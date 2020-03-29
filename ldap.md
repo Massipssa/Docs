@@ -1,4 +1,4 @@
-* Les données sont stockées d'une manière relationnelle 
+* Les données sont stockées d'une manière arborescente 
 * Stocke les données qui ne sont pas en mouvement permanant 
 * Par défault: 
   * LDAP utilise le port 389
@@ -6,7 +6,7 @@
   
 * ***dc:*** Domaine Component
 * ***ou:*** Organization Units 
-* ***cn:***
+* ***cn:*** Common Name 
 
 ***DN (Distinguished Name)***: permet d'identifier d'une manière unique une Entry
 

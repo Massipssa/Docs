@@ -1,0 +1,6 @@
+* Make vritual env 
+
+    virtualenv -p python3 airflow_jupyter
+
+
+source airflow_jupyter/bin/activate

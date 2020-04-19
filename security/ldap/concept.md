@@ -8,7 +8,9 @@
 * ```dc:``` Domaine Component
 * ```ou:``` Organization Units
 * ```cn:``` Common Name
-* ```dc``` (Distinguished Name): permet d'identifier d'une manière unique une Entry
+* ```sn:``` Surname Name
+
+* ```dn``` (Distinguished Name): permet d'identifier d'une manière unique une Entry
 
 Exemple
 ```dc=toto,dc=fr```

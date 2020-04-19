@@ -38,9 +38,9 @@ to **EC2**
 
 ### EC2 Princing
 
-* On-demand
-* Reserved Instances (RI)
-* Spot Instances: can be terminated at any time
+* **On-demand**
+* **Reserved Instances (RI)**
+* **Spot Instances:** can be terminated at any time
 * Dedicated
     * Most expensive
     * Multi-Tenant (virtual isolation with other consumers) vs Single Tenant (physical isloation with other cosumers)

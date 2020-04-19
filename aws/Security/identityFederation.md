@@ -16,5 +16,4 @@
 * **Custom Identity Broker Application**
 * **AWS Cognito - Federation Identity Pools**
 
-
-<img src="./screenshots/identityFederation.png" style="text-align:center">
+<div style="text-align:center"><img src="./screenshots/identityFederation.png"> </div>

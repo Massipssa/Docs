@@ -38,5 +38,5 @@
 	
 * Trash 
 	- When files are deleted they are moved to ```/user/<username>/.Trash```
-	- How to 
+	- How to configure it **???**
 	

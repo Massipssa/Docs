@@ -1,5 +1,8 @@
 ## Key Management Service (KMS)
 
+* Manages Key in AWS
+* Fully managed 
+
 
 ## Cloud HSM
 

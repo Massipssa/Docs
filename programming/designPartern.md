@@ -11,3 +11,10 @@
 * Synchronization: 
     * Allows to resolve conccurency problem 
     * Deadlock: when conncurrency is not managed 
+
+
+### Archi 
+
+* **Data Access Object (DAO)**
+
+* **Data Transfer Object (DTO)**

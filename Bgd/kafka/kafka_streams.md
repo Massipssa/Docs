@@ -1,7 +1,7 @@
 # Kafka streams 
  * Consume -> Process -> Produce 
- * Data stream: unbounded dataset (unfinite or ever growing) 
- * Envent streams features : 
+ * ***Data stream:*** unbounded dataset (unfinite or ever growing) 
+ * Envent streams features: 
 	* They are ordred (card ex : put money, send, recover...) 
 	* Immutable data record (ex: fincancial transaction can not be modfied) 
 	* Are relayable 

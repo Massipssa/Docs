@@ -40,3 +40,6 @@
 	- When files are deleted they are moved to ```/user/<username>/.Trash```
 	- How to configure it **???**
 	
+* **Backup and checkpoint nodes** 
+	- dfs.namenode.backup.address
+	- dfs.namenode.backup.http-address

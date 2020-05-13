@@ -10,6 +10,6 @@
 
 
 * Queue: 
-   - *Fifo*
+   - *FIFO*
    - *Capacityn Scheduler*
    - *Fair Scheduler*

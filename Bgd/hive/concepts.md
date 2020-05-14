@@ -37,3 +37,32 @@
 * Hive do not enforce schema on write, but it
 * **hive.metastore.warehouse.dir** : default dir in hdfs where data is stored
 
+
+- Types: 
+ - Java types (int, string, float, ...)
+ - Complexe types: Array, Map, Struct
+
+
+- Table 
+
+ - Can copy exsiting table schema with LIKE
+ - Show: 
+	- show tables in <namespace>
+	- show tables 'emp*'
+ - Describe: 
+	- describe extended <tablename>
+	- describe formated <tablename>
+ - Describe column: 
+ 	- describe extended <tablename.columnname>
+
+Partitions 
+
+ - Strict and nonstrict mode to prohiby queries without where clause in partitioned tables
+
+ - We can descirbe and show partitions
+	-  show partitions <tablename>
+
+ - We can Atler table by adding partition
+
+- no support for insert, update and delete
+- doesn't support transactions

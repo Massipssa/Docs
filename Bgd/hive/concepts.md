@@ -42,20 +42,20 @@
  - Java types (int, string, float, ...)
  - Complexe types: Array, Map, Struct
 
+### DDL
 
-- Table 
-
+#### Table 
  - Can copy exsiting table schema with LIKE
  - Show: 
-	- show tables in <namespace>
-	- show tables 'emp*'
+   - show tables in <namespace>
+   - show tables 'emp*'
  - Describe: 
 	- describe extended <tablename>
 	- describe formated <tablename>
  - Describe column: 
  	- describe extended <tablename.columnname>
 
-Partitions 
+#### Partitions 
 
  - Strict and nonstrict mode to prohiby queries without where clause in partitioned tables
 

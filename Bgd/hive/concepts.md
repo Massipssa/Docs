@@ -66,3 +66,8 @@
 
 - no support for insert, update and delete
 - doesn't support transactions
+
+### DML
+- Load data
+```LOAD DATA LOCAL INPATH /path/local/file
+   OVERWRITE INTO TABLE tablename``

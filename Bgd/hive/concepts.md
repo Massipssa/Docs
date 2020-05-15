@@ -69,5 +69,4 @@
 
 ### DML
 - Load data
-```LOAD DATA LOCAL INPATH /path/local/file
-   OVERWRITE INTO TABLE tablename```
+```LOAD DATA LOCAL INPATH /path/local/file OVERWRITE INTO TABLE tablename```

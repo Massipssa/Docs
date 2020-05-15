@@ -70,4 +70,4 @@
 ### DML
 - Load data
 ```LOAD DATA LOCAL INPATH /path/local/file
-   OVERWRITE INTO TABLE tablename``
+   OVERWRITE INTO TABLE tablename```

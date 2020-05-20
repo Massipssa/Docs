@@ -95,13 +95,13 @@ A realm in Kerberos refers to an authentication administrative domain. Principal
 
 ```vi /var/kerberos/krb5kdc/kdc.conf```
 
-4.***Create KDC database***
+**4. Create KDC database**
 
 ```sh
     kdb5_util create -r HADOOP.COM -s
 ```
 
-5.**Specify the admin principals and add admin principal**
+**5. Specify the admin principals and add admin principal**
 
 * All users in realm ```*/admin@HDPCLUSTER.COM``` will have admin access
 * ```kadmin.local``` utility used only on the krb server
@@ -111,14 +111,14 @@ vi /var/kerberos/krb5kdc/kadm5.acl
 kadmin.local -q "addprinc root/admin"
 ```
 
-6.**Start kdc and the server**
+**6. Start kdc and the server**
 
 ```
 service krb5kdc start
 service kadmin start
 ```
 
-7. **Test**
+**7. Test**
 
 ```sh
 # list if ticket is present in cache

@@ -1,9 +1,23 @@
-#### 
-* Construction 
-    * Singleton 
-    * Factory 
-    * Abstract Factory 
-    * Builder 
+## Creational
+
+* Used to create object
+
+* Singleton
+* Factory
+* Abstract Factory
+* Builder:
+    * Create a complexe object from a simple one
+    * When some attibutes are not required
+* Prototype
+
+## Structrual
+
+* Relationship  between objects
+
+## Behavior
+
+* Communication between objects
+
 
 ### Combinator
 * Combinator pattern allows to chain functions on an object in order to perform some validations

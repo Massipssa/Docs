@@ -1,22 +1,25 @@
-### Request 
-* What container grantee to get 
-### Limit 
-* Container container never go above this limit 
+### Request
+
+* What container grantee to get
+
+### Limit
+
+* Container container never go above this limit
 
 ### ResourceQuotas
 
-```yaml 
-    apiVersion: v1 
+```yaml
+    apiVersion: v1
     kind: ResourceQuota
-    metadata: 
+    metadata:
         name: test
-    spec: 
-        hard: 
+    spec:
+        hard:
             # Maximum cpu combined by all containers in namespace can have
-            requests.cpu: 500m 
+            requests.cpu: 500m
             
-            requests.merory: 100Mib 
+            requests.merory: 100Mib
             # Maximum cpu combined by all pods in namespace
-            limits.cpu: 700m 
-            limits.memory: 500Mib 
+            limits.cpu: 700m
+            limits.memory: 500Mib
 ```

@@ -1,24 +1,23 @@
-[Pod](#headers)  
+[Pod](#headers)
 [ReplicatSet](#emphasis)  
 [Replication Controller (RC)](#emphasis)  
 
-
-## POD 
+## POD
 
 * Scheduling unit in k8S
-* Privides runtime environment for application that we deploy 
+* Privides runtime environment for application that we deploy
 
 * **Pod lifecycle**
-    1. Submit file (yaml or json) to API Server 
-    2. Pods go to scheduler and they stay in ***Pending*** state until all scheduled they pass to ***Running*** 
-    3. Pod may have: 
+    1. Submit file (yaml or json) to API Server
+    2. Pods go to scheduler and they stay in ***Pending*** state until all scheduled they pass to ***Running***
+    3. Pod may have:
         * **Succed**
         * **Failed**: when Pod fails it can not be recovred
 
 * **Create**
     ```kubectl  create -f path/to/file.yml```
 * **Get**
-    ```kubectl  get pod``` 
+    ```kubectl  get pod```
 
      
 
@@ -26,14 +25,15 @@
     ```kubectl  <command>  pod [pod-name]```
 
 ## Replication Controller (RC)
-* Ensures that the number of pods are running always at any time 
-* RC and Pods are linkend by labels 
-* Advantages: 
-    * High availability 
+
+* Ensures that the number of pods are running always at any time
+* RC and Pods are linkend by labels
+* Advantages:
+    * High availability
     * Load balancing  (trafic equalty distributed)
     * RC is ***OLD*** and was replaced by ***ReplicatSet***
 
-### Example 
+### Example
 
 ```yaml
     apiVersion: v1
@@ -61,7 +61,8 @@
                     - containerPort: 80
 ```
 
-# ReplicatSet 
+# ReplicatSet
+
 * Ensures that a number of pods is running always at any time 
 * ReplicaSet and Pods are linked by ***labels***
 
@@ -75,31 +76,31 @@
 ```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
-metadata: 
-  # name of rs 
+metadata:
+  # name of rs
   name: nginx-rs
 spec:
-  # nb of replicas to have all time 
+  # nb of replicas to have all time
   replicas: 3
-  # link between RS and Pods is by selector and labels 
+  # link between RS and Pods is by selector and labels
   selector:
-    # when have one value 
-    matchLabels: 
+    # when have one value
+    matchLabels:
         app: nginx-app
-    matchExpressions: 
+    matchExpressions:
         - {key: tier, operator: In, values: [frontend]}
-  # pods to run 
-  template: 
-    metadata: 
+  # pods to run
+  template:
+    metadata:
       name: nginx-pod
-      labels: 
+      labels:
         app: nginx-app
         tier: frontend
     spec:
-      containers: 
+      containers:
       - name: nginx-container
         image: nginx
-        ports: 
+        ports:
           - containerPort: 80
 ```
 
@@ -114,10 +115,10 @@ spec:
 ### Types 
 * Recreate (when version 1 is shudown start version 2) implies downtime of service
 * RollingUpdate (Ramped or Incremental)
-* Canary 
-* Blue / Green 
+* Canary
+* Blue / Green
 
-#### update deployment 
+#### update deployment
 
 ```kubectl set image deploy [deploy-name] [deploy-container]=image:verion ```
 **OR**
@@ -130,28 +131,34 @@ spec:
 #### Scale up and down
 ```kubectl scale deployment [deploy-name] --replicas=[replica-number]```
 
+## Job
 
-## Job 
 * Run repated tasks
-* Is controller which supervise Pod to accomplish certain task 
-### Types 
+* Is controller which supervise Pod to accomplish certain task
+
+### Types
+
 * Run to completion (Jobs)
-    * Perform bash processing 
-    * Controller will wait for return code exit 0 to shutdown job 
-    * Must be deleted manually 
+    * Perform bash processing
+    * Controller will wait for return code exit 0 to shutdown job
+    * Must be deleted manually
 * Scheduler (CronJob)
-    * Similar to cron job in linux 
-    * Main purpose free space, dump logs,... repetelly 
+    * Similar to cron job in linux
+    * Main purpose free space, dump logs,... repetelly
 
 
-## DeamonSet 
-* Ensure that all nodes of cluster run one Pod of application 
-* Can be used to: 
-    * Deploy one Pod by node 
-    * Deploy one pod by subset of nodes (iin this case we need to tag nodes by labels)
-* Add and remove Pods as the nodes join or leave cluster 
+## DeamonSet
 
-## Basic commands 
+* Ensure that all ((or some) nodes of cluster run one Pod of application
+* Can be used to:
+    * Deploy one Pod by node
+    * Deploy one pod by subset of nodes (in this case we need to tag nodes by labels)
+* Add and remove Pods as the nodes join or leave cluster
+* Some uses cases:
+    * Collect logs: install Filebeat, fluentd on every node
+    * Monitoring: Prometheus on each node
+
+## Basic commands
 
 ### Objects
 

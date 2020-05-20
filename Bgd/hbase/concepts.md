@@ -38,34 +38,38 @@
 		* The data is sotred in lexicographical order before commiting it to the disk 
     * ***Hfile*** 
 		* It stores data to cells on the disk
-		* MemStore commit the data to Hfile when the size of MemStore exceeds 
+		* MemStore commit the data to Hfile when the size of MemStore exceeds
 				
 * **Read Mecanism:**
 * **Write Mecanism:**
 		
 		
 		
-## Basics 		
- 
-* **DDL** 
+## Basics
 
-- Create table : create '<table-name>', 'CF1', 'CF2'
-	create 'customer','address','order'
+* **DDL**
+
+- Create table : **create table-name, 'CF1', 'CF2'**
+
+	```create 'customer','address','order'```
 			
-- Put data : put ‘<table-name>’,’row-key’,’columnfamily:columnname’,’value’
-	put 'customer', 'john', 'address:state', 'paris'
-	put 'customer','john','order:number','ORD-15'
+* Put data : put ‘<table-name>’,’row-key’,’columnfamily:columnname’,’value’
+	```put 'customer', 'john', 'address:state', 'paris'```
+	```put 'customer','john','order:number','ORD-15'```
 	
-- Get data : get ‘<table-name>’,’<row-key>’,’<column-family>’
-	-- Get by row-key : get 'customer', 'john'
-	-- Get by row-key and column-family : get 'customer', 'john', 'address'  
+* Get data : **get table-name, row-key, column-family**
+	* Get by row-key
+		```get 'customer', 'john'```
+	* Get by row-key and column-family
+		```get 'customer', 'john', 'address'```
 	
-- Scan table : ```scan 'table_name'```
+* Scan table
+	 ```scan 'table_name'```
 	
-- Delete : delete  ‘<table-name>’,’<rowkey>’
+- Delete : **delete table-name, rowkey**
 	delete 'customer', 'john'
 	
-- Count rows : 
+- Count rows: 
 	count 'customer'
 	
 - Delete table : 

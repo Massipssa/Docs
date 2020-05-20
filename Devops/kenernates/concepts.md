@@ -36,23 +36,23 @@
 ### Components 
 1. **Master**
     * **API**
-        * Acts as gate keeper of the cluser 
+        * Acts as gate keeper of the cluser
         * Actions (GET, DELETE, ...) go throught the API
     * **API Server**
         * Validates and configure API objects such as pods, services ...
-        * Responsible for exposing various APIs 
+        * Responsible for exposing various APIs
     * **Scheduler**
-        * Schedules Pods across multiple nodes 
+        * Schedules Pods across multiple nodes
     * **Controll Manager**
-        * There are four controllers 
+        * There are four controllers
             * Node controller
-            * Replication contoller 
-            * End-point Controller 
+            * Replication contoller
+            * End-point Controller
             * Service controller
-        * All controllers are responsible for health of cluster 
-    * **etcd** 
-        * Key-value distributed light-weight database   
-        * Stores current states of the cluster 
+        * All controllers are responsible for health of cluster
+    * **etcd**
+        * Key-value distributed light-weight database
+        * Stores current states of the cluster
 
 <img src="./screeshots/master_cmpts.PNG"> 
 
@@ -68,8 +68,8 @@
 
 <img src="./screeshots/worker_cmpts.PNG"> 
 
-3. Tools to interact with API 
-    * Kubectl 
+3. Tools to interact with API
+    * Kubectl
     * Minikube
 * hybrid,on-premise, and public cloud ??
 

@@ -27,9 +27,12 @@ It happens when
 * The topics the consumers are consuming is modified (e.g. administrator add new partition to topic)
 
 ### Configuration parameters 
+#### Consumer
 * **auto.offset.reset** 
     * latest: is the default (records written after consumer were started)
     * earliest: read the data starting from the very beginning 
+* **enable.auto.commit**: can be true or false. Allows Kafka to commit automatically the offset it had consumed 
+#### Producer
 
 ### Offset commit
 
@@ -44,7 +47,7 @@ It happens when
 livelock : application did not crash but fails to make progress for some reason 
 
 
-## Offser Management
+## Offset Management
 
 
 

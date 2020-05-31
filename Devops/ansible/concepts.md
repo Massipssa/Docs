@@ -50,7 +50,7 @@ dabase3.hotname
 ```
 
 * Ansible tower: framework desgin to access Ansible using GUI
-* We can use jinja templating in ansible 
+* We can use jinja templating in ansible
 * Loops: 
 ```yaml 
     tasks: 

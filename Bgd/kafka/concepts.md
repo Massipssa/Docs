@@ -1,24 +1,37 @@
 ## Concepts 
 * Partitions of topic can be stored in differents servers (scaled horizontaly)
-* Consumer read a message in order they arrive 
-* **Broker:** 
-    * Receives messages from Producer 
-    * Assigns offsets to messages 
-    * Commits messages to disk 
+* Consumer read a message in order they arrive
+
+* **Broker**
+    * Knows all about topics and partitions metadatas
+    * Is bootstrap broker
+    * Stores some topics and partitions
+    * Receives messages from Producer
+    * Assigns offsets to messages
+    * Commits messages to disk
     * Responds to consumers with messages
-* **Controller:** 
-    * Elected automatically 
+
+* **Controller:**
+    * Elected automatically
     * Reposible for administrative operations (Assign partitions to brokers and monitoring for broker failures)
-* **Leader:** the owner of partition 
-* **Retention:** 
-    * Can be the number of days 
+
+* **Leader:** the owner of partition
+
+* **Partition**
+    - Can not be deleted once is created
+    - Order is garanteed within the partition, and once data is writed to partition is immutable
+
+
+* **Retention:**
+    * Can be the number of days
     * Or when topic reaches certain size in bytes  
-    * Individual topic can have its own retention 
-    * Topic can also be configured with ***log compacted*** that means Kafka will retains only ***the last*** messages with some keys 
+    * Individual topic can have its own retention
+    * Topic can also be configured with ***log compacted*** that means Kafka will retains only ***the last*** messages with some keys
 
-## Consumer 
 
-* The way to scale data consumption is by adding more consumer to consumer group 
+## Consumer
+
+* The way to scale data consumption is by adding more consumer to consumer group
 
 ### Partition reassignement
 It happens when 
@@ -52,3 +65,7 @@ livelock : application did not crash but fails to make progress for some reason
 
 
 
+
+## Links
+
+http://lahotisolutions.blogspot.com/2019/03/apache-kafka-notes.html

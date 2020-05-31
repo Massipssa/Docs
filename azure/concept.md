@@ -1,14 +1,14 @@
 # Azure basics
 
-## Services 
+## Services
 
 ### Storage account
 * **Types**
   - **Blob:** for test and binary data
-  - **File** 
+  - **File**
   - **Queue**
   - **Table** is NoSql storage
-* **Access types** 
+* **Access types**
   - Hot
   - Cool
   - Archive

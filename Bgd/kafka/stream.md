@@ -1,4 +1,8 @@
-# Kafka streams 
+# Kafka streams
+
+- **Record:** is key-value pair
+
+
  * Consume -> Process -> Produce 
  * ***Data stream:*** unbounded dataset (unfinite or ever growing) 
  * Envent streams features: 
@@ -10,7 +14,9 @@
 	* Request-Response (online trasaction processing OLAP) 
 	* Bash-processing 
 	* Stream-processing 
- * Concepts: 
+ 
+ 
+ ## Concepts 
  
 	* Time
 		- Event time: time where event occured. Kafka add automatically the current time to producer record 
@@ -37,15 +43,26 @@
 	1- StreamBuilder: create topology (DAG) is serie of transformations 
 	2- KafkaStream: execute object from topology. will start multiple threads,each applying the processing 
 		topology to events in the stream
-		
-	* Stream: 
-		- like topic, consists of one or many partitions 
-	* We can run multiple app instances (with same application.id) 
-	* Tolology: processing logic where: 
-		- Node: stream processor 
-		- Edge: stream 
-	* State: 
-		- Stateless: independent from the processing of the other message 
-		- Stateful:
+
+* Stream:
+	- Uunbouded, countinous real-time flow of records
+	- Like topic, consists of one or many partitions
+
+* Tolology: processing logic where
+	- Node: Stream processor
+	- Edge: stream
+
+* **State:**
+	- ***Stateless:*** independent from the processing of the other message
+	- ***Stateful:*** dependent from other messages, its used when we need to join, aggregate or window input data
+
+* **KStream:** insert only
+* **KTable:** upsert (insert and update it the record exists)
+
+- Stream application do not run inside the broker, it runs on the client JVM
+- We can run many instances of an application
+- **Processor topology:** the strategy which allows to compute data (is graph)
+
+
 
 https://kafka-tutorials.confluent.io/changing-serialization-format/kstreams.html

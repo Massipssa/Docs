@@ -45,6 +45,7 @@ function start-kafka {
     --entity-name demo \
     --delete-config retention.ms
 
+# Trouble shooting ?? under ... 
 
 #==== kafka-console-producer.sh ====
 ./kafka-console-producer.sh --broker-list localhost:9092 --topic demo

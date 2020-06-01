@@ -13,13 +13,16 @@
 
 * **Controller:**
     * Elected automatically
-    * Reposible for administrative operations (Assign partitions to brokers and monitoring for broker failures)
+    * Reponsible for administrative operations (Assign partitions to brokers and monitoring for broker failures)
 
 * **Leader:** the owner of partition
 
 * **Partition**
     - Can not be deleted once is created
     - Order is garanteed within the partition, and once data is writed to partition is immutable
+    - Key used :
+        - As additional information that gets stored with the message
+        - To decide to which one of the topic partitions the message will be writen to. All the message with the same key will go to same partition
 
 
 * **Retention:**

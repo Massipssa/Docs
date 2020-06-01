@@ -3,46 +3,45 @@
 - **Record:** is key-value pair
 
 
- * Consume -> Process -> Produce 
- * ***Data stream:*** unbounded dataset (unfinite or ever growing) 
- * Envent streams features: 
-	* They are ordred (card ex : put money, send, recover...) 
-	* Immutable data record (ex: fincancial transaction can not be modfied) 
-	* Are relayable 
-	* Fault-tolerant 
- * Three paradigms : 
-	* Request-Response (online trasaction processing OLAP) 
-	* Bash-processing 
-	* Stream-processing 
+ * Consume -> Process -> Produce
+ * ***Data stream:*** unbounded dataset (unfinite or ever growing)
+ * Envent streams features:
+	* They are ordred (card ex : put money, send, recover...)
+	* Immutable data record (ex: fincancial transaction can not be modfied)
+	* Are relayable
+	* Fault-tolerant
+ * Three paradigms:
+	* Request-Response (online trasaction processing OLAP)
+	* Bash-processing
+	* Stream-processing
  
  
- ## Concepts 
+## Concepts
  
-	* Time
-		- Event time: time where event occured. Kafka add automatically the current time to producer record 
-		- Log append time: time event arrived to Kafka borker 
-		- Processing time: 
-			- Time at which sytem processing received data to perform some calculation 
-			- Two threads of same application can have different processing time 
-			- Higly unreliable and best avoided 
-		PS: when usign time, time zone should be standrardied over the application 
+* Time
+	- Event time: time where event occured. Kafka add automatically the current time to producer record
+	- Log append time: time event arrived to Kafka borker
+	- Processing time:
+		- Time at which sytem processing received data to perform some calculation
+		- Two threads of same application can have different processing time
+		- Higly unreliable and best avoided
+	- PS: when usign time, time zone should be standrardied over the application
 		
-	* State: information stored between events 
-		- Local or internal state : accesible only by steaming app instance 
-		- External state 
-	* Time windows: operations happens on slices of time 
+* State: information stored between events
+	- Local or internal state : accesible only by steaming app instance
+	- External state
+* Time windows: operations happens on slices of time
 	
-	* Design pattern 
-		- Single event processing 
+* Design pattern
+	- Single event processing
 		
 		
-	* Two API 
-		- Low level Processor 
-		- High Level Stream DSL
+* Two API
+	- Low level Processor
+	- High Level Stream DSL
 		
-	1- StreamBuilder: create topology (DAG) is serie of transformations 
-	2- KafkaStream: execute object from topology. will start multiple threads,each applying the processing 
-		topology to events in the stream
+1- StreamBuilder: create topology (DAG) is serie of transformations
+2- KafkaStream: execute object from topology. will start multiple threads,each applying the processing topology to events in the stream
 
 * Stream:
 	- Uunbouded, countinous real-time flow of records

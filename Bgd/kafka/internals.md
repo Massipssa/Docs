@@ -3,7 +3,7 @@
 
 * Every broker has a unique **id** (set in config file or auto generated)
 * Broker's metadata are stored within zookeeper in the znode **/brokers/ids/broker-id**
-* If the broker is gone it's ID will still existe in other data structure. Like this, if we replace the broker with another one with the same ID, it'll immediatly joion the cluster and with same partitions and topics assigned to it
+* If the broker is gone its ID will still existe in other data structure. Like this, if we replace the broker with another one with the same ID, it'll immediatly joion the cluster and with same partitions and topics assigned to it
 
 ## Controller
 

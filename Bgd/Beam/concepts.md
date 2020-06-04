@@ -7,6 +7,7 @@
 - **PCollection** dataset of bounded or unbounded items 
   - Has a schema
   - Immutable (like RDD in spark)
+  - Each item is assigned a **timestamp** by a source that creates it
 - **PTransformation**
   - Acts on PCollection, create zero or many new PCollections
 - **Pipeline** 

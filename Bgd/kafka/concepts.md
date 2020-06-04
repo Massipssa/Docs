@@ -46,7 +46,7 @@
     * The leader is responsible to assign partitions to consumer
     * Leader uses ***Range*** or ***RoundRobin*** policy to assign partition to the consumer
 
-## Partition reassignement
+### Partition reassignement
 
 * It happens when
     - New consumer is added to consumer group
@@ -54,16 +54,13 @@
     - The topics the consumers are consuming is modified (e.g. administrator add new partition to topic)
 * During rebalance a consuemer cannot consume, they should wait until rebalance is finished
 
-## Configuration parameters
-
-### Consumer
+### Configuration parameters
 
 * **auto.offset.reset**
     * **latest:** is the default (records written after consumer were started)
     * **earliest:** read the data starting from the very beginning
+    * **none**
 * **enable.auto.commit**: can be true or false. Allows Kafka to commit automatically the offset it had consumed
-
-### Producer
 
 ### Offset commit
 
@@ -82,6 +79,11 @@
         - ```commitSync()``` API  sends request and continue, don't wait for the broker response
         - It does not retry
 
+* ```subscribe()```: levrage consumer group mecanism
+* ```assign()```: used to assign pattitions manually to consuemr
+* **subscribe** and **assign** can't not be called by the same conusemr
+
+
 livelock : application did not crash but fails to make progress for some reason
 
 ## Consuming strategies
@@ -89,9 +91,6 @@ livelock : application did not crash but fails to make progress for some reason
 - **At-most-once:** never duplicate messages, but can miss ones
 - **At-last-once:** can duplicate messages but can't miss ones
 - **Exactly-once:** deliver all messages without duplication
-
-## Offset Management
-
 
 ## Links
 

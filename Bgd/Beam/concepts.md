@@ -6,5 +6,8 @@
 ## Components
 - PCollection: 
 - PTransformation:
-- Pipeline: acyclic graph of PCollection and PTransformation
+- Pipeline: 
+  - Acyclic graph of PCollection and PTransformation
+  - Different pipeline cannot share a PCollection
 - PipelineRunner: 
+

@@ -4,10 +4,13 @@
 - Provide a portable programming layer
 
 ## Components
-- PCollection: 
-- PTransformation:
-- Pipeline: 
+- **PCollection** dataset of bounded or unbounded items 
+  - Has a schema
+  - Immutable (like RDD in spark)
+- **PTransformation**
+  - Acts on PCollection, create zero or many new PCollections
+- **Pipeline** 
   - Acyclic graph of PCollection and PTransformation
   - Different pipeline cannot share a PCollection
-- PipelineRunner: 
+- **PipelineRunner** 
 

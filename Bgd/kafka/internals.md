@@ -3,7 +3,7 @@
 
 * Every broker has a unique **id** (set in config file or auto generated)
 * Broker's metadata are stored within zookeeper in the znode **/brokers/ids/broker-id**
-* If the broker is gone its ID will still existe in other data structure. Like this, if we replace the broker with another one with the same ID, it'll immediatly joion the cluster and with same partitions and topics assigned to it
+* If the broker is gone its ID will still existe in other data structure. Like this, if we replace the broker with another one having the same ID, it'll immediatly joion the cluster and with same partitions and topics assigned to it
 
 ## Controller
 
@@ -81,3 +81,9 @@ After receving the request, the lead replica will:
 
 - Maps offset to segment files and position within the file
 - They are broken into segments , they can be deleted when messages are purged
+- Partition has **one** segement and **two** indexes files
+
+### Compaction
+ - Keep only the lastest message value
+ - If the key of message is **null** the compaction will fail
+ - Message having null values are **deleted**

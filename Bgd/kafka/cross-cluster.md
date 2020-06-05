@@ -1,0 +1,2 @@
+- **Mirror:** copying data between Kafka clusters
+- **MirrorMaker:** built-in-cross-cluster replicator in Kafka

@@ -17,14 +17,16 @@
 - **PipelineRunner** 
 
 ## Beam Model 
-- **What** is beign computed 
-  - Here we compute **Sum** per key  --> ```PCollection<KV<String, Integer>> scores = input.apply(Sum.integersPerKeyy())```
-- **Where** in event time
+- **What** is beign computed ?
+  - Here we compute **Sum** per key:
+    ```PCollection<KV<String, Integer>> scores = input.apply(Sum.integersPerKeyy())```
+- **Where** in event time ?
   - Window each two minutes we receive (we compute) an event  --> 
     ```
       PCollection<KV<String, Integer>> scores = input
-                 .apply(Window.into(FixedWindows.of(Duration.ofMinutes(2)))
+                 .apply(Window.into(FixedWindows.of(Duration.standardMinutes(2)))
                  .apply(Sum.integersPerKeyy())
     ```
-
+- **Where** in processing time ? 
+- **How** refinement relate ? 
 

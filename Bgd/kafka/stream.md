@@ -84,4 +84,21 @@
 - **Processor topology:** the strategy which allows to compute data (is graph)
 
 
+### Windowing
+- Grace perdiod: indicates when the window result is final
+- Out-of-order: if a record arrive after grace period (record.ts > window.end.time + grace.period) it'll discared and not processed
+
+- **Window types** 
+ - **Tumbling**
+ - **Hopping**
+ - **Sliding**
+ - **Session**
+  - Prime use area is user behavior analysis
+
+### Processing grantee
+- **At-least-once:** records are nerver lost but may be delivred
+- **Exactly-once:**: records are processed only once
+
+
+
 https://kafka-tutorials.confluent.io/changing-serialization-format/kstreams.html

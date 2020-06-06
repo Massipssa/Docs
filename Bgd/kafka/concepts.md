@@ -45,6 +45,7 @@
     * The first consumer who joined the group become the ***leader*** of the group
     * The leader is responsible to assign partitions to consumer
     * Leader uses ***Range*** or ***RoundRobin*** policy to assign partition to the consumer
+* KafkaConsumer is not thread safe, it needs to be executed in one thread
 
 ### Partition reassignement
 
@@ -82,9 +83,10 @@
 * ```subscribe()```: levrage consumer group mecanism
 * ```assign()```: used to assign pattitions manually to consuemr
 * **subscribe** and **assign** can't not be called by the same conusemr
+* ```close()```: on consumer immediately triggers a partition rebalance as the consumer will not be available anymore
 
-
-livelock : application did not crash but fails to make progress for some reason
+## Producer
+- KafkaProducer is thread safe 
 
 ## Consuming strategies
 
@@ -95,3 +97,5 @@ livelock : application did not crash but fails to make progress for some reason
 ## Links
 
 http://lahotisolutions.blogspot.com/2019/03/apache-kafka-notes.html
+
+livelock : application did not crash but fails to make progress for some reason

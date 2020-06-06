@@ -5,7 +5,7 @@
   - Redundancy
   - Cloud migrations
  
- - Three difficulties should be considered when we have to deal with cross-cluster 
+- Three difficulties should be considered when we have to deal with cross-cluster 
   - High latencies
   - Limited bandwidth
   - Higer costs

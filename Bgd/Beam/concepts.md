@@ -2,6 +2,7 @@
 
 - Is unified programming model for batching and streaming
 - Provide a portable programming layer
+- Separates pipeline structure from execution platform (Spark, Dataflow, Flink, ...)
 
 ## Components
 - **PCollection** dataset of bounded or unbounded items 
@@ -14,4 +15,14 @@
   - Acyclic graph of PCollection and PTransformation
   - Different pipeline cannot share a PCollection
 - **PipelineRunner** 
+
+## Beam Model 
+- **What** is beign computed 
+  - Here we compute **Sum** per key  --> ```PCollection<KV<String, Integer>> scores = input.apply(Sum.integersPerKeyy())```
+- **Where** in event time
+  - Window each two minutes we receive (we compute) an event  --> 
+    ```PCollection<KV<String, Integer>> scores = input
+                 .apply(Window.into(FixedWindows.of(Duration.ofMinutes(2)))
+                 .apply(Sum.integersPerKeyy())```
+
 

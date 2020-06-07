@@ -30,3 +30,10 @@
 - **Where** in processing time ? 
 - **How** refinement relate ? 
 
+
+## Windowing
+
+- **Watermark** 
+  - **Event-time:** where event occured (timestamp inside event)
+  - **Proccessing-time:** where event was processed by the pipeline
+  

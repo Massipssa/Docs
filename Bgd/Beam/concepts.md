@@ -33,7 +33,12 @@
 
 ## Windowing
 
+- Each element of PCollection may belong to one or more windows
+- Each individual window contains an infinite elements
 - **Watermark** 
   - **Event-time:** where event occured (timestamp inside event)
   - **Proccessing-time:** where event was processed by the pipeline
-  
+    
+## Triggers
+  - Emitting after a certain amount of time elapses, or after a certain number of elements arrives 
+  - Processing of late data by triggering after the event time watermark passes the end of the window

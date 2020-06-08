@@ -5,6 +5,12 @@
     - Generate ssh key using ```ssh key-gen ....```
   - See: https://www.youtube.com/watch?v=6DD-vBdJJxk
   
+**Dataflow**
+  - Fully managed service
+  - Allows code optimization
+  - Dynamic workload rebalancing (straggler problem)
+  - Autoscaling (more or less workers)
+  
 **BigQuery**
   - Fully managed service
   - Deals with

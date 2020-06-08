@@ -21,5 +21,9 @@
   - Two types:
     - HTTP functions: triggred by http events like Git, Slack, ...
     - Background functions
+ **Cloud SQL**
+ - Postgresql 
+ - Myqsl 
+ - SQL Server
   
   

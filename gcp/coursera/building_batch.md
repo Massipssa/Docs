@@ -1,0 +1,10 @@
+- On premises Hadoop cluster limitations
+  - Not elastic (we are bound to the cluster power and storage capacity)
+  - Hard to scale fast
+  - Have capacity limit
+  - Have no separation between compute and storage resources
+- On cloud (Dataproc)
+  - Built-in support Hadoo
+  - Managed hardware and configuration
+  - Simplified version management (Keep hadoop tools version up to date)
+  - Flexible job configuration

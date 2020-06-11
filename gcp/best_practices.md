@@ -1,4 +1,4 @@
 - SQL
   - Small table instead or larger ones (data denormalization)
   - Select with fields names instead of SELECT *
-  - Use JOIN QUERY instead of WHERE (Where creates more combinaison = more work)
+  - Use INNER JOIN instead of WHERE (Where creates more combinaison = more work)

@@ -1,0 +1,4 @@
+- SQL
+  - Small table instead or larger ones (data denormalization)
+  - Select with fields names instead of SELECT *
+  - Use JOININ QUERY instead of WHERE (Where creates more combinaison = more work)

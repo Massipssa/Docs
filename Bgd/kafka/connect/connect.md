@@ -4,6 +4,8 @@
     - Timeliness
     - Reliability
 
+
+- Default port in distributed mode
 ## Components
 
 * **Connector**

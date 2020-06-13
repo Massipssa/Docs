@@ -1,1 +1,1 @@
-<img src="gcp/linuxacadimy/screenshots/"/>
+<img src="gcp/linuxacadimy/screenshots/databases.png"/>

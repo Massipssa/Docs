@@ -44,7 +44,14 @@
     - Command
         - ```bq extract 'projectid:dataset:table' gc://bucket_name/folder/object_name```
 
-## Monitor
+## Monitor & Logging
+
+- Monitor allows to visualize:
+    - Metrics (alter on metric)
+    - Performance
+    - Resource capacity/usage (Slots)
+- Logging:
+    - Who is doing what (show actions history)
 
 - What does colors mean in query details ?
 

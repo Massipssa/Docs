@@ -28,7 +28,9 @@
   - Open firewall port to network
   - Use SOCKS proxy - does not expose firewall ports
 
-### Pub/Sub
+### IAM
+
+## Pub/Sub
 
 - Global scale message buffer/coupler
 - No-ops, globaly availabilityn auto-scaling
@@ -37,6 +39,8 @@
 - Asynchrounous messaging (ex: many-to-many) or other combinaison
 - Message are stored in **Message Storage**
 - Kafka Connect can be user to link PubSub to Kafka
+
+### IAM 
 
 ### Dataflow
 
@@ -58,6 +62,8 @@
   - Fixed
   - Sliding
   - Session
+
+### IAM ??
 
 ## Data Transfert
 

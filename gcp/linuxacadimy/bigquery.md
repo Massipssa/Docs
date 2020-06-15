@@ -12,6 +12,7 @@
 - Accept batch and streaming
 - Can be used for storage and analysis
 - Replicated and durable
+- Is columnar
 
 ## IAM
 
@@ -19,6 +20,7 @@
 - Has predifined roles ...
 - Sharding dataset
 - View can be used to restrict access to some data
+- Supports premitives roles for Project Level access
 
 ## Cache
 

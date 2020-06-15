@@ -1,4 +1,8 @@
-## Datalab
+1. [Dataprep](#datastore)
+2. [Datalab](#dataprep)
+3. [Tools](#tools)
+
+## Datalab <a name="datastore"></a>
 
 - Interactive tool for exploring and visualize data
 - Build on jupter
@@ -7,9 +11,20 @@
 - Connect to Datalab: ```datalab connect (instance-name)```
 - **Source Repository** stores the notebooks  
 
-## Dataprep
+## Dataprep <a name="dataprep"></a>
 
-## Tools
+- Intelligent data preparation
+- Serverless
+- Is not Google product (Partner **Trifacta** product)
+- Supports:
+    - CSV, JSON, Avro,  ...
+    - Output: CSV, Json, Bigquery and the file can be compressed or uncompressed
+- **IAM ??**
+
+## Tools <a name="tools"></a>
+
 - gcloud
-- bq
+- gsutil (Storage)
+- bq (Bigquery)
 - datalab
+- cbt (Bigtable)

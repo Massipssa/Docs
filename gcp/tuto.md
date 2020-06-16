@@ -19,7 +19,16 @@
 - Supports:
     - CSV, JSON, Avro,  ...
     - Output: CSV, Json, Bigquery and the file can be compressed or uncompressed
-- **IAM ??**
+- **IAM **
+    - dataprep.projets.user: allows user to run the Cloud Dataprep
+    - dataprep.serviceAgent: gives access to:
+        - Storage (GCS)
+        - Datasets (BQ)
+        - Workflow (Dataflow)
+## Dataproc
+- Available connectors:
+    - Spark, Hadoop <=> Bigquery, CloudStorage, Bigtable
+
 
 ## Tools <a name="tools"></a>
 

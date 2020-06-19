@@ -16,7 +16,7 @@
     - use bzip2: ```tar cjf my_archive.tar.bz2 file_name*```
     - use zip: ```zip -r archive.zip file_name*```
 - **pipe**
-    - find word and count occurence: ```cat my_file.txt | grep my_word | wc -l ```
+    - find word and count occurence: ```cat my_file.txt | grep my_word | wc -l```
     - ```cat /etc/passwd | grep massi | cut -d: -f6```
 - **wc**
     - count number of lines: ```wc my_file.txt```
@@ -26,6 +26,13 @@
 - Rerun the last command I used
     - ex: ```!cat```
 
+## Files and Directories
+
+- IO redirection
+    - ```>``` : stout
+    - ```<``` : sdin
+    - ```>>``` : append
+
 ## Security
 
 - ```/etc/sudoers:``` contains all what users can do
@@ -34,4 +41,24 @@
 - ```/etc/group:```  users groups
 
 - Difference between system user and standard user ?
-    - Sytem user do not have a login shell
+    - Sytem user (Service account) do not have a login shell
+
+## Users and groups
+
+### Users
+
+- Create user ```useradd -m username``` (-m: make home dire)
+- Modify user ```usermod```
+- Assign password to user ```passwd usename```
+- ```/etc/skel:``` folder contains all files to be added in user's home when it's created
+- UID:
+    - 0: root
+    - 1-99: system users
+    - 100+: standard users
+    - 65534: user nobody
+
+### Groups
+
+- Create group ```groupadd groupname```
+- Add user to existing group ```usermod -a -G groupname username```
+- After a user was added to a group it should logout in to be added to the group

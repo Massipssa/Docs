@@ -10,13 +10,18 @@
 - Postgresql
 - Myqsl
 - SQL Server
+- Read replicas: used in case a read throughtput
 
 ## Cloud Datestore <a name="datastore"></a>
   
 - No relational database
 - NoSQL
+- Transactional
+- ACID support
+- Is schema-less
+- Uses SQL lile langangue **GQL**
 - One Datastore per project
-- Data structure:
+- ***Data structure***
   - Kind <=> Table
   - Entity <=> Row
   - Property <=> Column
@@ -51,3 +56,6 @@
     - No sequential numbers with ID
     - No timestamps (also sequential)
     - Use descenfing order timestamp if is required
+
+- Distingued from Cloud SQL by its **global consistent and size**
+- Secondry indexes ?? 

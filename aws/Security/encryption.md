@@ -1,6 +1,5 @@
-## Security 
+# Encryption
 
-### Enscryption 
 1. Encryption on fly (SSL)
     * Data encrypted before sending and decrypted when received by the server
     * To protect againt the MIMD attack
@@ -8,4 +7,4 @@
 2. Server side encryption at rest
 
 3. Client side encyption
-    * Data encypted by client and **never** decrypted by the server
+    * Data encypted by the client and **never** decrypted by the server

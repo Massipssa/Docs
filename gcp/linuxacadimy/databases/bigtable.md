@@ -1,7 +1,6 @@
 # Bigtable
 
 - High performance and massively scalable NoSQL database
-- ... for analytic workload
 - What is used for ?
     - High throughtput analytic
     - Huge datasets
@@ -39,3 +38,12 @@
 - Delete table ```cbt deletetable my-table```
 
 ## Schema Design ??
+
+
+## Tall and Narrow Tables ?? 
+
+## Key ??
+
+## IAM
+
+- Project, instance and table level

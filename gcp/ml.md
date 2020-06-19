@@ -73,3 +73,21 @@ Example: Predict person icome (labls) based on the age (feature)
     - CUSTOM
 
 - GPU(Graphic Processing Unit) /TPU (Tensor Processing Unit)
+
+## ML in GCP
+
+- Pre-trained ML models
+    - Neutral Language API
+        - Extract entities
+        - Detect sentiments
+        - Analyze syntax
+        - Classify content
+    - Vision API
+        - Lab & web detection
+        - Logo detection
+        - Landmark detection
+        - Crop hints
+        - Explicit content detection
+- Custom ML models
+    - Tensorflow
+    - CLoud ML Engine

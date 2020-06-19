@@ -1,7 +1,7 @@
 # Encyption
 
 * SSE-S3
-    
+
 * SSE-KMS
 
 * SSE-C

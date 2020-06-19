@@ -2,7 +2,7 @@
 * Availability Zone (AZ)
 * Connectivity
 * Services
-* VPC: Virtual Private Cloud 
+* VPC: Virtual Private Cloud
 
 ### Services locations 
 * S3, Dynamo DB .... on region

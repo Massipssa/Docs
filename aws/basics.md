@@ -1,7 +1,7 @@
 # Basics
 
 - [Access Management basics](#accesmanagement)
-- [Security Responsability Model](#securitymodels)
+- [Security Responsability Models](#securitymodels)
 - [Service Models](#servicemodels)
 - [High Availability (HA) and Fault Tolerance (FT)](#ftha)
 - [RPO and RTO](#rporto)
@@ -14,7 +14,7 @@
 3. **Identity:** object that requires authentication and are authaurized to access resources
 4. **Authorization:** process of checking and allowing or dening access to resource to an Identity
 
-## Security Responsability Model <a name="securitymodels"></a>
+## Security Responsability Models <a name="securitymodels"></a>
 
 - Two types of models
     - Security ***IN*** cloud: is the customer responsability
@@ -60,6 +60,5 @@
     - To protect againt the MIMD attack
     - SSL certificates help to secure HTTPS
 - Server side encryption at rest
-
 - Client side encyption
     * Data encypted by the client and **never** decrypted by the server

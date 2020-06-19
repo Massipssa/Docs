@@ -1,11 +1,7 @@
 # Dataproc
 
-- Allows to deploy spark cluster
-- Open ssh tunel to service like yarn GUI ```gclould compute ssh ....```
-- Connect to vm:
-  - Generate ssh key using ```ssh key-gen ....```
-- See: https://www.youtube.com/watch?v=6DD-vBdJJxk
-- On demand, managed Hadoop, Spark cluster
+- Allows to deploy Hadoop and Spark cluster
+- Deploy On demand, managed Hadoop, Spark cluster
 - Connectors to Google services are already added (reduce administrator work)
 - Other ecosystem tools can be instatted as wl via initialization
   - Intialize action: install tools like Kafka by given the location of the bucket and when cluster starts, it'll install the tool
@@ -29,3 +25,9 @@
   - Use SOCKS proxy - does not expose firewall ports
 
 ## IAM
+
+## Connect to Dataproc
+- Open ssh tunel to service like yarn GUI ```gclould compute ssh ....```
+- Connect to vm:
+  - Generate ssh key using ```ssh key-gen ....```
+- See: https://www.youtube.com/watch?v=6DD-vBdJJxk

@@ -2,11 +2,11 @@
 
 - Fully managed service
 - Deals with
-- Storage:
-  - Data is stored in structued table
+  - Storage:
+    - Data is stored in structued table
     - Replicated, distributed storage
-- Ingestion
-- Quering
+  - Ingestion
+  - Quering
 - Supports ***SQL***
 - Near real-time query analysis
 - Accept batch and streaming

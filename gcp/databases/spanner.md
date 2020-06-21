@@ -24,4 +24,6 @@
     - Use descenfing order timestamp if is required
 
 - Distingued from Cloud SQL by its **global consistent and size**
-- Secondry indexes ??
+- Secondry indexes
+    - Allows to search quickly for values
+    - Adding index to existing table doesn't lock the table

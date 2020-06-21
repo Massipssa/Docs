@@ -2,8 +2,8 @@
 
 ## 1. ELK
 
-* Search engine 
-* Analysis tool 
+* Search engine
+* Analysis tool
 * Visualization tool (Kibana)
 * A data pipeline (Beat / Logstash)
 * Horizontally scalable

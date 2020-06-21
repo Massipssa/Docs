@@ -1,4 +1,4 @@
- # Athena
+# Athena
 
 * To qeury in **S3** using SQL
 * Build on top of **Apache Presto**
@@ -11,11 +11,11 @@
     * Avro (columnar, splittable)
 * Structrued, semi-structred an unstructrued data
 
-* Ad-hoc ?? 
+* Ad-hoc ??
 
 * Athena detect automatically the tables from **Glue** and it creates queryable table
-* **Costs** 
-    * Pay-as-you-go 
+* **Costs**
+    * Pay-as-you-go
         * $5 per TB scanned
         * **Successful or cancelled** queries count, **failed** queries do not
         * No charge for DDL (Create/ Alter, Drop, ...)

@@ -5,9 +5,9 @@
     * Resilient
     * Self healing
 * Source database remain available during the migration
-* Supports 
-    * Homogeneous: ex Oracle to Oracle
-    * Hetoregeneous: MSServer to Oracle
+* Supports
+    * ***Homogeneous:*** ex Oracle to Oracle
+    * ***Hetoregeneous:*** MSServer to Oracle
 * Use Continuos Data Replication usuing CDC **???**
 * You must create an **EC2** instance to perform data raplication
 

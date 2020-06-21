@@ -11,7 +11,7 @@
 
 * **Cost**
     * Pay only for resources consumed (but it's not cheap)
-    * Serveless; scales automatically 
+    * Serveless; scales automatically
     * Use IAM permissions to access streaming source and destination(s)
     * Schema discovery
 

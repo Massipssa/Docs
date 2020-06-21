@@ -28,10 +28,21 @@
 - Are per user
 - No charge for queries exectued from the cache
 
+## Partition
+
+- Ingestion-time partitioned
+- Partition by specific timestamp/date column
+
 ## UDF
 
 - Combine JaveScript with SQL
 - Allow more complexe operations like loops, combinaison, ...
+
+## Princing
+
+- Charged fro: Storage, Quering and Streaming insert
+- No charge for Batch Loading
+- **Flat rate ??**
 
 ## Import and export data to BigQuery
 

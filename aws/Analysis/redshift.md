@@ -1,5 +1,7 @@
-* Performance 
-    * Massively Parallel Processing
+# Redshift
+
+* Performance
+    * Massively Parallel Processing (MPP)
     * Colomnar Data Storage
     * Column Compression (is column level operation, reduce space, reduce disc I/O)
 * Block size of 1MB
@@ -7,9 +9,8 @@
 
 * **Durability**
 
-
 * **Distribution Styles**
-    * **AUTO** 
+    * **AUTO**
     * **EVEN**
     * **KEY**
     * **ALL**
@@ -19,7 +20,6 @@
     * **Compound (default)**
     * **Interleaved**
 
-### COPY command
+## COPY command
 
 * **UNLOAD command:** unload from a table into files in S3
-

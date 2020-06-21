@@ -1,4 +1,8 @@
-## Collection
+# Kinesis
+
+1. [Kinesis Streams](#kinesis)
+2. [Kinesis Data Firehose (KDF)](#firehose)
+3. [Kinesis Data Streams vs Firehose](#kinesisvsfirehose)
 
 ## 1. Kinesis Streams
 
@@ -62,18 +66,18 @@
 
 <img src="../screenshots/kdf_read_write.PNG">
 
-* Firehose Buffer Size 
-    * Firehose accumulates records in a buffer 
-    * The buffer is flushed based on time and size rules 
-    * **Buffer Size (ex: 32MB):** if size is reached, it's flushed 
+* Firehose Buffer Size
+    * Firehose accumulates records in a buffer
+    * The buffer is flushed based on time and size rules
+    * **Buffer Size (ex: 32MB):** if size is reached, it's flushed
     * **Buffer Time (ex: 2 minutes):** if that time is reached, it's flushed
     * Firehose can automatically increase the buffer size to increase throughput
-    * High throughput => Buffer Size will be hit : usually we flush based on size 
+    * High throughput => Buffer Size will be hit : usually we flush based on size
     * Low throughput => Buffer Time be hit : usually we flush on time  
 
-### Kinesis Data Streams vs Firehose
+## 3. Kinesis Data Streams vs Firehose
 
-* **Streams** 
+* **Streams**
     * Going to write custom code (producer / consumer)
     * Real time (~ 200 ms latency for class, ~ 70 ms latency for enhanced fan-out)
     * Must manage scaling (shard spliting / merging)
@@ -83,8 +87,8 @@
     * Fully managed, send to S3, Splunk, Redshift, ElasticSearch
     * Serveless data transformations with Lambda
     * Near real time **(lowest buffer time is 1 minute)**
-    * Autmated Scaling 
+    * Autmated Scaling
     * No data storage
 
-* Install Kinesis Agent 
+* Install Kinesis Agent
 ```sudo yum install -y aws-kinesis-agent```

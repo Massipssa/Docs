@@ -1,8 +1,20 @@
 # Datalab
 
 - Interactive tool for exploring and visualize data
-- Build on jupter
-- Support Python, SQL, Javascript
+- Build on Jupyter
+- Support languages:
+    - Python
+    - SQL
+    - Javascript
+- Allows to interact with:
+    - BigQuery
+    - ML Engine
+    - Stackdriver
+    - Compute Engine
+    - Cloud Storage
 - Create Datalab: ```datalab create (instance-name)```
 - Connect to Datalab: ```datalab connect (instance-name)```
-- **Source Repository** stores the notebooks  
+- When Datalab is the followings are creared:
+    - VPC
+    - Compute Engine
+    - **Source Repository** stores the notebooks  

@@ -14,7 +14,7 @@
     - Cloud Storage
 - Create Datalab: ```datalab create (instance-name)```
 - Connect to Datalab: ```datalab connect (instance-name)```
-- When Datalab is the followings are creared:
+- When Datalab is created, the followings are creared:
     - VPC
     - Compute Engine
     - **Source Repository** stores the notebooks  

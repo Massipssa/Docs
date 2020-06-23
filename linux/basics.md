@@ -62,3 +62,19 @@
 - Create group ```groupadd groupname```
 - Add user to existing group ```usermod -a -G groupname username```
 - After a user was added to a group it should logout in to be added to the group
+
+## Network
+
+- ```ip addr show``` or ```ifconfig``` show host ip adress
+- ```dig hostname``` or  ```nslookup hostname``` or ```host hostname``` resolve hostname
+- ```/etc/resolv.conf``` file used to determine which hosts to use for DNS queries
+- ```/etc/hosts``` map ip adress to hostnames
+
+- ```ip route show``` show the route we are traversing
+- ```netstat``` view services and active connections
+
+
+## Useful commands
+
+- ```w``` check how is login
+- ```last``` the history of login

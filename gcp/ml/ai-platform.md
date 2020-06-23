@@ -17,7 +17,6 @@
     - Version: instance of model
     - Job: interaction with AI Platform
 
-
 ## IAM Roles
 
 - Project and Model roles

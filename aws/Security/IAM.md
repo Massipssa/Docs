@@ -21,11 +21,19 @@
     * Managed
         * Created by AWS
         * Read only
+        * Useful when we need to assign them to many users
     * Customer
         * Created by the user
         * Are readable
+        * Useful when we need to assign them to many users
     * Inline
         * Attatched directly to the user
+        * Useful for exception permissions
+
+## Credentials
+
+- Account can be accessed using: User/PWD or Access Key (from cmd)
+- STS (Security Token Service): allows to give temporary access between services
 
 ### Access Keys
 

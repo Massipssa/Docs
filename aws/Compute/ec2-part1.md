@@ -51,7 +51,7 @@
 ## Instance Metadata
 
 - Allows an application to get the informations about the instance
-- Uses th url: **http://169.254.169.254/latest/meta-data** 
+- Uses th url: **http://169.254.169.254/latest/meta-data**
 
 ## EC2 Princing
 
@@ -62,3 +62,4 @@
     * Most expensive
     * Multi-Tenant (virtual isolation with other consumers) vs Single Tenant (physical isloation with other cosumers)
 
+<div style="text-align:center"> <img src="./screenshots/ec2_archi.png"> </div>

@@ -1,7 +1,0 @@
----
-- name: Install 
-  hosts: web
-  tasks: 
-    - name: Install git
-      apt: name=git state=latest
-      

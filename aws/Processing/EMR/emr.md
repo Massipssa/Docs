@@ -1,37 +1,34 @@
-# EMR
+# EMR (Elastic MapReduce)
 
-* Allows to use open source frameworks, hive pig,...
-    * To perform data analytic
-    * BI workloads
-    * Move data to another AWS storage like S3, DynamoDB
+- Allows to use open source frameworks, hive pig,...
+    - To perform data analytic
+    - BI workloads
+    - Move data to another AWS storage like S3, DynamoDB
 
 ## Storage
 
-* **HDFS**
-    * Is ephemeral, sapce is reclaimed when cluster is terminated
-    * Helpful for caching intermidiate result during MapReduce processing or for workloads that have significant random I/O
+- **HDFS**
+    - Is ephemeral, sapce is reclaimed when cluster is terminated
+    - Helpful for caching intermidiate result during MapReduce processing or for workloads that have significant random I/O
 
-* **EMRFS**
-    * Extends HDFS to store data in S3
+- **EMRFS**
+    - Extends HDFS to store data in S3
 
+- **Hbase**
 
-* **Hbase**
+- **Hue**
 
-* **Hue**
+- **Splunk**
 
-* **Splunk**
+- **Flume**
+    * Used to handle log aggregation
 
-* **Flume**
-    * Used to handle log aggregation 
-
-* **MXNet** 
+- **MXNet**
     * Framework used to build deep learing application
 
-* S3DistCP
+- S3DistCP
     * Copy from S3 to HDFS (vice-versa)
 
+- **What's EBS volumes ???**
 
- * **What's EBS volumes ???**   
-
- ## AWS Data pipeline
- 
+## AWS Data pipeline

@@ -7,7 +7,7 @@
 * **Realm**
 A realm in Kerberos refers to an authentication administrative domain. Principals are assigned to specific realms in order to establish boundaries and simplify administration
 
-* **Key distribution center (KDC)**: contains all infomations about principals and realm. It consists of: 
+* **Key distribution center (KDC)**: contains all infomations about principals and realm. It consists of:
     * ***Kerberos database:*** it stores  
         * UPN and SPN
         * To which realm principal belongs to
@@ -22,7 +22,6 @@ A realm in Kerberos refers to an authentication administrative domain. Principal
 	* ***Ticket Granting Server (TGS):***
         * Validates **TGT**
 	    * Delivers TS (Ticket Service)
-
 * **KeyTab:** file that contains all keys related to specific service
 
 ## Principals parts
@@ -30,7 +29,6 @@ A realm in Kerberos refers to an authentication administrative domain. Principal
 * **Primary:** ```username@EXAMPLE.COM``` => user belogns to realm EXAMPLE.COM
 * **Instance:** ```username/admin@EXAMPLE.COM```
 * **Service:** ```hdfs/node1.domain.com@EXAMPLE.COM``` => service ```hdfs``` in the node ```node1.domain.com```
-
 * **PS**: naming is **case sensitive**
 
 ## Types

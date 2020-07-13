@@ -35,10 +35,11 @@
 
 ## Security
 
-- ```/etc/sudoers:``` contains all what users can do
-- ```/etc/password:``` users and their infos (9 fields)
-- ```/etc/shadow:```   hashed password users
-- ```/etc/group:```  users groups
+- `/etc/sudoers:` contains all what users can do
+- `/etc/password:` users and their infos (9 fields)
+- `/etc/shadow:`   hashed password users
+- `/etc/group:`  users groups
+- `/etc/login.defs` contains login configurations
 
 - Difference between system user and standard user ?
     - Sytem user (Service account) do not have a login shell
@@ -47,7 +48,7 @@
 
 ### Users
 
-- Create user ```useradd -m username``` (-m: make home dire)
+- Create user `useradd -m username` (-m: make home dire) or `adduser username`
 - Modify user ```usermod```
 - Assign password to user ```passwd usename```
 - ```/etc/skel:``` folder contains all files to be added in user's home when it's created
@@ -59,7 +60,7 @@
 
 ### Groups
 
-- Create group ```groupadd groupname```
+- Create group ```groupadd groupname``` or ```addgroup groupname```
 - Add user to existing group ```usermod -a -G groupname username```
 - After a user was added to a group it should logout in to be added to the group
 
@@ -72,7 +73,6 @@
 
 - ```ip route show``` show the route we are traversing
 - ```netstat``` view services and active connections
-
 
 ## Useful commands
 

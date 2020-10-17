@@ -1,10 +1,31 @@
 * **Data Defition Langauage (DDL)**
 
-- Create table:
-  
-  `create [table-name], 'CF1', 'CF2'**`
-	`create 'customer','address','order'`
-			
+- Create: `create [table-name], 'CF1', 'CF2'`
+- Alter
+ - Alter cell number: `alter [table-name], NAME => 'CF', VERSIONS => number`
+ - Delete column family: `alter [table-name], METHOD  => 'CF'`
+ - Make readonly: `alter [table-name], READONLY(option)`
+ - Table operators 
+- Drop: `drop [table-name]`
+- Drop all
+- List: `list`
+- Disable / Enabele: `disable [table-name]`
+- Is_disabled: `is_disabled [table-name]`
+- Describe: `describe [table-name]`
+- Exists: `exists [table-name]`
+
+```
+create 'customer','address','order'
+alter 'customer', NAME => 'f1', VERSIONS => 4
+alter 'customer', 'delete' => 'f1'
+drop 'customer'
+describe 'customer'
+disable 'customer'
+enable 'customer'
+exists 'customer'
+```
+
+
 * Put data : put ‘<table-name>’,’row-key’,’columnfamily:columnname’,’value’
 	```put 'customer', 'john', 'address:state', 'paris'```
 	```put 'customer','john','order:number','ORD-15'```

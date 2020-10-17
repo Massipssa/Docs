@@ -25,6 +25,7 @@ enable 'customer'
 exists 'customer'
 ```
 
+* **Data Manuipulation Langauage (DML)**
 
 * Put data : put ‘<table-name>’,’row-key’,’columnfamily:columnname’,’value’
 	```put 'customer', 'john', 'address:state', 'paris'```
@@ -35,9 +36,7 @@ exists 'customer'
 		```get 'customer', 'john'```
 	* Get by row-key and column-family
 		```get 'customer', 'john', 'address'```
-
-* **Data Manuipulation Langauage (DML)**
-
+		
 * Scan table
 	 ```scan 'table_name'```
 	

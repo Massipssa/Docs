@@ -27,25 +27,18 @@ exists 'customer'
 
 * **Data Manuipulation Langauage (DML)**
 
-* Put data : put ‘<table-name>’,’row-key’,’columnfamily:columnname’,’value’
-	```put 'customer', 'john', 'address:state', 'paris'```
-	```put 'customer','john','order:number','ORD-15'```
-	
-* Get data : **get table-name, row-key, column-family**
-	* Get by row-key
-		```get 'customer', 'john'```
-	* Get by row-key and column-family
-		```get 'customer', 'john', 'address'```
-		
-* Scan table
-	 ```scan 'table_name'```
-	
-- Delete : **delete table-name, rowkey**
-	delete 'customer', 'john'
-	
-- Count rows: 
-	count 'customer'
-	
-- Delete table : 
-	- disable 'customer'
-	- drop 'customer' 
+* Put : `put 'table-name','row-key', 'columnfamily:columnname', 'value'`
+* Get with rowkey : `get 'table-name', 'row-key'`
+* Get with rowkey and column family: `get 'table-name', 'row-key', 'column-family'`
+* Scan table: `scan 'table-name'`
+* Delete : `delete 'table-name', rowkey`
+* Count rows: `count 'table-name'`
+```
+put 'customer', '1', 'address:state', 'paris'
+put 'customer', '1','order:number','ORD-15'
+get 'customer', '1'
+get 'customer', '1', 'address'
+sacn 'customer'
+delete 'customer', '1'
+count 'customer'
+```

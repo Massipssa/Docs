@@ -47,11 +47,10 @@
 
 
 
-Data Model 
-==========
+## Data Model 
 
-Table
------
+### Table
+
  - Can copy exsiting table schema with LIKE
  - Show: 
    - show tables in <namespace>
@@ -63,26 +62,22 @@ Table
  	- describe extended <tablename.columnname>
 
 
-Partition 
-----------
- - Strict and nonstrict mode to prohiby queries without where clause in partitioned tables
+### Partition 
 
- - We can descirbe and show partitions
-	-  show partitions <tablename>
-
- - We can Atler table by adding partition
-
+- Strict and nonstrict mode to prohiby queries without where clause in partitioned tables
+- We can descirbe and show partitions
+ -  show partitions <tablename>
+- We can Atler table by adding partition
 - no support for insert, update and delete
 - doesn't support transactions
 
-Bucket
-------
+### Bucket
 
-- Types: 
- - Java types (int, string, float, ...)
- - Complexe types: Array, Map, Struct
+- Each bucket is stored as file in partition directory
 
-
+### Types
+- Java types (int, string, float, ...)
+- Complexe types: Array, Map, Struct
 
 ### DDL
 

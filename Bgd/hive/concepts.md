@@ -42,14 +42,16 @@
  - Driver: **javax.jdo.option.ConnectionDriverName**
  - Password: **javax.jdo.option.ConnectionPassword**
  - Url: **javax.jdo.option.ConnectionURL**
+ 
+ ### core-site.xml
 
-- Types: 
- - Java types (int, string, float, ...)
- - Complexe types: Array, Map, Struct
 
-### DDL
 
-#### Table 
+Data Model 
+==========
+
+Table
+-----
  - Can copy exsiting table schema with LIKE
  - Show: 
    - show tables in <namespace>
@@ -60,8 +62,9 @@
  - Describe column: 
  	- describe extended <tablename.columnname>
 
-#### Partitions 
 
+Partition 
+----------
  - Strict and nonstrict mode to prohiby queries without where clause in partitioned tables
 
  - We can descirbe and show partitions
@@ -71,6 +74,20 @@
 
 - no support for insert, update and delete
 - doesn't support transactions
+
+Bucket
+------
+
+- Types: 
+ - Java types (int, string, float, ...)
+ - Complexe types: Array, Map, Struct
+
+
+
+### DDL
+
+
+
 
 ### DML
 - Load data

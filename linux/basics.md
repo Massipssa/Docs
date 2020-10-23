@@ -78,3 +78,11 @@
 
 - ```w``` check how is login
 - ```last``` the history of login
+
+## Arguments
+- `$@` stores list of argumments  
+- `$#` stores the numbers of arguments
+- `$0` get the script name  
+
+
+

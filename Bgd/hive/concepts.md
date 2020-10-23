@@ -35,8 +35,13 @@
 ### About 
 
 * Hive do not enforce schema on write, but it
-* **hive.metastore.warehouse.dir** : default dir in hdfs where data is stored
 
+### hive-site.xml
+* **hive.metastore.warehouse.dir** : default dir in hdfs where data is stored
+* Metastore 
+ - Driver: **javax.jdo.option.ConnectionDriverName**
+ - Password: **javax.jdo.option.ConnectionPassword**
+ - Url: **javax.jdo.option.ConnectionURL**
 
 - Types: 
  - Java types (int, string, float, ...)

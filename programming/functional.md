@@ -5,10 +5,9 @@
 * Pure function (dont depends on global variable)
 * No side effects
 * Higher Order Function
-    * The function one takes or more functions as parammeter
+    * The function one takes or more functions as parameter
     * The function returns another function as result
-
-
+    
 ## Multi-threading
 
 * Deux sortes de thread

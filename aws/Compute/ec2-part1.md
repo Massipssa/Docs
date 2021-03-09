@@ -3,8 +3,7 @@
 - IaaS
 - Regional service
 - Has an AMI (Amzon Machine Image)
-- Can use Instance Store Volume: they are not persistante and not secure
-
+- Can use ***Instance Store Volume***: they are not persistante and not secure
 - Instance families
     - General purpose
     - Compute optimized

@@ -6,11 +6,11 @@
 * Factory
 * Abstract Factory
 * Builder:
-    * Create a complexe object from a simple one
-    * When some attibutes are not required
+    * Create a complex object from a simple one
+    * When some attributes are not required
 * Prototype
 
-## Structrual
+## Structural
 
 * Relationship  between objects
 
@@ -20,15 +20,13 @@
 
 
 ### Combinator
-* Combinator pattern allows to chain functions on an object in order to perform some validations
-
-* Synchronization: 
-    * Allows to resolve conccurency problem 
-    * Deadlock: when conncurrency is not managed 
+- Combinator pattern allows chaining functions on an object in order to perform some validations
+- Synchronization: 
+    - Allows resolving concurrency problem 
+    - Deadlock: when concurrency is not managed 
 
 
 ### Archi 
 
 * **Data Access Object (DAO)**
-
 * **Data Transfer Object (DTO)**

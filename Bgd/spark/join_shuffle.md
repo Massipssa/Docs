@@ -25,7 +25,7 @@
     - With **Big-table to Small-table** => Use broadcast join on the small table. Place a small  table in each executor -- per node computaion strategy
     - ```spark.sql.autoBroadcastJoinThreshold``` is used to determine the size
 
-* **Little-to-little table** => let spark to decide how to join them
+* **Little-to-little table** => let Spark to decide how to join them
 
 3. **Sort join**
 

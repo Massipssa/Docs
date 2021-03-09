@@ -11,4 +11,4 @@
 * **Reserved Memory (300MB):** The memory is reserved for system and is used to store Spark's internal objects
    * Spark fail if we don't give executor memory at least 1.5 * Reveserved Memory = 450MB
     
-<img src="../screenshots/spark-memory.png" style="text-align:center">
+![memory](../screenshots/spark-memory.png)

@@ -1,19 +1,19 @@
 ## Kerberos concepts
 
-* **Principal** : an identity needs to be verified
+* **Principal** : an identity that needs to be verified
 	* User Principal Names (UPN)
 	* Service Principal Names (SPN)
 
 * **Realm**
 A realm in Kerberos refers to an authentication administrative domain. Principals are assigned to specific realms in order to establish boundaries and simplify administration
 
-* **Key distribution center (KDC)**: contains all infomations about principals and realm. It consists of:
+* **Key distribution center (KDC)**: contains all information about principals and realm. It consists of:
     * ***Kerberos database:*** it stores  
         * UPN and SPN
         * To which realm principal belongs to
         * Encryption keys
         * Tickets validation duration
-        * Experation date
+        * Expiration date
         * ...
 	* ***Authentication Server (AS):***
 	    * Delivers TGT (Ticket Granting Ticket)
@@ -24,7 +24,7 @@ A realm in Kerberos refers to an authentication administrative domain. Principal
 	    * Delivers TS (Ticket Service)
 * **KeyTab:** file that contains all keys related to specific service
 
-## Principals parts
+## Principal parts
 
 * **Primary:** ```username@EXAMPLE.COM``` => user belogns to realm EXAMPLE.COM
 * **Instance:** ```username/admin@EXAMPLE.COM```
@@ -41,7 +41,7 @@ A realm in Kerberos refers to an authentication administrative domain. Principal
 
 * Is Single sign on
 * Password do not travel in clear over the network
-* Centralized repository for all users and services credentials 
+* A centralized repository for all users and services credentials 
 
 ## Example: Access hdfs
 
@@ -52,7 +52,7 @@ A realm in Kerberos refers to an authentication administrative domain. Principal
     1. Hadoop will use TGT and reach Ticket Granting Server
     2. TGS will grant TS (Ticket Service) and client will cache TS
 5. Hadoop RPC will use TS to reach the Namenode
-6. Clinet and Namenode exchange Tickets (Client ticket prouve client identity and Namenode determines the identification of Namenode)
+6. Client and Namenode exchange Tickets (Client ticket prouve client identity and Namenode determines the identification of Namenode)
 
 ### Kerberos on Hadoop
 

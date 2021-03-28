@@ -1,16 +1,16 @@
-* Les données sont stockées d'une manière arborescente
-* Stocke les données qui ne sont pas en mouvement permanant
+* The data is stored in tree
+* Stores data that won't be changed many times 
 
-* Par défault:
-    * LDAP utilise le port 389
-    * LDAPS (over TLS/SSL) utilse le port 636
+* By default:
+    * LDAP uses the port 389
+    * LDAPS (over TLS/SSL) uses the port 636
 
-* ```dc:``` Domaine Component
+* ```dc:``` Domain Component
 * ```ou:``` Organization Units
 * ```cn:``` Common Name
 * ```sn:``` Surname Name
 
-* ```dn``` (Distinguished Name): permet d'identifier d'une manière unique une Entry
+* ```dn``` (Distinguished Name): allows unique identification by entry 
 
-Exemple
+Example
 ```dc=toto,dc=fr```

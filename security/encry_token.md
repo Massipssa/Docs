@@ -1,4 +1,4 @@
-## Encyption
+## Encryption
 
 * Data Encryption Standard (DES)
 * Advanced Encryption Standard (AES)
@@ -10,6 +10,6 @@
 ## Tokenization
 
 * vault-based tokenization
-* Protegrity Vaultless Tokenization (PVT)
+* Property Vaultless Tokenization (PVT)
 
 * PCI Compliance ??

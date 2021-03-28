@@ -1,11 +1,11 @@
-## Behavior Driven Developement Test
+## Behavior Driven Development Test
 
 * Based on three 
     * Context (Given): starting state  
     * Event (When): what user does 
-    * Outcomes (Then): expected resutl 
+    * Outcomes (Then): expected results 
     
-* Can be writen at any time 
+* Can be written at any time 
     * Before 
     * During 
     * After 

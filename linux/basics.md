@@ -12,11 +12,11 @@
     - **f:** read or write from file
 
 - **compression**
-    - **z:** create archive with gzip ```tar czf my_archive.tar.gz file_name*```
+    - **z:** create an archive with gzip ```tar czf my_archive.tar.gz file_name*```
     - use bzip2: ```tar cjf my_archive.tar.bz2 file_name*```
     - use zip: ```zip -r archive.zip file_name*```
 - **pipe**
-    - find word and count occurence: ```cat my_file.txt | grep my_word | wc -l```
+    - find word and count occurrence: ```cat my_file.txt | grep my_word | wc -l```
     - ```cat /etc/passwd | grep massi | cut -d: -f6```
 - **wc**
     - count number of lines: ```wc my_file.txt```
@@ -36,13 +36,13 @@
 ## Security
 
 - `/etc/sudoers:` contains all what users can do
-- `/etc/password:` users and their infos (9 fields)
+- `/etc/password:` users and their info (9 fields)
 - `/etc/shadow:`   hashed password users
 - `/etc/group:`  users groups
 - `/etc/login.defs` contains login configurations
 
 - Difference between system user and standard user ?
-    - Sytem user (Service account) do not have a login shell
+    - System user (Service account) do not have a login shell
 
 ## Users and groups
 
@@ -69,7 +69,7 @@
 - ```ip addr show``` or ```ifconfig``` show host ip adress
 - ```dig hostname``` or  ```nslookup hostname``` or ```host hostname``` resolve hostname
 - ```/etc/resolv.conf``` file used to determine which hosts to use for DNS queries
-- ```/etc/hosts``` map ip adress to hostnames
+- ```/etc/hosts``` map ip address to hostnames
 
 - ```ip route show``` show the route we are traversing
 - ```netstat``` view services and active connections
@@ -80,9 +80,10 @@
 - ```last``` the history of login
 
 ## Arguments
-- `$@` stores list of argumments  
+- `$@` stores list of all arguments  
 - `$#` stores the numbers of arguments
-- `$0` get the script name  
+- `$0` get the script name
+- `$?` exist status of the last command
 
 
 

@@ -2,7 +2,7 @@
 ## Functional Programming
 
 * No state
-* Pure function (dont depends on global variable)
+* Pure function (don't depends on global variable)
 * No side effects
 * Higher Order Function
     * The function one takes or more functions as parameter

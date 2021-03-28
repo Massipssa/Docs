@@ -1,7 +1,7 @@
 # for 
-for arg in $@;
+for arg in "$@";
 do
-    echo $arg
+    echo "$arg"
 done
 
 # while

@@ -7,13 +7,13 @@
     * Have leader to perform updates, writes, ...
     * Lock resources
 * Challenges of Distributed Applications
-    * ***Race condition:*** two machines try to perfom a tache, which should be perfomed by one machine
+    * ***Race condition:*** two machines try to perform a task, which should be performed by one machine
     * ***Deadlock:*** two or more operations waiting other to complete
-    * ***Inconsistency:*** partial failure of dta
+    * ***Inconsistency:*** partial failure of data
 
 ## Components
 
-- **Client:** sends heartbeats to inform server that is alive
+- **Client:** sends heartbeats to inform the server that is alive
 - **Server:** sends acknowledgment  
 - **Zookeeper ensemble:** set of servers. Minimum nodes required to form ansemble is 3
 - **Leader:** recover failed nodes
@@ -22,7 +22,7 @@
 * Namespaces:
     * **Znode:** each node have **name** and **sequence of path** separated by (/)
     * **Config:** centralized configuration
-    * **Workers:** userd for naming
+    * **Workers:** used for naming
 * Data model
     * stat
         * Version number
@@ -34,7 +34,7 @@
 
 * Maintain a stats structure
 * Can store data and have children at same time
-* Stores informations (last version, transaction Id of laste transation, ...)
+* Stores information (last version, transaction Id of laste transation, ...)
 * Have ACL (create, write, read, delete and admin)
 * Support authentication username / password
 * Client can set **watcher** on znode to get notified when change occurs

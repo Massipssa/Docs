@@ -47,7 +47,9 @@
 - Two or more Namenodes
 	- Active
 	- StandBy
-- To keep the state of the cluster synchronized, Namenodes use separate group of deamons called **JournalNodes** to read all edit logs from active Namenode	 
+- To keep the state of the cluster synchronized, Namenodes use separate group of deamons called **JournalNodes** to read all edit logs from active Namenode
+- To set HA add options in **hdfs-site.xml**
+- Minimum number of HA nodes is 2. Its suggested to not exceed 5 - with a recommended 3 NameNodes - due to communication overheads	 
 
 ## HDFS Federation
 - Uses multiple Namenodes/namespaces

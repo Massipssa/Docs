@@ -12,6 +12,7 @@
     - It's serializable
     - Has a default **hashCode** implementation
     - Has an imporved implementation of **toString**
+    - Can access private of its companion class
     
 - **High order function:** 
     - Function that takes other function as parameter 

@@ -4,8 +4,7 @@
 * **Data Node**
 	- Read, Write
 	- Block creation, replication and deletion
-	
-	
+		
 * **Replica selection:** in order to optimize bandwith and latency hdfs always read from the replica closest to reader 
 	- If replica exist in the same **rack** read it 
 	- if cluster is spans  on multiple data center read replica from local data center
@@ -24,7 +23,6 @@
 	- Mapping of blocks to files 
 	- FS properties
 	
-
 * **Checkpoint:** 
 	- Are occured 
 		* After certain time periode (**dfs.namenode.checkpoint.period**) 
@@ -43,3 +41,7 @@
 * **Backup and checkpoint nodes** 
 	- dfs.namenode.backup.address
 	- dfs.namenode.backup.http-address
+
+## Common problems
+- Massive amount of small files in hdfs => More pressure on Namenode => Slow latency
+- Hadoop and parquet don't support updates

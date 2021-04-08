@@ -1,5 +1,5 @@
 * **Name node** 
-	- Open, Close, Rename operations 
+	- Open, Close, Rename, Delete operations on files and directories 
 	- Determines the mapping between blocks and databnode
 * **Data Node**
 	- Read, Write
@@ -41,6 +41,18 @@
 * **Backup and checkpoint nodes** 
 	- dfs.namenode.backup.address
 	- dfs.namenode.backup.http-address
+
+## HA
+- Solve SPOF
+- Two or more Namenodes
+	- Active
+	- StandBy
+- To keep the state of the cluster synchronized, Namenodes use separate group of deamons called **JournalNodes** to read all edit logs from active Namenode	 
+
+## HDFS Federation
+- Uses multiple Namenodes/namespaces
+- Namenodes are independantes and don't need coordination
+- Datanodes are used as common storage for blocks by all Namenodes 
 
 ## Common problems
 - Massive amount of small files in hdfs => More pressure on Namenode => Slow latency

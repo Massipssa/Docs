@@ -7,10 +7,10 @@ from datetime import datetime, timedelta
 
 # 1 - declare defautl arguments
 default_args = {
-    'owner': 'e565710',
+    'owner': 'massi',
     'depends_on_past': False,
     'start_date': datetime(2019, 10, 26),
-    'email': ['massipssa.kerrache@ext.mpsa.com'],
+    'email': ['massipssa.kerrache@gmail.com'],
     'retries': 1,
     'retry_delay': timedelta(minutes=1),
 }
@@ -47,7 +47,7 @@ airflow test helloworld_dag task_1 2019-10-26
 
 
 1.   Scheduler creates new task instance in metadata store with status SCHEDULED  
-2.   Schedulder uses Celery Executor to send task to messages broker (RabbitMQ) 
+2.   Scheduler uses Celery Executor to send a task to messages broker (RabbitMQ) 
 3.   The Cerely worker receives the command from the queue
 4.   The Cerely worker updates the status of task in metadata store to RUNNING
 5.   The Cerely worker executes task command
@@ -56,6 +56,6 @@ airflow test helloworld_dag task_1 2019-10-26
 
 ![picture alt](https://images.ctfassets.net/be04ylp8y0qc/7jm5tFBkD8LmnQmdmkzvZa/3e17809a19f11ee8efbcc87a0a6b389b/1_avBjYUY6ZtfEyTkk7FI8JQ.png?fm=webp "Airflow")
 
-For more infos see  [How Apache Airflow Distributes Jobs on Celery workers](https://www.sicara.ai/blog/2019-04-08-apache-airflow-celery-workers/)
+For more info see  [How Apache Airflow Distributes Jobs on Celery workers](https://www.sicara.ai/blog/2019-04-08-apache-airflow-celery-workers/)
 
 * **Celery:** task queue 

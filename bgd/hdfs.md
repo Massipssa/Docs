@@ -16,46 +16,55 @@
 	- If any block doesn't satisfy the nombre of replica, Name node will replicate 
 	
 * **EditLog** 
-	- Any action in FS is stored in edit log (delete file, change file replica number, ...) 
+	- Any action in FS is stored in edit log (delete a file, change file replica number, ...) 
 
 * **FsImage:** it stores
 	- All FS namespace 
 	- Mapping of blocks to files 
 	- FS properties
 	
-* **Checkpoint:** 
-	- Are occured 
-		* After certain time periode (**dfs.namenode.checkpoint.period**) 
-		* Give number of tansactions on FS have accumulated (**dfs.namenode.checkpoint.txns**) 
-		
-* **Re-replication:** it may occurs when
+- **Checkpoint:** 
+	- Are occurred 
+		* After certain time period (**dfs.namenode.checkpoint.period**) 
+		* Give number of the transactions on FS have accumulated (**dfs.namenode.checkpoint.txns**) 
+
+- **Checksum**
+	- When data is written or read
+	- The datanodes are responsible for verifying the data they receive before storing the data and its checksum
+	- HDFS run DataBlockScanner (n a background thread that periodically verifies all the blocks stored on the datanode)
+	  This is to guard against corruption due to **bit rot** in the physical storage media 
+
+- **Re-replication:** it may occur when
 	- Datanode become unavailable 
 	- Replica is corrupted 
 	- Datanode hard disk fail 
 	- Replication factor is decreased 
 	
-* **Trash** 
+- **Trash** 
 	- When files are deleted they are moved to ```/user/<username>/.Trash```
 	- How to configure it **???**
 	
-* **Backup and checkpoint nodes** 
+- **Backup and checkpoint nodes** 
 	- dfs.namenode.backup.address
 	- dfs.namenode.backup.http-address
 
 ## HA
-- Solve SPOF
+- Solve Single Point Of Failure (SPOF) 
 - Two or more Namenodes
 	- Active
 	- StandBy
-- To keep the state of the cluster synchronized, Namenodes use separate group of deamons called **JournalNodes** to read all edit logs from active Namenode
+- To keep the state of the cluster synchronized, Namenodes use separate group of daemons called **JournalNodes**
+  to read all edit logs from active Namenode
 - To set HA add options in **hdfs-site.xml**
-- Minimum number of HA nodes is 2. Its suggested to not exceed 5 - with a recommended 3 NameNodes - due to communication overheads	 
+- The number of JournalNodes must be at least 3  
+- Minimum number of HA nodes is 2. It's suggested to not exceed 5 - with a recommended 3 NameNodes - due to communication overheads	 
 
 ## HDFS Federation
 - Uses multiple Namenodes/namespaces
-- Namenodes are independantes and don't need coordination
+- Namenodes are independents and don't need coordination
 - Datanodes are used as common storage for blocks by all Namenodes 
 
 ## Common problems
-- Massive amount of small files in hdfs => More pressure on Namenode => Slow latency
+- A massive amount of small files in hdfs => More pressure on Namenode => Slow latency
+- Split brain scenario  
 - Hadoop and parquet don't support updates

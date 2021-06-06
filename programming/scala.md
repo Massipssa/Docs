@@ -1,18 +1,19 @@
 ## Scala 
-- **case classe:** 
+- **case class:** 
     - Implement immutable data 
     - Useful for Pattern match 
-    - No need to use new to create object (implement apply method)
+    - No need to use ***new*** to create an object (implement apply method)
     - Methods: toString, equal (shallow copy)
 
 - **object**
   - Class that have only one object (singleton)
   - It's created lazy
+  
 - **case object**
     - It's serializable
     - Has a default **hashCode** implementation
-    - Has an imporved implementation of **toString**
-    - Can access private of its companion class
+    - Has an improved implementation of **toString**
+    - Can access private elements of its companion class
     
 - **High order function:** 
     - Function that takes other function as parameter 

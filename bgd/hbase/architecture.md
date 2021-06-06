@@ -1,17 +1,17 @@
 ## Components 
 
 * **HMaster server**
-    * Acts as NameNode in HDFS
-    * Handles and manage Region Server
-    * Performs DDL operations
-    * Assigns regions to Region Servers
-    * Performs recovery activities
+    - Acts as NameNode in HDFS
+    - Handles and manage Region Server
+    - Performs DDL operations
+    - Assigns regions to Region Servers
+    - Performs recovery activities
 
 * **HBase Region server**
-	* Responsible for handling, manging, executing reads and writes operations on the set of regions
-	* Regions:
-		- Contains all the rows between the start jey and the end key
-		- Hbase table can be divied into a number of regions in such way that all the columns of family is stored in one region
+	- Responsible for handling, manging, executing reads and writes operations on the set of regions
+	- Regions:
+		- Contains all the rows between the start key and end key
+		- Hbase table can be divided into a number of regions in such way that all the columns of family is stored in one region
 		- Each region contains the rows in sorted order
 		- Many regions are assigned to a Region Server
 		- Default size of region is 256 MB which can be configured
@@ -23,7 +23,7 @@
 		
 * **Region Server**
 
-    <img src="region_server.png"/>
+    <img src="../screenshots/hbase/region_server.png"/>
     
     * ***Block Cache***
 	    * It stores in the memory the frequently accessed data  
@@ -36,12 +36,12 @@
 	    * It is the write cache store
 		* It stores all the incoming data before commiting it to the disk or permanant memory
 		* There is one MemStore for each column family
-		* The data is sotred in lexicographical order before commiting it to the disk
+		* The data is stored in lexicographical order before commiting it to the disk
     * ***Hfile***
 		* It stores data to cells on the disk
 		* MemStore commit the data to Hfile when the size of MemStore exceeds
 				
-* **Read Mecanism:**
-* **Write Mecanism:**
+* **Read Mechanism:**
+* **Write Mechanism:**
 
 https://blog.engineering.publicissapient.fr/category/cloud/

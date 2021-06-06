@@ -16,10 +16,10 @@ commit;
 
 ## 1. Ranking Window
 
-* Commun use is to find N top record based on some value
+* Common use is to find N top record based on some value
  
 * **RANK():**
-	* Get oreder with frame (partition) 
+	* Get order with a frame (partition) 
 	* If two records have same rank (ex: rank = 3) the next rank will be 5 (rank 4 will be skipped)
 	
 ```sql

@@ -1,6 +1,6 @@
 ## Creational
 
-* Used to create object
+Used to create object
 
 * Singleton
 * Factory
@@ -12,7 +12,7 @@
 
 ## Structural
 
-* Relationship  between objects
+* Relationship between objects
 
 ## Behavior
 
@@ -26,7 +26,16 @@
     - Deadlock: when concurrency is not managed 
 
 
-### Archi 
 
-* **Data Access Object (DAO)**
-* **Data Transfer Object (DTO)**
+
+- **Data Access Object (DAO)**
+  - Separate business layer from persistence layer
+  - Permits both layer to evolve separately without knowing anything about each other
+- **Data Transfer Object (DTO)**
+
+
+- Data Change Capture
+
+### Archi
+- Data Driven Architecture
+

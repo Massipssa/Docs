@@ -29,4 +29,10 @@
     - PaaS
     - Supports multiple programming languages and containers
 
-- Azure functions      
+- Azure functions
+    - PaaS 
+    - Serverless
+    - Two hosting/pricing models
+        - Consumption-based plan
+        - Dedicated plan
+    - Designed for micro/nano-services      

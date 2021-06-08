@@ -109,8 +109,32 @@
   - Standard
   - Professional Direct
 
+## Resources
+- Objects used to manage services in Azure
+- Represent service lifecycle
+- All resources are represented as Json template
+  
 ### Resource group  
+- Logic container for resources
+- Grouping of resources
+- Some strategies to group resources:
+    - Type (sql, web, ...)
+    - Lifecycle (app, environment) 
+    - Departament
+    - Billing, location or combination of those
+- Resource can only be assigned to one resource group
+- **IAM** is used to manage access  
+- **Azure Resource Explorer** to view resource details
 
+### Resource Manager
+- Resources can be managed using one of these mean
+   - Portal
+   - Rest
+   - Power shell
+   - CLI
+   - SDKs
+- All the tools uses **Azure Resource Manager**
+- RM controls access and resources     
   
 ### Azure Devops
 * **Components**

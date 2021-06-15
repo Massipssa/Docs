@@ -3,7 +3,7 @@
 * Is data warehouse
 * Uses HQL
 
-## Serivces
+## Services
 
 1. **Hive**
 2. **Metastore**
@@ -12,7 +12,7 @@
         * Metastore use its own JVM process and other services communite with it using **Thrift API**
 3. **HiveServer2**
 
-### Tunning
+### Tuning
 
 * Memory configuration 
 * GC limits 
@@ -20,7 +20,7 @@
 
 ### HA
 
-* Configure loadbalancer for HiveServer2 
+* Configure load balancer for HiveServer2 
 * Enable HA for metastore 
 
 ### Replication 
@@ -49,72 +49,63 @@
 
 ## Data Model 
 
+
 ### Table
 
- - Can copy exsiting table schema with LIKE
- - Show: 
-   - show tables in <namespace>
-   - show tables 'emp*'
- - Describe: 
-	- describe extended <tablename>
-	- describe formated <tablename>
- - Describe column: 
- 	- describe extended <tablename.columnname>
-
-
+- Show
+    - ``show tables in <namespace>``
+    - ``show tables 'emp*'``
+- Describe
+    - ``describe extended <tablename>``
+	- ``describe formatted <tablename>``
+ - Describe column 
+ 	- ``describe extended <tablename.columnname>``
+    
+- **Internal (managed)**
+    - Data stored in default location
+    - The data is dropped when the table is dropped
+- **External**
+    - Location is not the default one
+    - Dropping table will not drop data, although table's metadata will be dropped
+    
 ### Partition 
 
-- Strict and nonstrict mode to prohiby queries without where clause in partitioned tables
-- We can descirbe and show partitions
- -  show partitions <tablename>
-- We can Atler table by adding partition
+- **strict:** prohibit queries without where clause in partitioned tables 
+  **nonstrict:** allow running queries without where clause
+  ``set hive.mapred.mode=strict;``
+  
+- We can describe and show partitions
+    -  ``show partitions <tablename>``
+    - ``show partitions <tablename> PARTITION(col_name='value')``
+- We can alter table by adding partition
 - no support for insert, update and delete
 - doesn't support transactions
 
+  ````sql
+    Create table if not exists mydb.employee(
+        name string,
+        salary float,
+        adgress struct<street: string, city: string, state: string, zip: int> 
+    )
+    PARTITIONED BY (country string, state string);
+    ````
+  
+    - Load data from file to partitioned table
+    ```
+    LOAD DATA LOCAL INPATH '${env:HOME}/path/to/dir'
+    INTO TABLE employees
+    PARTITION (col_part_name1 = 'value1', col_part_name2 = 'value2');
+    ```
 ### Bucket
 
 - Each bucket is stored as file in partition directory
 
 ### Types
 - Java types (int, string, float, ...)
-- Complexe types: Array, Map, Struct
-
-### DDL
+- Complex types: Array, Map, Struct
 
 
 
 
-### DML
-- Load data
-```LOAD DATA LOCAL INPATH /path/local/file OVERWRITE INTO TABLE tablename```
 
-- This command is useful if source table is partionned
 
-```
-INSERT OVERWRITE TABLE tablename1
-SELECT * FROM tablename2 t
-WHERE t.col1 = 'US' and t.col2 = 'OR'
-```
-- To avoid scanning table multiple time, use this syntaxe
-
-```
-FROM tablename2 t
-INSERT OVERWRITE TABLE tablename1
-	PARTITION (country = 'US', state = 'OR') 
-	SELECT * WHERE t.cntry = 'US' and t.st = 'OR'
-```
-
-- Hive support Dynamic Partition Inserts
-
-- Create table and load in them in one query 
-
-```
-CREATE TABLE test
-AS SELECT name, email 
-FROM tablesource t
-WHERE t.col = 'toto'
-```
-
-- Export data 
-
-```INSERT OVERWRITE LOCAL DIRECTORY '/tmp/ca_employees'```

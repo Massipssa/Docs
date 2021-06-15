@@ -1,4 +1,4 @@
-## Data Defition Langauage (DDL)
+## Data Definition Language (DDL)
 
 - Create: `create 'table-name', 'CF1', 'CF2'`
 - Alter
@@ -9,7 +9,7 @@
 - Drop: `drop 'table-name'`
 - Drop all: `drop_all 'regex'`
 - List: `list`
-- Disable / Enabele: `disable 'table-name'`
+- Disable / Enable: `disable 'table-name'`
 - Is_disabled: `is_disabled 'table-name'`
 - Describe: `describe 'table-name'`
 - Exists: `exists 'table-name'`
@@ -26,7 +26,7 @@ enable 'customer'
 exists 'customer'
 ```
 
-## Data Manuipulation Langauage (DML)
+## Data Manipulation Language (DML)
 
 * Put : `put 'table-name','row-key', 'columnfamily:columnname', 'value'`
 * Get with rowkey : `get 'table-name', 'row-key'`

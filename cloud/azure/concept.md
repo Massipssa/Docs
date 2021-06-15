@@ -25,8 +25,8 @@
 ## Advantages
 - High Availability
 - High Scalability
-  - Scale up
-  - Scale down
+  - Scale up (vertical scaling)
+  - Scale out (horizontal scaling)
 - High Elasticity (scale automatically)
 - High Durability
   - Be fast to restore in case of disaster

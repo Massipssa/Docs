@@ -3,7 +3,7 @@
 - Layer data based on user’s skills (data analytic, engendering, ...)
 - Keep the Datalake open (avoiding vendor lock-in, or overbalance on a single tool or database)
 - Plan for performance
-- https://www.upsolver.com/blog/four-principles-data-lake-architecture
+- See the [link](https://www.upsolver.com/blog/four-principles-data-lake-architecture)
 
 
 ## Example of data ingestion in Uber
@@ -20,5 +20,10 @@
 ![update_insert](screenshots/datalake/update_insert.png)
       
     - The indexing system that maybe used **HBase** or **Cassandra** 
+    - Hbase vs Cassandra
+      - HBase permits consistency on reads and writes. No need to tweak consistency parameter as is done in cassandra
+      - HBase provides automatic rebalancing of tables within a cluster
 
 ![indexing_system](screenshots/datalake/indexing_system.png)
+
+- See the [link](https://eng.uber.com/data-partitioning-global-indexing/)

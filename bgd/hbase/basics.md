@@ -15,8 +15,8 @@
 - Exists: `exists 'table-name'`
 
 ```
-create 'customer','address','order'
-alter 'customer', NAME => 'f1', VERSIONS => 4
+create 'customers','Address','Order'
+alter 'Customer', NAME => 'f1', VERSIONS => 4
 alter 'customer', 'delete' => 'f1'
 drop 'customer'
 drop 'c*'
@@ -28,13 +28,13 @@ exists 'customer'
 
 ## Data Manipulation Language (DML)
 
-* Put : `put 'table-name','row-key', 'columnfamily:columnname', 'value'`
-* Get with rowkey : `get 'table-name', 'row-key'`
-* Get with rowkey and column family: `get 'table-name', 'row-key', 'column-family'`
-* Scan table: `scan 'table-name'`
-* Delete : `delete 'table-name', rowkey`
-* Count rows: `count 'table-name'`
-* Count rows: `truncate 'table-name'`
+* Put : `put <table-name>, <row-key>, <columnfamily:columnname>, <value>`
+* Get with row key : `get <table-name>, <row-key>`
+* Get with row key and column family: `get <table-name>, <row-key>, <column-family>`
+* Scan table: `scan <table-name>`
+* Delete : `delete <table-name>, rowkey`
+* Count rows: `count <table-name>`
+* Count rows: `truncate <table-name>`
 
 ```
 put 'customer', '1', 'address:state', 'paris'

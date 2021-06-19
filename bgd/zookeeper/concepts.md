@@ -1,6 +1,6 @@
 # Zookeeper
 
-* Enables coordination in distribued systems
+* Enables coordination in distributed systems
 * Main cluster state and notify any changes
 * Needed to:
     * Manage configuration around the cluster
@@ -15,7 +15,7 @@
 
 - **Client:** sends heartbeats to inform the server that is alive
 - **Server:** sends acknowledgment  
-- **Zookeeper ensemble:** set of servers. Minimum nodes required to form ansemble is 3
+- **Zookeeper ensemble:** set of servers. Minimum nodes required to form assemble is 3
 - **Leader:** recover failed nodes
 - **Follower:** follows leader instructions
 
@@ -32,26 +32,26 @@
 
 ### Znode
 
-* Maintain a stats structure
-* Can store data and have children at same time
-* Stores information (last version, transaction Id of laste transation, ...)
-* Have ACL (create, write, read, delete and admin)
-* Support authentication username / password
-* Client can set **watcher** on znode to get notified when change occurs
-    * data change
-    * change an any znode
-    * child znode created or deleted
+- Maintain a stats structure
+- Can store data and have children at same time
+- Stores information (last version, transaction Id of last transaction, ...)
+- Have ACL (create, write, read, delete and admin)
+- Support authentication username / password
+- Client can set **watcher** on znode to get notified when change occurs
+    - Data change
+    - Change an any znode
+    - Child znode created or deleted
     
-* Types
-    1. **Persistance:** pemanant znode they are only deleted manually (default)  
-    2. **Emphemeral:** delete by Zookeeper when (-e flag to create)
+- **Types**
+    1. **Persistence:** permanent node they are only deleted manually (default)  
+    2. **Ephemeral:** delete by Zookeeper when (-e flag to create)
          * Client who created it close the session
          * No request from client after timeout session (use by Kafka to maintain brokers)
-    3. **Sequetiel:** same as emphemeral just Zoopkeeper assigns number of 10 digits during the creation and increment this number when other sequential is created (-s flag to create)
-* Session: create between client and zookeeper
-    * client sends heartbeats
-    * Fail If no heartbeat was sent after certain period (timeout)
-* Watchers: mecanism used by cleint to get changes in Zookeeper
+    3. **Sequential:** same as ephemeral just Zoopkeeper assigns number of 10 digits during the creation and increment this number when other sequential is created (-s flag to create)
+* **Session:** create between client and zookeeper
+    - Client sends heartbeats
+    - Fails If no heartbeat was sent after certain period (timeout)
+* Watchers: mechanism used by client to get changes in Zookeeper
 
 
 ## Config
@@ -59,7 +59,7 @@
 * **server.X=hostname:peerPort:leaderPort**
     * **X:** should be integer
     * **hostname:** ip of the host
-    * **peerPort:** port on wich ensemble comunicates
+    * **peerPort:** port on which ensemble communicates
     * **leaderPort:** port used to elect leader
     * **clientPort:** port used to communicate with client  
 
@@ -77,4 +77,5 @@
 
 * Herd effet
 
-https://medium.com/@bikas.katwal10/zookeeper-introduction-designing-a-distributed-system-using-zookeeper-and-java-7f1b108e236e
+### Useful links
+- [Link-1](https://medium.com/@bikas.katwal10/zookeeper-introduction-designing-a-distributed-system-using-zookeeper-and-java-7f1b108e236e)

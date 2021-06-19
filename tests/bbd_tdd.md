@@ -10,3 +10,49 @@
     * During 
     * After 
     
+  
+- Test types
+  - Unit
+  - Integration
+    - Component
+    - System
+      - To realize test we can use for example in memory databases
+  - Functional
+  
+
+- Unit tests
+  - Arrange
+  - Act
+  - Assert
+  
+
+## Python 
+  - Unittest
+    - ``python -m unittest discover``
+  
+  - Pytest
+    - **fixtures:** are functions that create data or test doubles or initialize some system state
+      for the test suite.
+    - ``pytest``
+    - Filtering
+      - Run one test ``pytest -v tests/my-directory/test_demo.py::TestClassName::test_specific_method``
+    - Uses ``pytest.ini`` as config file
+    - Uses ``conftest.py`` to define fixtures
+    - Marking is useful for categorizing by subsystem or dependencies
+        - Run tests having mark ``pytest -m mark_name``
+        - Do not run tests having mark ``pytest -m "not mark_name"``
+        - Custom markers can be used
+    
+
+## Java
+
+- Unit tests in Maven are managed by Surefire plugin and Integration test are managed by Failsafe plugin
+- Integration test names end by IT (convention in Java) which allows Maven to separate them from unit tests 
+
+
+- Define tests standard
+  - Test types
+  - Code coverage  
+- Put code quality check as step in CI/CD pipeline
+- Add code review in dev process
+- Apply SOLD and Twelve principals

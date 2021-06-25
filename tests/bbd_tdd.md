@@ -13,10 +13,13 @@
   
 - Test types
   - Unit
-  - Integration
-    - Component
-    - System
-      - To realize test we can use for example in memory databases
+  - **Integration:**
+    - Focus integrating different layers of the application, that means no mocking is involved
+    - Ideally, they should be keep separated from unit tests and should not run along with unit tests  
+    - Two types     
+        - Component
+        - System
+            - To realize test we can use for example in memory databases
   - Functional
   
 

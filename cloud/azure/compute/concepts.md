@@ -9,27 +9,30 @@
         - middleware
         - configuration
         
-- Azure VM
+- **Azure VM**
     -  IaaS
     
-    
-- Azure Container Instances
+- **Azure Container Instances**
     - Simplest and fastest wat to run a container in Azure
     - PaaS
     - Serverless containers
     
-- Azure Kubernetes Services (AKS)
+- **Azure Kubernetes Services (AKS)**
     - Open-source container orchestration platform
     - PaaS
     - Highly scalable and customizable
     - Designed for high scale container deployments
     
-- App Service
+- **App Service**
     - Designed as enterprise grade web application service
     - PaaS
     - Supports multiple programming languages and containers
+    - Guaranteed 99,95% availability
+    - Can be
+        - Scaled up
+        - Scaled out 
 
-- Azure functions
+- **Azure functions**
     - PaaS 
     - Serverless
     - Two hosting/pricing models

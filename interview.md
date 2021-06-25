@@ -7,6 +7,7 @@
 
 ## Spark common errors 
 - Task not serializable
+- java.lang.OutOfMemoryError: Java heap space
 
 ## SQL vs NOSQL
 - Normalize data, Denormalize

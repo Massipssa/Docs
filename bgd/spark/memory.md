@@ -10,5 +10,6 @@
 * **User Memory:** It's mainly used to store the data needed for RDD conversion operations, such as the information for RDD dependency
 * **Reserved Memory (300MB):** The memory is reserved for system and is used to store Spark's internal objects
    * Spark fail if we don't give executor memory at least 1.5 * Reveserved Memory = 450MB
-    
-![memory](../screenshots/spark-memory.png)
+  
+
+  ![memory](../screenshots/spark/spark-memory.png)

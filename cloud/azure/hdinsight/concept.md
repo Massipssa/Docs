@@ -1,0 +1,2 @@
+- HDInsight cluster's ability to access files in Data Lake Storage Gen2 is controlled through managed identities
+- ACLs aren't inherited, so reapplying ACLs requires updating the ACL on every file and subdirectory

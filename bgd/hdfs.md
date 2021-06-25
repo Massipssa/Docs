@@ -1,7 +1,7 @@
-* **Name node** 
+* **Namenode** 
 	- Open, Close, Rename, Delete operations on files and directories 
 	- Determines the mapping between blocks and databnode
-* **Data Node**
+* **Datanode**
 	- Read, Write
 	- Block creation, replication and deletion
 		
@@ -47,6 +47,17 @@
 - **Backup and checkpoint nodes** 
 	- dfs.namenode.backup.address
 	- dfs.namenode.backup.http-address
+
+
+## Block
+### Utility of blocks
+- Estimate the size easily
+- Separate metadata from file itself
+- Allows replication for providing fault-tolerant and availability
+- Insure against corrupted blocks and disk and machine failures
+## Block caching
+- cache directive
+- cache pool 
 
 ## HA
 - Solve Single Point Of Failure (SPOF) 

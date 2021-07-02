@@ -17,15 +17,20 @@
     - Use partial aggregation to reduces data movement ?
 
 ## Join
+ 
+- *Big-table to Big-table*
+    - **Shuffle join:** => Shuffle join (Each node will talk to another node to get join keys)
+    - It'll induce  ***all-to-all*** communication
 
+- *Big-table to Small-table*
+    - **Broadcast join**
+        - Use broadcast join on the small table.
+        - Place a small table in each executor 
+        - Induce per node computation strategy
+        - ```spark.sql.autoBroadcastJoinThreshold``` is used to determine the size
 
-1. **Shuffle join:**  ***Big-table to Big-table*** => Shuffle join (Each node will talk to another node to get join keys)  -- all-to-all communication
-
-2. **Broadcast join:**
-    - With **Big-table to Small-table** => Use broadcast join on the small table. Place a small  table in each executor -- per node computaion strategy
-    - ```spark.sql.autoBroadcastJoinThreshold``` is used to determine the size
-
-* **Little-to-little table** => let Spark to decide how to join them
+* **Little-to-little table**
+  - Let Spark to decide how to join them
 
 3. **Sort join**
 

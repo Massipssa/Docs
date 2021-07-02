@@ -1,40 +1,44 @@
-# Hello word example in Apache Airflow #
+# Hello word example in Apache Airflow
 
 ```python
 from airflow import DAG
-from airflow.operators import BashOperator
+from airflow.operators.bash_operator import BashOperator
 from datetime import datetime, timedelta
 
-# 1 - declare defautl arguments
+# [1. Define default args]
 default_args = {
     'owner': 'massi',
     'depends_on_past': False,
     'start_date': datetime(2019, 10, 26),
-    'email': ['massipssa.kerrache@gmail.com'],
+    'email': ['kerrache.massipssa@gmail.com'],
     'retries': 1,
     'retry_delay': timedelta(minutes=1),
 }
 
-# 2 - define a DAG
-dag = DAG('helloworld_dag', default_args=default_args)
+# [2. Define dag args]
+with DAG(
+    'hello_dag',
+    default_args=default_args,
+    schedule_interval="2 * * * *"
+) as dag:
 
-# 3 - define DAG's tasks 
-task_1 = BashOperator(
-    task_id='task_1',
-    bash_command='echo "Hello World from Task 1"',
-    dag=dag)
+    # [3. Define Dag's tasks]
+    task_1 = BashOperator(
+        task_id='task_1',
+        bash_command='echo "Hello World from Task 1"',
+        dag=dag)
 
-task_1 = BashOperator(
-    task_id='task_2',
-    bash_command='echo "Hello World from Task 2"',
-    dag=dag)
+    task_2 = BashOperator(
+        task_id='task_2',
+        bash_command='echo "Hello World from Task 2"',
+        dag=dag)
 
-# 4 - set task dependencies    
-task_1 >> task_2 
+    # [4. Set task dependencies]
+    task_1 >> task_2
 
 ```
 ### Validate a DAG ###
-Before running a DAG, one have to execute 
+Before running a DAG, execute your file to check if it contains errors. 
 ```bash 
 python helloworld_dag.py
 ```

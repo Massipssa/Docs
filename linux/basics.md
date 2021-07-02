@@ -84,6 +84,7 @@
 - `$#` stores the numbers of arguments
 - `$0` get the script name
 - `$?` exist status of the last command
+- `$*` show command line arguments
 
 
 

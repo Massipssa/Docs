@@ -109,6 +109,18 @@
   - Standard
   - Professional Direct
 
+## Hierarchy 
+
+  ```
+  ---> Management group
+    | 
+    |---> Subscription
+        |
+        |--> Resource Group
+           |
+           |--> Resource
+  ```      
+  
 ## Resources
 - Objects used to manage services in Azure
 - Represent service lifecycle
@@ -130,16 +142,8 @@
 - Resources can be managed using one of these mean
    - Portal
    - Rest
-   - Power shell
+   - Powershell
    - CLI
    - SDKs
 - All the tools uses **Azure Resource Manager**
-- RM controls access and resources     
-  
-### Azure Devops
-* **Components**
-  - Pipelines
-  - Repositories
-  - Test Plans
-  - Boards
-  - Artefacts
+- RM controls access and resources

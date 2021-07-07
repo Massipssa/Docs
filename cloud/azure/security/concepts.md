@@ -16,7 +16,16 @@
         - Office 365
         - ...        
    - Syncs with on-premises AD via **sync service**
-   
+
+- **Network Security Group**
+    - Filter traffic to inbound and from outbound Azure resources located in VNET
+    - Filtering is controlled by roles 
+    - Ability to have multiple inbound and outbound rules
+ 
+- ** Application Security Group**
+    - Allows grouping of virtual machines located in VNET
+    - Designed to reduce the maintenance effort
+
 - **Multi-Factor Authentication (MFA)**
     - Use more than one factor (evidence) to prove identity
     
@@ -65,8 +74,8 @@
         - Detect malicious traffic and block it while allowing legitimate users to connect
         - Prevent additional costs for auto-scaling environments
     - Two tiers
-        - Basic: automatically enabled for Azure platform
-        - Standard: additional mitigation & monitoring capabilities for Azure virtual network resources
+        - **Basic:** automatically enabled for Azure platform
+        - **Standard:** additional mitigation & monitoring capabilities for Azure virtual network resources
     
 - **Azure firewall**
     - Allow monitor and control incoming and outgoing traffic using rules

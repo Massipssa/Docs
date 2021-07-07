@@ -1,5 +1,5 @@
 - Visualization
-    - Emulation of physical machines 
+    - Emulation of physical machines
     - Different virtual hardware configuration per machine/app
     - Different operating systems per machine/app
     - Total separation of environments
@@ -10,7 +10,7 @@
         - configuration
         
 - **Azure VM**
-    -  IaaS
+    - IaaS
     
 - **Azure Container Instances**
     - Simplest and fastest wat to run a container in Azure
@@ -30,12 +30,12 @@
     - Guaranteed 99,95% availability
     - Can be
         - Scaled up
-        - Scaled out 
+        - Scaled out
 
 - **Azure functions**
-    - PaaS 
+    - PaaS
     - Serverless
     - Two hosting/pricing models
         - Consumption-based plan
         - Dedicated plan
-    - Designed for micro/nano-services      
+    - Designed for micro/nano-services

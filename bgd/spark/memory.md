@@ -13,3 +13,10 @@
   
 
   ![memory](../screenshots/spark/spark-memory.png)
+  
+
+## Cache and Repartition 
+- Cache: use MEMORY_AND_DISK storage level.
+- Persist: the storage level can be changed.
+- Cache and persist are lazy operations (transformations)
+- Spark drops persisted data if not used or by using least-recently-used (LRU) algorithm.

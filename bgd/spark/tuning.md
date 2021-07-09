@@ -96,15 +96,16 @@
 - spark.shuffle.compress
 - spark.shuffle.spill.compress
 - spark.shuffle.manager
+- spark.reducer.maxSizeInFlight
 
 
 ### Example
 
-- 6 nodes 
-- 16 cores per node (number of cores per node)
+- 6 nodes (***number of nodes***) 
+- 16 cores per node (***number of cores per node***)
   - One core should be reserved to Hadoop process, so ``number of cores per node = 15``
-- 64 GB RAM per node (memory per node)
-- The optimal value is 5 cores per executor (number of cores per executor: --executor-cores)
+- 64 GB RAM per node (***memory per node***)
+- The optimal value is 5 cores per executor (***number of cores per executor***, --executor-cores)
 
     ```
    number of executor per node = number of cores per node / number of cores per executor 

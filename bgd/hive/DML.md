@@ -1,37 +1,38 @@
 ### DML
 - Load data
-```LOAD DATA LOCAL INPATH /path/local/file OVERWRITE INTO TABLE tablename```
+  
+    ```LOAD DATA LOCAL INPATH /path/local/file OVERWRITE INTO TABLE tablename```
 
 - This command is useful if source table is partitioned
 
-```
-INSERT OVERWRITE TABLE tablename1
-SELECT * FROM tablename2 t
-WHERE t.col1 = 'US' and t.col2 = 'OR'
-```
+    ```
+    INSERT OVERWRITE TABLE tablename1
+    SELECT * FROM tablename2 t
+    WHERE t.col1 = 'US' and t.col2 = 'OR'
+    ```
 - To avoid scanning table multiple time, use this syntax
 
-```
-FROM tablename2 t
-INSERT OVERWRITE TABLE tablename1
-	PARTITION (country = 'US', state = 'OR') 
-	SELECT * WHERE t.cntry = 'US' and t.st = 'OR'
-```
+    ```
+    FROM tablename2 t
+    INSERT OVERWRITE TABLE tablename1
+        PARTITION (country = 'US', state = 'OR') 
+        SELECT * WHERE t.cntry = 'US' and t.st = 'OR'
+    ```
 
 - Hive support Dynamic Partition Inserts
 
 - Create table and load in them in one query 
 
-```
-CREATE TABLE test
-AS SELECT name, email 
-FROM tablesource t
-WHERE t.col = 'toto'
-```
+    ```
+    CREATE TABLE test
+    AS SELECT name, email 
+    FROM tablesource t
+    WHERE t.col = 'toto'
+    ```
 
 - Export data 
 
-```INSERT OVERWRITE LOCAL DIRECTORY '/tmp/ca_employees'```
+    ```INSERT OVERWRITE LOCAL DIRECTORY '/tmp/ca_employees'```
 
 - **Aggregation functions** 
     - count, sum, avg, ...

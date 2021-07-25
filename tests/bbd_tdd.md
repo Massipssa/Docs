@@ -12,7 +12,8 @@
     
   
 - Test types
-  - Unit
+  - **Unit**
+    - Doest interact with external word
   - **Integration:**
     - Focus integrating different layers of the application, that means no mocking is involved
     - Ideally, they should be keep separated from unit tests and should not run along with unit tests  
@@ -20,9 +21,10 @@
         - Component
         - System
             - To realize test we can use for example in memory databases
-  - Functional
-  
-
+  - **Functional**
+        - Test the functionality of an application (create account, delete user, ...)
+        - Verify only the functionality purpose
+    
 - Unit tests
   - Arrange
   - Act

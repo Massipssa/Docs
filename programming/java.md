@@ -22,3 +22,6 @@
     - The garbage collection occurs in one thread, and the compaction is performed after the 
     collection if finished
       
+
+## Static class
+      

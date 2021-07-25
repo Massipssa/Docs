@@ -70,20 +70,26 @@
 
 ### Server Side
 
-**1. Install Kerberos Admin Server:** this install the server and KDC
+**1. Install Kerberos Admin Server:** install the server and KDC
 
 ```yum install krb5-workstation krb5-libs krb5-server```
 
 **2. Configure Kerberos**
 
-* Two configuration files
+- Two configuration files
+  - `/etc/krb5.conf`
+  - `/var/kerberos/krb5kdc/kdc.conf`
 
-    * ```/etc/krb5.conf```
-    * ```/var/kerberos/krb5kdc/kdc.conf```
+- **Configure the realm**
 
-* **Configure the realm**
-
-```cat /etc/krb5.conf```
+    ```
+    sudo echo
+    [realms]
+     HADOOP.COM = {  
+      kdc = server.hostname.com
+      admin_server = server.hostname.com 
+     } > /etc/krb5.conf 
+    ```
 
 ```
 [realms]
@@ -108,8 +114,8 @@
 
 **5. Specify the admin principals and add admin principal**
 
-* All users in realm ```*/admin@HDPCLUSTER.COM``` will have admin access
-* ```kadmin.local``` utility used only on the krb server
+- All users in realm ```*/admin@HDPCLUSTER.COM``` will have admin access
+- ```kadmin.local``` utility used only on the krb server
 
 ```sh
 vi /var/kerberos/krb5kdc/kadm5.acl

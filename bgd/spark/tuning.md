@@ -87,16 +87,20 @@
     - Too many partitions
         - It'll take many times to schedule task
     - Need ***reasonable number*** of partition
-- **Lower bound:**  At least ~2x number of cores in the cluster
+- **Lower bound:**  At least ~3x number of cores in the cluster
 - **Upper bound:** Ensure tasks take at least 100ms
 
 
 ## Shuffle
 
-- spark.shuffle.compress
-- spark.shuffle.spill.compress
-- spark.shuffle.manager
-
+- **spark.shuffle.compress:** whether to compress map output files (true by default).
+- **spark.shuffle.spill.compress:** wheter to compress data spilled during the shuffles (true by default).
+- **spark.shuffle.manager:** specify spark shuffle algorithm
+    - Hash
+    - Sort
+    - Tungsten
+    
+## Data locality 
 
 ### Example
 

@@ -15,21 +15,21 @@ There are three type of actions in spark
 
 ## Execution steps
 
-- User code --> Logical plan --> Physical plan --> Execution (RDD manipulations)
+``User code ==> Logical plan ==> Physical plan ==> Execution (RDD manipulations)``
 
-- Unresolved Logical Plan 
+- **Unresolved Logical Plan** 
   - Verify syntactic field
   - Semantic analysis
   
-- Logical Plan
+- **Logical Plan**
   - Check data structure, schema and types
   - It resolves types using Catalog
   
-- Optimized Logical Plan
+- **Optimized Logical Plan**
   - Apply some rules to optimize the logical plan
   - Reorder the logical operations to perform some optimizations
 
-- Physical Plan
+- **Physical Plan**
   - Catalyst Optimizer will generate many Physical Plans base on execution time and resource cosumption.
     Only one with the best cost performance will be chosen.  
 

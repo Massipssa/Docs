@@ -93,13 +93,6 @@
 
 ## Shuffle
 
-<<<<<<< HEAD
-- spark.shuffle.compress
-- spark.shuffle.spill.compress
-- spark.shuffle.manager
-- spark.reducer.maxSizeInFlight
-
-=======
 - **spark.shuffle.compress:** whether to compress map output files (true by default).
 - **spark.shuffle.spill.compress:** wheter to compress data spilled during the shuffles (true by default).
 - **spark.shuffle.manager:** specify spark shuffle algorithm
@@ -108,7 +101,7 @@
     - Tungsten
     
 ## Data locality 
->>>>>>> 84b9bbf7c2a8386ff578e03c1c659a0751574e0d
+
 
 ### Example
 

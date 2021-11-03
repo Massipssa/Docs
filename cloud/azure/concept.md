@@ -147,3 +147,5 @@
    - SDKs
 - All the tools uses **Azure Resource Manager**
 - RM controls access and resources
+
+- tenantID: A tenant is a specific organization that owns and manages a instance of Azure

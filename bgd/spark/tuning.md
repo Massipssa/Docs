@@ -109,10 +109,10 @@
 - 16 cores per node (***number of cores per node***)
   - One core should be reserved to Hadoop process, so ``number of cores per node = 15``
 - 64 GB RAM per node (***memory per node***)
-- The optimal value is 5 cores per executor (***number of cores per executor***, --executor-cores)
+- The optimal value is 5 vcores per executor (***number of cores per executor***, --executor-cores)
 
     ```
-   number of executor per node = number of cores per node / number of cores per executor 
+   number of executor per node = number of cores per node / number of vcores per executor 
                                   = 15 / 5 
                                   = 3                           
    ```

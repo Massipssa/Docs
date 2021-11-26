@@ -1,18 +1,28 @@
-- Spark architecture
-- Transformation vs action 
-  - Transformation always returns an RDD (wide and large --> add schema)
-  - Action 
-- Execution modes 
-- Deploy modes
+## **Why Spark ?**
+- In-memory Computation (100x times faster than MR in memory, 10x faster than on disk) **===> Remark DS**
+- Resilient Distributed Datasets (RDD)
+  - Immuatable (Why ?) **Because of fact that data is distruted + servers in data recovery**
+  - Can be cached or persisted   
+- Lazy Evaluation
  
-- Why Spark ?
-  - In-memory Computation (100x times faster than MR in memory, 10x faster than on disk) **Remark DS**
-  - Resilient Distributed Datasets (RDD)
-    - Immuatable (Why ?) **Because of fact that data is distruted + servers in data recovery**
-    - Can be cached or persisted   
-  - Lazy Evaluation
+## **Spark architecture**
 
-- How data is partitionned ?
+
+## How can be executed a Spark App **Execution modes**
+- Standalone (local) 
+- Yarn
+- Kubernetes
+- Mesos
+
+## Deploy modes
+- Client 
+- Cluster (main difference: owner of resources ??) 
+  
+## Transformation vs action
+- Transformation always returns an RDD (wide and large --> add schema)
+- Action 
+
+## **How does Spark partition the data ?**  **===> add an image**
   - Huge amount of data can't fit in one single node memory
   - Leads to minimize IO (serialization and deserialization)
   - Spark uses the princpe of data locality (read date from the nodes that are close) **look in detail** 
@@ -39,7 +49,11 @@
   -  repartition() or coalesce(): partition data in memory 
   -  partitionBy(): partition data in disk
   
-- How handales data recovery **Add an image**
+## Spark memory types ? **Add image**
+
+## Notion of APP -> Stage -> tasks (vcore)
+   
+## How handales data recovery **==>Add an image**
   - Node crash (no heartbeat are received from the node) ??
   - Lineage graph (execution plan) -->  DAG
     - Applies the same execution plan in all nodes leads to recover the data
@@ -59,8 +73,6 @@
   ```
   - Spark-submit 
   - Default config 
-- Spark memory types ? **Add image**
-- Notion of APP -> Stage -> tasks (vcore)
 
 
 ## To present later

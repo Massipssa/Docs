@@ -10,7 +10,8 @@
 - How spark reads config ?
   - Main
   
-  ```SparkSession spark = SparkSession
+  ```java
+  SparkSession spark = SparkSession
         .master("local")
         .config("key1", "value1")
         ...

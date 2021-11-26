@@ -16,8 +16,29 @@
   - Huge amount of data can't fit in one single node memory
   - Leads to minimize IO (serialization and deserialization)
   - Spark uses the princpe of data locality (read date from the nodes that are close) **look in detail** 
-  - Creates a partition of size 64MB in HDFS
-    - The partition is by itself can be partited by HDFS (in hdfs way) (Imagine it as a file that you write and every file writen to HDFS is partitionned)
+  - Creates a partition of size 128 MB in HDFS
+    - The partition itself can be partited by HDFS (in hdfs way) 
+      -  Imagine it as a file that you write and every file writen to HDFS is partitionned
+      -  Partiton of 256 MB => 2 blocks in HDFS (HDFS partition)
+  - Having many partitions doesn't mean more performance
+    - Partition <=> task, so, many partitions will the increase the execution time because it
+      requires a lot of time for creating, scheduling and manging task by spark scheduler
+    - A lot of partition leads a huge flow between driver and executor   
+    - Empty partition takes time to compute 
+  - A few number of partition
+    - Idle nodes
+    - Data skew issue  
+  - Recommandation 2x or 3x number of vcores 
+  - 100 ms to computes a partition **(benchmark have been done on machines with average capacities)**
+  - Example:  file of 10KB in 20 partitions 
+  
+  ```java
+    read.text("path/to/text.txt")
+        .repartition(20)
+  ```
+  -  repartition() or coalesce(): partition data in memory 
+  -  partitionBy(): partition data in disk
+  
 - How handales data recovery **Add an image**
   - Node crash (no heartbeat are received from the node) ??
   - Lineage graph (execution plan) -->  DAG

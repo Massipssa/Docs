@@ -4,7 +4,8 @@
 - **Spoofing and Layering:**
 - **Front running**
   - A broker had an insider knwoledge (not yet public) that his company is about to sell or buy and that knwoledge will affect the price of an asset
-- **Insider trading:** 
+- **Insider trading:**
+- **Ramping**
 
 
 ## Market data
@@ -13,3 +14,5 @@
 - Ice 
 - EBS (Electronic Broking Service)
 - Retuers
+- Dow Jones new
+- Bloomberg 

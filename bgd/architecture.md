@@ -1,4 +1,7 @@
-### How to choose storage tool
+
+1. [How to choose storage tool](#storage)
+
+## How to choose storage tool
 
 - **Data model**
     - Key/value

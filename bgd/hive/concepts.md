@@ -20,32 +20,30 @@
 
 ### HA
 
-* Configure load balancer for HiveServer2 
-* Enable HA for metastore 
+- Configure load balancer for HiveServer2 
+- Enable HA for metastore 
 
 ### Replication 
 
 ### Security 
 
 1. **Authentication:** LDAP and Kerberos 
-    * If Kerberos is not enabled no need to provide password when connecting using Beeline CLI 
+    - If Kerberos is not enabled no need to provide password when connecting using Beeline CLI 
 2. **Authorization:** Ranger 
 3. **Encryption** SASL QOP or SSL/TLS  
 
 ### About 
 
-* Hive do not enforce schema on write, but it
+- Hive do not enforce schema on write, but it
 
 ### hive-site.xml
-* **hive.metastore.warehouse.dir** : default dir in hdfs where data is stored
-* Metastore 
+- **hive.metastore.warehouse.dir** : default dir in hdfs where data is stored
+- Metastore 
  - Driver: **javax.jdo.option.ConnectionDriverName**
  - Password: **javax.jdo.option.ConnectionPassword**
  - Url: **javax.jdo.option.ConnectionURL**
  
  ### core-site.xml
-
-
 
 ## Data Model 
 
@@ -71,7 +69,8 @@
 ### Partition 
 
 - **strict:** prohibit queries without where clause in partitioned tables 
-  **nonstrict:** allow running queries without where clause
+- **nonstrict:** allow running queries without where clause
+  
   ``set hive.mapred.mode=strict;``
   
 - We can describe and show partitions
@@ -97,12 +96,17 @@
     PARTITION (col_part_name1 = 'value1', col_part_name2 = 'value2');
     ```
 ### Bucket
-
 - Each bucket is stored as file in partition directory
 
 ### Types
 - Java types (int, string, float, ...)
 - Complex types: Array, Map, Struct
+
+### Internal vs external table
+- Hive manages interanl but non external
+- Drop internal delete metadata and path, but drop external remove only metadata
+- Internal support archive, unarchive, ACID/transactional and **result caching ??** but none of there features are supported by an external
+
 
 
 

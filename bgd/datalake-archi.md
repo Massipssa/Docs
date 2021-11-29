@@ -8,13 +8,21 @@
 ## Architecture
 
 - **Datalake**
- - Pros: 
+ - Pros:
+  - Store raw data 
   - Store different type of data (structued, semi and non-strcutrued)
   - Allows flexbily
  - Cons: 
-    - Mutiples issues of data quality   
+  - Mutiples issues of data quality
+  -    
 - **Lambda**
+ - Batch layer
+ - Realtime layer 
+ - Serving layer 
 
+- **Kappa**
+ - Simplify lamda architecture by fusionning batch realtime layers 
+ 
 ## Example of data ingestion in Uber
 - Decouple storage from query layer, each can be scaled independently
 - Two dataset types

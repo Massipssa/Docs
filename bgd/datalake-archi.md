@@ -6,13 +6,14 @@
 - See the [link](https://www.upsolver.com/blog/four-principles-data-lake-architecture)
 
 ## Architecture
-**- Datalake**
+
+- **Datalake**
  - Pros: 
   - Store different type of data (structued, semi and non-strcutrued)
   - Allows flexbily
  - Cons: 
     - Mutiples issues of data quality   
-**- Lambda**
+- **Lambda**
 
 ## Example of data ingestion in Uber
 - Decouple storage from query layer, each can be scaled independently

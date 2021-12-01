@@ -4,6 +4,7 @@
   - Immuatable (Why ?) **Because of fact that data is distruted + servers in data recovery**
   - Can be cached or persisted   
 - Lazy Evaluation
+- Batch and stream processing 
  
 ## **Spark architecture**
 

@@ -22,7 +22,7 @@
     - Filtering is controlled by roles 
     - Ability to have multiple inbound and outbound rules
  
-- ** Application Security Group**
+- **Application Security Group**
     - Allows grouping of virtual machines located in VNET
     - Designed to reduce the maintenance effort
 

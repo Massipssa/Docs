@@ -23,3 +23,8 @@ POST name-of-index/_doc/id-of-doc
   }
 }
 ```
+
+## Delete
+
+- DELETE is used
+- `DELETE name-of-index/_doc/id-of-doc`

@@ -9,7 +9,7 @@ In case of queries
 
 - Limited to 10 docs
 - total is limited to 10000 after >= 7.0 ELK version
-- - **```track_total_hits: true```**: search in all hints 
+- **```track_total_hits: true```**: search in all hints 
 - track_total_hints can be used to get total value
 - hits are stored by **_score** and each hit has _score
 

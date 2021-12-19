@@ -3,14 +3,13 @@
 - ***Queries:*** the query cluases to matche documents
 - ***Aggregations:*** the aggregation clauses to summarize data
 
-- **```track_total_hits: true```**: count more than 10,000 hints (in ELK > 7.0 hint is limeted to 10,000)
-
 ## Hints
 
 In case of queries
 
 - Limited to 10 docs
 - total is limited to 10000 after >= 7.0 ELK version
+- - **```track_total_hits: true```**: search in all hints 
 - track_total_hints can be used to get total value
 - hits are stored by **_score** and each hit has _score
 
@@ -26,4 +25,14 @@ In case of queries
 
 ## Precesion 
 
+- What portion of retrieved data is actually relevant to the search query ?
 - `precesion = True positives / True positives + False positives`
+
+## Recall 
+
+## Ranking
+- Gives the more relevant doc to the search query
+- Docs are ranked by the score 
+- Scoring algorithm is used to rank the docs
+  - Term Frequency (TF)
+  - Inverse Document Frequency (IDF) 

@@ -14,8 +14,12 @@
 
 ## Update
 - _update endpoint is used:  
-- ```POST name-of-index/_doc/id-of-doc {
+ 
+```
+POST name-of-index/_doc/id-of-doc
+{
   "doc": {
-    "field": "new_valu"
+    "field": "new_value"
+  }
 }
 ```

@@ -1,7 +1,8 @@
 # Search
 
-- ***Queries:*** the query cluases to matche documents
-- ***Aggregations:*** the aggregation clauses to summarize data
+- Two main ways to search in ELK:
+  - ***Queries:*** the query cluases to matche documents (retrieve docs that match a criteria)
+  - ***Aggregations:*** the aggregation clauses to summarize data
 
 ## Hints
 

@@ -11,3 +11,11 @@
 ## Read
 
 - GET is used to get a doc:  `GET name-of-index/_doc/id-of-doc`
+
+## Update
+- _update endpoint is used:  
+- ```POST name-of-index/_doc/id-of-doc {
+  "doc": {
+    "field": "new_valu"
+}
+```

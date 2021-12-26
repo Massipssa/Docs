@@ -1,5 +1,6 @@
 
 1. [How to choose storage tool](#storage)
+2. [Managing risks](#risks)
 
 ## How to choose storage tool
 
@@ -50,3 +51,11 @@
 	- ext3
 	- ext4
 	- XFS
+
+## Managing risk 
+- Categories of risks
+ - Technology risk 
+ - Team risk 
+  - Knowledge level and strength of team
+  - Dependency on external team
+  - Potentially distraptive team member  

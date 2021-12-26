@@ -59,7 +59,7 @@
 - **Technology risk**
     - Individual component risk 
     - Interation between components 
-    -  
+    - Unfamiliarity with na technology used in designing the system
 - **Team risk** 
     - Knowledge level and strength of team
     - Dependency on external team
@@ -74,6 +74,6 @@
    - Data ingest
    - Data serving 
    - Data processing (compute)
-   - Access pattern (SQL, REST, ...)
+   - Access pattern (JDBC, ODBC, REST, ...)
    - Data storage 
 - Assign team members to work on each component

@@ -52,11 +52,28 @@
 	- ext4
 	- XFS
 
-## Managing risk 
+## Managing risk
 
 ### Categories of risks
-- **Technology risk** 
+
+- **Technology risk**
+    - Individual component risk 
+    - Interation between components 
+    -  
 - **Team risk** 
     - Knowledge level and strength of team
     - Dependency on external team
     - Potentially distraptive team member  
+- **Requirements**
+   - Poorly defined requirements or poorly defined problem
+   - New technologies on which team member didn't worked on
+
+### How to manage risks  
+
+- Categorize risk in the architecture: break the architecture into pieces. Allows the risk of each component to be contained within that component.
+   - Data ingest
+   - Data serving 
+   - Data processing (compute)
+   - Access pattern (SQL, REST, ...)
+   - Data storage 
+- Assign team members to work on each component

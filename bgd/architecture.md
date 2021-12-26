@@ -57,6 +57,6 @@
 ### Categories of risks
 - **Technology risk** 
 - **Team risk** 
- - Knowledge level and strength of team
- - Dependency on external team
- - Potentially distraptive team member  
+    - Knowledge level and strength of team
+    - Dependency on external team
+    - Potentially distraptive team member  

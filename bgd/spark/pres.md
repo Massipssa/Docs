@@ -8,7 +8,7 @@
  
 ## **Spark architecture**
 
-- Dricer
+- Driver
 - Executors 
 
 ## How can be executed a Spark App **Execution modes**

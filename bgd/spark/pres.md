@@ -8,6 +8,8 @@
  
 ## **Spark architecture**
 
+- Dricer
+- Executors 
 
 ## How can be executed a Spark App **Execution modes**
 - Standalone (local) 
@@ -34,13 +36,14 @@
   - Having many partitions doesn't mean more performance
     - Partition <=> task, so, many partitions will the increase the execution time because it
       requires a lot of time for creating, scheduling and manging task by spark scheduler
-    - A lot of partition leads a huge flow between driver and executor   
-    - Empty partition takes time to compute 
+    - A lot of partition leads to huge flow between driver and executor (Increase IO. Well known Small files issue in HDFS that saturates INodes tables)
+    - Empty partitions take time to compute 
   - A few number of partition
     - Idle nodes
     - Data skew issue  
-  - Recommandation 2x or 3x number of vcores 
-  - 100 ms to computes a partition **(benchmark have been done on machines with average capacities)**
+  - Recommandation:
+    -   2x or 3x number of vcores 
+    - 100 ms to computes a partition **(benchmark have been done on machines with average capacities)**
   - Example:  file of 10KB in 20 partitions 
   
   ```java

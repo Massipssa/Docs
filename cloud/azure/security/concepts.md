@@ -51,7 +51,7 @@
     - Service principal
     - Managed identity
   - Scope: one or more azure resources that the access applies to
-    
+  - Role Assignement: combinaison of **Role definition** + **Security principal** + **Scope**  
 - **Resource Locks**
     - Designed to prevent accidental deletion and/or modification
     - Two types

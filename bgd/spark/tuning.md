@@ -146,5 +146,6 @@
                             ~= 19 GB
     ```
     
+    
 ### Links 
 - [Link-1](https://aws.amazon.com/fr/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/) 

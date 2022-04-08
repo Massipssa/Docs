@@ -25,3 +25,17 @@
 
 ## Static class
       
+## JVM
+- Class loader
+    - Loading
+    - Linking
+        - Verify
+        - Prepare
+        - Resolve 
+    - Initialization
+- Runtime data area
+- Execution engine: convert byte code to machine code
+    - Interpreter
+    - JIT compiler: complies bytes code to native codes. Native code will be used for repetead methods calls
+    - Profiler
+    - CG 

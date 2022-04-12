@@ -13,6 +13,11 @@ There are three type of actions in spark
 - Action to collect data (collect, count, ...)
 - Action to write to external data storage (write)
 
+## Main component
+- Execution model
+- The shuffle
+- The cache
+
 ## Execution steps
 
 ``User code ==> Logical plan ==> Physical plan ==> Execution (RDD manipulations)``

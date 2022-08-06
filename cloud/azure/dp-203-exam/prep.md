@@ -36,6 +36,10 @@
 ## ETL vs ELT 
 
 ## Azure IoT Hub
+- Is the cloud gateway that connects IoT devices. IoT hubs gather data to drive business insights and automation
+
+## Azure Event Hubs 
+- Provides big-data streaming services. 
 
 ## Azure Storage
 - Types 
@@ -90,6 +94,11 @@
     - Supports SQL Server authentication and Azure Active Directory
     - Can set up multifactor authentication
     - Supports security at the level of both columns and rows
+
+##  Azure Stream Analytics
+- To process streaming data and respond to data anomalies in real time
+- For Internet of Things (IoT) monitoring, web logs, remote patient monitoring, and point of sale (POS) systems
+- Stream Analytics handles security at the transport layer between the device and Azure IoT Hub
 
 ## AzCopy 
 - Can copy 1TB

@@ -1,48 +1,51 @@
-Data forms
-	- test
-	- stream
-	- audio
-	- video
-	- metadata
-Data can be
-	- structured (Microsoft SQL Server, Azure SQL Databases, Azure Data Warehouse): 
-		- Data have a schema
-		- Scheam defined at design time 
-		- React slowly to changes
-	- unstructured (Azure Blob Storage, Cosmoms DB, HDI): 
-		- each element can have its own shcema at query time (binary, audio and image file)
-		- Key value, document, graph and column database
-	- aggregated
+## Data forms
+- test
+- stream
+- audio
+- video
+- metadata
 
-Data engineer must maintain system that are
-	- Accurate 
-	- Highly secured
-	- Constantly available
+## Data can be
+- structured (Microsoft SQL Server, Azure SQL Databases, Azure Data Warehouse): 
+ - Data have a schema
+ - Scheam defined at design time 
+ - React slowly to changes
+- unstructured (Azure Blob Storage, Cosmoms DB, HDI): 
+ - each element can have its own shcema at query time (binary, audio and image file)
+ - Key value, document, graph and column database
+- aggregated
 
-On-premise
-	- Infra 
-	- Licence (per sever or per CAL "client Access Licence")
-	- Maintenace
-	- Scalability
-	- Availability
-	- Support 
-	- TCO total cost of ownership (TCO) describes the final cost of owning a given technology.
+## Data engineer must maintain system that are
+- Accurate 
+- Highly secured
+- Constantly available
 
-On-cloude 
-	- LCID (langauge code identifier) 
-	- lift anf shift 
+## On-premise
+- Infra 
+- Licence (per sever or per CAL "client Access Licence")
+- Maintenace
+- Scalability
+- Availability
+- Support 
+- TCO total cost of ownership (TCO) describes the final cost of owning a given technology.
 
-ETL vs ELT 
+## On-cloude 
+- LCID (langauge code identifier) 
+- lift anf shift 
 
-Azure IoT Hub
+## ETL vs ELT 
 
-Azure Storage
-Types 
-	- Blob 
-	- Files
-	- Queue 
-	- Table
-Provides 
+## Azure IoT Hub
+
+## Azure Storage
+
+- Types 
+ - Blob 
+ - Files
+ - Queue 
+ - Table
+
+- Provides 
  - API 
  - SDKs 
  - PS and azure cli 
@@ -50,17 +53,17 @@ Provides
 - All data writen to azure storage is crypted
 - Can be accessed via keys or shared access signature
 
-- Cosmos DB
-	- Globally dis
-	- Multimodel 
+## Cosmos DB
+- Globally dis
+- Multimodel 
 
-when to use:
-	- Need NoSQL for supported API model 
-	- Planet disb
-	- 99,999 resp
-	- response in 10 ms if correctly provisioned 
+- When to use:
+ - Need NoSQL for supported API model 
+ - Planet disb
+ - 99,999 resp
+ - response in 10 ms if correctly provisioned 
 
-AzCopy 
-	- Can copy 1TB
-	- Splits files than execeed 200 GB
+## AzCopy 
+- Can copy 1TB
+- Splits files than execeed 200 GB
 	

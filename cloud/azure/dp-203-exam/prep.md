@@ -103,4 +103,5 @@
 ## AzCopy 
 - Can copy 1TB
 - Splits files than execeed 200 GB
-	
+
+## Azure Purview

@@ -61,7 +61,8 @@
   - AZ is made of
     - **Fault domain**
     - **Update domain**
-  
+- **Sovereign region**: region dedicated to certain sovereign 
+ 
 ## Services
 - **Compute services**
   - Azure VM 

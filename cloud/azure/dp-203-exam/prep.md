@@ -105,3 +105,6 @@
 - Splits files than execeed 200 GB
 
 ## Azure Purview
+
+
+- source, ingest, prepare, analyze, and consume

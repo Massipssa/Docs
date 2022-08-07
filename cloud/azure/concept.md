@@ -162,3 +162,14 @@
 - RM controls access and resources
 
 - tenantID: A tenant is a specific organization that owns and manages a instance of Azure
+
+## Cost managment
+- **Cost analysis:** explore and analyze organization cost 
+- **Cost alerts:** raise an alerts
+  - Budget alerts
+  - Credit alerts
+  - Departement spending quota alerts 
+- **Budget**: a way to set budget by subscription, resource group, resouce, ... 
+
+- Pricing calculator Vs Total Cost of Ownership (TCO) calculator
+- Tags ?

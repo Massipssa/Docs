@@ -126,7 +126,7 @@
 - Represent service lifecycle
 - All resources are represented as Json template
   
-### Resource group  
+## Resource group  
 - Logic container for resources
 - Grouping of resources
 - Some strategies to group resources:
@@ -135,8 +135,20 @@
     - Departament
     - Billing, location or combination of those
 - Resource can only be assigned to one resource group
+- They cannot be nested
 - **IAM** is used to manage access  
 - **Azure Resource Explorer** to view resource details
+
+## Subscription 
+- Unit of management
+- A way to logically manage resources group and facilate billing
+- Two types of subscriptions can be used
+  - Billing boundary
+  - Access control boundar
+
+## Management group
+- Mange a group of subscriptions
+- Management group can be nested
 
 ### Resource Manager
 - Resources can be managed using one of these mean

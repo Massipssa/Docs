@@ -6,27 +6,27 @@
     - Highly durable
     - It contains the following services
      
-- **Azure Blob Storage**
-    - Used to store any kind type of data (unstructured data)
-    - Three storage tiers
-        - **Hot**: frequently accessed data
-        - **Cool** 
-            - Infrequently accessed data (lower availability and high durability)
-            - Useful to store older versions and backups of applications 
-        - **Archive:** rarely accessed data
+    - **Azure Blob Storage**
+        - Used to store any kind type of data (unstructured data)
+        - Three storage tiers
+            - **Hot**: frequently accessed data
+            - **Cool** 
+                - Infrequently accessed data (lower availability and high durability)
+                - Useful to store older versions and backups of applications 
+            - **Archive:** rarely accessed data
   
-- **Azure Queue Storage**
-    - Store small pieces of data (messages)  
-    - Designed for scalable asynchronous processing
+    - **Azure Queue Storage**
+        - Store small pieces of data (messages)  
+        - Designed for scalable asynchronous processing
  
-- **Azure Table Storage**
-    - Store semi-structured data
+    - **Azure Table Storage**
+        - Store semi-structured data
   
-- **Azure File Storage**
-    - Similar to Blob Storage
-    - In case of file we access Shares (in Blob we access containers)
-    - Accessed via ***shared drive*** protocols
-    - Designed to ***extend on-premise file shares*** or implement ***lift-and-shift*** scenarios
+    - **Azure File Storage**
+        - Similar to Blob Storage
+        - In case of file we access Shares (in Blob we access containers)
+        - Accessed via ***shared drive*** protocols
+        - Designed to ***extend on-premise file shares*** or implement ***lift-and-shift*** scenarios
 
 
 - **Azure Disk Storage**

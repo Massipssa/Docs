@@ -1,0 +1,4 @@
+- Standard storage: hot data
+- Nearline storage : once per month
+- Coldline storage: once evry 90 days 
+- Archive storage; once per year

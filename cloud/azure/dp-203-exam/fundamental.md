@@ -1,6 +1,6 @@
-**Azure Blueprints:** standardize cloud sb or env deployements 
-  - Each components know as artifact
-	- No additional parameters are required 
+**Azure Blueprints:** standardize cloud subscription or environment deployements 
+ - Each components know as artifact
+ - No additional parameters are required 
 **Azure Policy:**
 	- How to ensure that resources stay compliant
 	- Types

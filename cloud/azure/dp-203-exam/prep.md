@@ -4,11 +4,11 @@
 - audio
 - video
 - metadata
--
+
 ## Data can be
 - Structured (Microsoft SQL Server, Azure SQL Databases, Azure Data Warehouse):
   - Data have a schema
-  - Scheam defined at design time 
+  - Schema defined at design time 
   - React slowly to changes
 - Unstructured (Azure Blob Storage, Cosmoms DB, HDI): 
   - each element can have its own shcema at query time (binary, audio and image file)

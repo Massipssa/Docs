@@ -1,3 +1,52 @@
+## Shared responsability 
+- responsablity is shared between the cloud provider and consumer 
+
+## Cloud models 
+- private
+- public 
+- hybrid 
+- multi-cloud
+
+## Cost
+- Capital expenditure (CapEx)
+- Operational expenditure (OpEx)
+
+## Tools to interact with azure 
+- Azure portal 
+- CLoud shell
+ - Supports PowerShell and Bash 
+- Azure CLI
+
+## Manage service in Azure and on-premise
+- Azure Arc 
+ - simplifies governance and management by delivering a consistent multi-cloud and on-premises management platform
+ - It can manage
+  - servers 
+  - k8s cluster 
+  - SQL servers 
+  - VM
+  - Azure data services 
+
+## Provision resource
+- Azure Resource Manager
+
+## Monitor 
+- Azure Advisor: evalute resource and makes recommendations to help to improve the usage of the resource
+- Azure Service Healt: helps you keep track of Azure resource, both your specifically deployed resources and the overall status of Azure.
+   - Combines three services:
+    - Azure status
+    - Service Health
+    - Resource Health 
+- Azure Monitor
+ - Collect, analyze, visualize and acts on data 
+ - Can monitor resource on Azure, on-premise and multi-cloud 
+ - Azure Log Analytics
+ - Azure Monitor Alerts
+
+- Application Insights: 
+ - monitors your web applications
+ - Can monitor applications running on Azure, on-premise and multi-cloud 
+
 **Azure Blueprints:** standardize cloud subscription or environment deployements 
 - Each components know as artifact
 - No additional parameters are required 

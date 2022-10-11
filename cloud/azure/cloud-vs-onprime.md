@@ -1,4 +1,5 @@
 ## Cloud adavantages:
+
 - Cost-effective: you pay for what you consume. Pay-as-you-go (PAYG)
 - Global: we can choose regions in every part in world
 - Secure: cloud provider put a lot of effort to secure services
@@ -10,7 +11,7 @@
 - Scalable: increase and decrease resources and services based on demand
 - Elastic: automate scaling during the spikes and drop in demand
 
-## Cloud drabacks 
+## Cloud drawbacks 
 
 - Less customisable: could provider sometimes doesn't provide customised support and some issue may take a long time to be fixed
 - Long terme costs: using some cloud services for a long terme may become expensive and also sometimes to get most of some services

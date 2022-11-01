@@ -3,7 +3,7 @@
 - When not applied
     - **Code fragility:** change in one module may create bugs in other modules
     - **Code rigidity:** change in one place will imply change in other places
-    - 
+  
 ## Single Responsibility Principal (SRP)
 
 - Every method, class or module should have only one and only one reason to change

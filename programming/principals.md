@@ -1,8 +1,4 @@
-## SOLID
-
-- Dependency Inversion: modules should depend on abstraction 
-    - Constructor DI, Field DI   
-## Twelve Factor
+ ## Twelve Factor
 1. **Codebase**
     - Git repo per application
     - An app should have its own git repo and should not share this repo with any other apps

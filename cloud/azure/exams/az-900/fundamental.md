@@ -20,6 +20,8 @@
 - hybrid 
 - multi-cloud
 
+- Whats is Azure Arc and Azure VMWare ?
+
 ## Cost
 - Capital expenditure (CapEx)
 - Operational expenditure (OpEx)

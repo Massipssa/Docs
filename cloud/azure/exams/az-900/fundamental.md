@@ -1,17 +1,17 @@
 ## Shared responsibility 
 - Responsibility is shared between the cloud provider and consumer
- - IaaS
- - PaaS
- - SaaS
+  - IaaS
+  - PaaS
+  - SaaS
 
 - Consumer is always responsible for 
- - Devise used to connect to the cloud 
- - Data and information sotred 
- - The accounts and identities of people, services and devices used by the organization
+  - Devise used to connect to the cloud 
+  - Data and information sotred 
+  - The accounts and identities of people, services and devices used by the organization
 - Provider is always responsible for
- - Physical hosts 
- - Physical network 
- - Physical datacenters
+  - Physical hosts 
+  - Physical network 
+  - Physical datacenters
    
 
 ## Cloud models 

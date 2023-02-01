@@ -5,7 +5,7 @@
 - Semi-structured (json, csv, ...)
 - Unstructured (images, videos, audios, binary files, ...)
 
-## Database
+## Databases
 - Relational
 - NoSql
   - Key-value

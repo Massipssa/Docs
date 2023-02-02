@@ -1,3 +1,7 @@
+# Naming
+- Variables
+  - Avoid disnformation (meaningfull names)
+  - Use Pronounceable Names
 # Error handling
 - **Use exception rather than return codes**
   - It's easy to to forget to check exception, to avoid that throw the exception

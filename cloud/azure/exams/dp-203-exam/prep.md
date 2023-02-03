@@ -83,17 +83,6 @@
     - Using SDKs of multiple languages like Java, python,..
     - With T-SQL 
     - From Azure Data Factory
-    
-## Azure Synapse Analytics
-- Brings toghter data warehousing and bigdata analytics
-- SQL Pools uses MMP to query and run petabytes of data
-- Data Movement Service (DMS) coordinates and transports data between compute nodes as necessary
-- Supports three types of distributed tables: hash, round-robin and replicated
-- PolyBase 
-- Security
-    - Supports SQL Server authentication and Azure Active Directory
-    - Can set up multifactor authentication
-    - Supports security at the level of both columns and rows
 
 ##  Azure Stream Analytics
 - To process streaming data and respond to data anomalies in real time

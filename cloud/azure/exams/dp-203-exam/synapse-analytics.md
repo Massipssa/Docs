@@ -12,3 +12,9 @@
     - Supports SQL Server authentication and Azure Active Directory
     - Can set up multifactor authentication
     - Supports security at the level of both columns and rows
+
+- Spark pools
+  - Can be run using notbook
+  - Job definition: using jars 
+
+- Pipelines

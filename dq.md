@@ -1,5 +1,5 @@
 ```json
-
+{
 "dataSource": {
   "id": "FIDESSA",
   "type": "HDFS",
@@ -52,8 +52,19 @@
     "option": 10,
     "description": "Checks if #columns of the source is the same as desired number" 
   }
+], 
+"targets": [
+  "ftrTagret": {
+    "status": "failed"
+    "message": "failed because ...."
+  },
+  "ftrTagret": {
+    "status": "success"
+    "message": "failed because ...."
+  }
 ]
 }
+
 ```
 
 

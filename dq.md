@@ -1,6 +1,6 @@
 ```json
 {
-"dataSource": {
+"data_source": {
   "id": "FIDESSA",
   "type": "HDFS",
   "path": "/path/to/datasource",
@@ -10,63 +10,67 @@
   "date": "2017-05-19" 
 },
 "checks" : [
-  "FtrChecks": [
+  "ftr_checks": [
    {
-      "id": "_check",
+      "id": "ftr_check",
       "type": "FTR",
-      "source": "sample_A",
       "ftrFileIds": "path/to/file/ids",
       "option": "received",
+      "severity": "hard",
       "description": "check that ftr files are received"
     }
   ],
-  "LoadChecks": [
+  "load_checks": [
   // pre-checks 
   {
     "id": "encoding_check",
     "type": "ENCODING",
-    "source": "sample_A",
     "option": "UTF-8",
+    "severity": "hard",
     "description": "check that all data are encoded in utf-8 (option)"
   },
   {
     "id": "file_type",
     "type": "FILE_TYPE",
-    "source": "sample_A",
     "option": "parquet", 
+    "severity": "hard",
     "description": "check that file provided by the source are in parquet format (option), (source folder may contain file but not in desired format)"
   },
   {
     "id": "file_existence",
     "type": "EXIST",
-    "source": "sample_A",
     "option": true,
+    "severity": "hard",
     "description": "check that file exists"
-
   },
+   {
+    "id": "schema_check",
+    "type": "VALID_SCHEMA",
+    "option": true,
+    "severity": "hard",
+    "description": "Check if datasource schema is valid (compare to input schema)" 
+  }
   // post check
   {
-    "id": "min_column",
+    "id": "exact_column",
     "type": "EXACT_COLUMN_NUM",
-    "source": "sample_A",
     "option": 10,
+    "severity": "hard",
     "description": "Checks if #columns of the source is the same as desired number" 
   }
 ], 
-"targets": [
-  "ftrTagret": {
-    "status": "failed"
+"checkResult": [
+  "ftr": {
+    "check_id": "ftr_check",
+    "status": "failed",
     "message": "failed because ...."
   },
-  "ftrTagret": {
-    "status": "success"
+  "load_checks": {
+    "check_id": "file_existence",
+    "status": "success",
     "message": "failed because ...."
   }
 ]
 }
 
 ```
-
-
-
-

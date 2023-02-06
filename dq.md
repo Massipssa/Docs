@@ -1,3 +1,5 @@
+```json
+
 "checks" : [
   "ftr checks": []
   LoadChecks: [
@@ -26,7 +28,8 @@
     option = true // Boolean: Expected result
   }
 ]
-
+}
+```
 - datasource
 
 {

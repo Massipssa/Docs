@@ -1,5 +1,14 @@
 ```json
 
+"dataSource": {
+  "id": "FIDESSA",
+  "type": "HDFS",
+  "path": "/path/to/datasource",
+  "fileType": "csv",
+  // or use path to schema
+  "schema": "[{name: "a", type: "string"}, {name: "b", type: "string"},{name: "c", type: "string"}]",
+  "date": "2017-05-19" 
+},
 "checks" : [
   "FtrChecks": [
    {
@@ -38,29 +47,14 @@
   // post check
   {
     "id": "min_column",
-    "type": "MIN_COLUMN_NUM",
+    "type": "EXACT_COLUMN_NUM",
     "source": "sample_A",
     "option": 10,
-    "description": "Integer: Num of columns" 
+    "description": "Checks if #columns of the source is the same as desired number" 
   }
 ]
 }
 ```
-- datasource
-
-{
-    id = "CONT"
-    type = "HDFS"
-    path = "/path/resources/sample-data/contract.csv",
-    fileType = "csv",
-    delimiter = "|", // optional
-    quote = "'", // optional
-    escape = "\\", // optional
-    header = false,
-    // Optional fields
-    schema = [{name: "a", type: "string"}, {name: "b", type: "string"},{name: "c", type: "string"}]
-    date = "2017-05-19" 
-}
 
 
 

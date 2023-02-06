@@ -5,16 +5,15 @@
   "type": "HDFS",
   "path": "/path/to/datasource",
   "fileType": "csv",
-  // or use path to schema
-  "schema": "[{name: "a", type: "string"}, {name: "b", type: "string"},{name: "c", type: "string"}]",
-  "date": "2017-05-19" 
+  "schema": "/path/to/schema",
+  "date": "2023-01-19" 
 },
 "checks" : [
   "ftr_checks": [
    {
       "id": "ftr_check",
       "type": "FTR",
-      "ftrFileIds": "path/to/file/ids",
+      "ftrFileIds": "path/to/ftr/file/ids",
       "option": "received",
       "severity": "hard",
       "description": "check that ftr files are received"
@@ -54,12 +53,16 @@
   {
     "id": "exact_column",
     "type": "EXACT_COLUMN_NUM",
+    "name": "column_name",
     "option": 10,
     "severity": "hard",
     "description": "Checks if #columns of the source is the same as desired number" 
   }
 ], 
-"checkResult": [
+"checks_result": [
+  "name": "checkResultName",
+  "path": "path/to/target",
+  "results": [
   "ftr": {
     "check_id": "ftr_check",
     "status": "failed",
@@ -70,6 +73,7 @@
     "status": "success",
     "message": "failed because ...."
   }
+  ]
 ]
 }
 

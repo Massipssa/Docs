@@ -1,7 +1,16 @@
 ```json
 
 "checks" : [
-  "ftr checks": [],
+  "FtrChecks": [
+   {
+      "id": "_check",
+      "type": "FTR",
+      "source": "sample_A",
+      "ftrFileIds": "path/to/file/ids",
+      "option": "received",
+      "description": "check that ftr files are received"
+    }
+  ],
   "LoadChecks": [
   // pre-checks 
   {

@@ -1,31 +1,38 @@
 ```json
 
 "checks" : [
-  "ftr checks": []
-  LoadChecks: [
+  "ftr checks": [],
+  "LoadChecks": [
+  // pre-checks 
   {
-    id = "encoding_check"
-    type = "ENCODING"
-    source = "sample_A"
-    option = "UTF-8" // String: Encoding name (please, use encoding names defined in Spark)
+    "id": "encoding_check",
+    "type": "ENCODING",
+    "source": "sample_A",
+    "option": "UTF-8",
+    "description": "check that all data are encoded in utf-8 (option)"
   },
   {
-    id = "min_column"
-    type = "MIN_COLUMN_NUM"
-    source = "sample_A"
-    option = 10 // Integer: Num of columns
+    "id": "file_type",
+    "type": "FILE_TYPE",
+    "source": "sample_A",
+    "option": "parquet", 
+    "description": "check that file provided by the source are in parquet format (option), (source folder may contain file but not in desired format)"
   },
   {
-    id = "file_type"
-    type = "FILE_TYPE"
-    source = "sample_A"
-    option = "avro" // String: File formate (csv, avro)
+    "id": "file_existence",
+    "type": "EXIST",
+    "source": "sample_A",
+    "option": true,
+    "description": "check that file exists"
+
   },
+  // post check
   {
-    id = "file_existence"
-    type = "EXIST"
-    source = "sample_A"
-    option = true // Boolean: Expected result
+    "id": "min_column",
+    "type": "MIN_COLUMN_NUM",
+    "source": "sample_A",
+    "option": 10,
+    "description": "Integer: Num of columns" 
   }
 ]
 }

@@ -13,4 +13,7 @@
   - requests 
   - Beautiful soup 
   - scrapy 
+    - scrapy shell
+    - cli 
+    - ... 
   - Selenium   

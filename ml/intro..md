@@ -1,0 +1,21 @@
+# Intro to ml
+- Type 
+  - Supervised 
+  - Unsupervised
+- Flow
+  - Ask righ questions 
+    - Define end goal, starting point and how to achieve goal 
+    - Understand the features in data 
+    - Identify critical features 
+  - Prepare data
+    - Data rule #3: Accurately predicting rare events is difficult 
+    - Data rule #4: track how you manipulate data
+  - Select the algorithm 
+    - Algorithm descision factors
+      - Learning type 
+      - Result 
+      - Complexity 
+      - Basic vs enhanced   
+  - Training the model 
+  - Testing the model
+    

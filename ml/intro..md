@@ -12,8 +12,8 @@
     - Data rule #4: track how you manipulate data
   - Select the algorithm 
     - Algorithm descision factors
-      - Learning type 
-      - Result 
+      - Learning type (supervised or unsupervised)
+      - Result (regression or classsification)
       - Complexity 
       - Basic vs enhanced   
   - Training the model 

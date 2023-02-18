@@ -16,4 +16,4 @@
     - scrapy shell
     - cli 
     - ... 
-  - Selenium   
+  - Selenium and Request html for pages genetated dynamically

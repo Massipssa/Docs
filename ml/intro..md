@@ -2,6 +2,7 @@
 - Type 
   - Supervised 
   - Unsupervised
+  - Reinforcement
 - Flow
   - Ask righ questions 
     - Define end goal, starting point and how to achieve goal 

@@ -47,8 +47,9 @@ Run as deamon :
 
 ### Aggregation type: 
 * Metrics 
-* Buckets: collection of docs that share  a common criteria
-
+* Buckets: 
+  - collection of docs that share  a common criteria
+  - More then 25 buckets strtegies are supported
 ## Mapping
 
 Can be:

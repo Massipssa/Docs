@@ -1,6 +1,10 @@
 # Intro to ml
 - Type 
-  - Supervised 
+  - Supervised
+    - Classification: 
+      - Binary classification 
+      - Multiclass 
+    - Regression  
   - Unsupervised
   - Reinforcement
 - Flow

@@ -6,7 +6,9 @@
   - Token: meant for machines only
 - Scope: a permission to do something within an API
 - Grant Type
-
+  - Code
+  - Implicit
+  - 
 - Response type
   - Token
   - Token type

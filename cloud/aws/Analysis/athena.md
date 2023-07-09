@@ -1,6 +1,6 @@
 # Athena
 
-- To qeury in **S3** using SQL
+- To query **S3** using SQL
 - Build on top of **Apache Presto**
 - Is serverless
 - It's schema on read
@@ -11,26 +11,26 @@
     - ORC (columnar, splittable)
     - Avro (columnar, splittable)
     - XML
-- Structrued, semi-structred an unstructrued data
-- Ad-hoc ??
-- Athena detect automatically the tables from **Glue** and it creates queryable table
+- Structured, semi-structured an unstructured data
+- Ad-hoc queries 
+- Athena detect automatically the tables from **Glue,** and it creates queryable table
 
-- **Costs**
-    * Pay-as-you-go
-        * $5 per TB scanned
-        * **Successful or cancelled** queries count, **failed** queries do not
-        * No charge for DDL (Create/ Alter, Drop, ...)
-    * Save monyen by using columnar formats
-        * ORC, Parquet
-        * Save 30-90% and get better performance
-        * Good partionning (Less query CPU)
-    * Glue and S3 have their own charges
+## Costs
+- Pay-as-you-go 
+  - $5 per TB scanned
+    - **Successful or cancelled** queries count, **failed** queries do not
+    - No charge for DDL (Create/ Alter, Drop, ...)
+  - Save money by using columnar formats
+    - ORC, Parquet
+    - Save 30-90% and get better performance
+    - Good partitioning (Less query CPU)
+  - Glue and S3 have their own charges
 
 ## Security
 
 - Access control
-    - IAM, ACLs, S3 bucket policies
-    - AmazonAthenFullAcces/
+  - IAM, ACLs, S3 bucket policies
+  - AmazonAthenFullAcces/
 - Encrypt .... ???
 - Cross-acount in S3 bucket policy possible
 - Transport Layer Security (TLS) encrypts in-transit (between Athena and S3)

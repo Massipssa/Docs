@@ -8,8 +8,8 @@
 ## Storage
 
 - **HDFS**
-    - Is ephemeral, sapce is reclaimed when cluster is terminated
-    - Helpful for caching intermidiate result during MapReduce processing or for workloads that have significant random I/O
+    - Is ephemeral, space is reclaimed when cluster is terminated
+    - Helpful for caching intermediate result during MapReduce processing or for workloads that have significant random I/O
 
 - **EMRFS**
     - Extends HDFS to store data in S3
@@ -24,7 +24,7 @@
     * Used to handle log aggregation
 
 - **MXNet**
-    * Framework used to build deep learing application
+    * Framework used to build deep learning application
 
 - S3DistCP
     * Copy from S3 to HDFS (vice-versa)

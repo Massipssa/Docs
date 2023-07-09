@@ -63,7 +63,7 @@
 - **Team risk** 
     - Knowledge level and strength of team
     - Dependency on external team
-    - Potentially distraptive team member  
+    - Potentially disruptive team member  
 - **Requirements**
    - Poorly defined requirements or poorly defined problem
    - New technologies on which team member didn't worked on

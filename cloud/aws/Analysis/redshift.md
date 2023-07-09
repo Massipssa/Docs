@@ -5,28 +5,28 @@
 <div style="text-align:center"><img src=/aws/Analysis/screenshots/redshift_archi.png/></div>
 
 - Performance
-    - Massively Parallel Processing (MPP)
-    - Colomnar Data Storage
-    - Column Compression (is column level operation, reduce space, reduce disc I/O)
+  - Massively Parallel Processing (MPP)
+  - Columnar Data Storage
+  - Column Compression (is column level operation, reduce space, reduce disc I/O)
 - Block size of 1MB
 - Indexes are materialized but not required
-- Data is stored in three diffetents places:
-    - Original data within cluster
-    - Backup within cluster
-    - Backup in S3
+- Data is stored in three different places:
+  - Original data within cluster
+  - Backup within cluster
+  - Backup in S3
 
 - **Durability**
 
 - **Distribution Styles**
-    * **AUTO**
-    * **EVEN**
-    * **KEY**
-    * **ALL**
+  - AUTO
+  - EVEN
+  - KEY
+  - ALL
 
 - **Sort Keys**
-    * **Single column**
-    * **Compound (default)**
-    * **Interleaved**
+  - Single column
+  - Compound (default)
+  - Interleaved
 
 ## COPY command
 

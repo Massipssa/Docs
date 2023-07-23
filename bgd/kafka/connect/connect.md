@@ -1,25 +1,24 @@
 # Kafka Connect
 
-- When building data piplines:
-    - Timeliness
-    - Reliability
-
-
+- When building data pipelines:
+  - Timeliness
+  - Reliability
 - Default port in distributed mode
+
 ## Components
 
-* **Connector**
-    - Defines how data will be copied
-    - They perform the copy of the data using ***jobs*** by breaking the job into a set of ***Tasks***
-    - Two types of connectors:
-        * **Source connector:** push data to Kafka topic
-        * **Sink connector:** pull data from kafka
-    - Is reponsible for three things:
-        - How many tasks to run for the connector
-        - How to split data-copying between tasks
-        - Getting configurations of tasks from the workers and pass it along
+- **Connector**
+  - Defines how data will be copied
+  - They perform the copy of the data using ***jobs*** by breaking the job into a set of ***Tasks***
+  - Two types of connectors:
+    * **Source connector:** push data to Kafka topic
+      * **Sink connector:** pull data from kafka
+  - Is responsible for three things:
+      - How many tasks to run for the connector
+      - How to split data-copying between tasks
+      - Getting configurations of tasks from the workers and pass it along
 
-* **Tasks**
+- **Tasks**
     - Responsible for getting data in and out of Kafka
     - They are initialized by receiving a context from the connector (Source or Sink context)
     - Task states are stored in special topics ***config.storage.topic*** and ***status.storage.topic*** and managed by the associated connector

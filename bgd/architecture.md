@@ -1,6 +1,7 @@
 
 1. [How to choose storage tool](#storage)
 2. [Managing risks](#risks)
+3. [SQL and NOSQL](#sqlandNosql)
 
 ## How to choose storage tool
 
@@ -77,3 +78,10 @@
    - Access pattern (JDBC, ODBC, REST, ...)
    - Data storage 
 - Assign team members to work on each component
+
+## SQL and NOSQL
+
+- CAP
+  - Consistency: data source should provide the most recent data in every copy after successfully write 
+  - Availability: no downtime and data system is available every time
+  - Partition: system should continue to serve data even system is down in some partitions

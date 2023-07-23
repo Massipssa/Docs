@@ -1,22 +1,30 @@
 
+## Record 
+It consists of three parts:
+- Key 
+- Value 
+- Timestamp 
+
+Default size is 1 MB
+
 ## Broker
 
-* Every broker has a unique **id** (set in config file or auto generated)
-* Broker's metadata are stored within zookeeper in the znode **/brokers/ids/broker-id**
-* If the broker is gone its ID will still existe in other data structure. Like this, if we replace the broker with another one having the same ID, it'll immediatly joion the cluster and with same partitions and topics assigned to it
+- Every broker has a unique **id** (set in config file or auto generated)
+- Broker's metadata are stored within zookeeper in the znode **/brokers/ids/broker-id**
+- If the broker is gone its ID will still exist in other data structure. Like this, if we replace the broker 
+  with another one having the same ID, it'll immediately join the cluster and with same partitions and topics assigned to it
 
 ## Controller
 
-* Is responsible to elect partitions leader
-* The first broker that starts in cluster becomes the controller
-* It create ephemeral node **/controller** in zookeeper
-
+- Is responsible to elect partitions leader
+- The first broker that starts in cluster becomes the controller
+- It creates ephemeral node **/controller** in zookeeper
 
 ## Replication
 
-* ***Leader replica:*** signle replica with leader node
-    - Producers and consumers use this replica for read and write operations
-    - Responsible for knowing which followers are up-to-date with the leader
+- ***Leader replica:*** single replica with leader node
+  - Producers and consumers use this replica for read and write operations
+  - Responsible for knowing which followers are up-to-date with the leader
 
 * ***Follower replica:***
     - Used in case the leader craches
@@ -44,9 +52,9 @@
     - **metadata.cache.max.ms** refresh interval of the metadata in the cache
 
 - **Produce request**
-After receving the request, the lead replica will:
+After receiving the request, the lead replica will:
 
-- Check if the user who trying to write has the required priviliges
+- Check if the user who trying to write has the required privileges
 - The **acks** is valid (0, 1 or all)
 - If acks=all, is there enough **in sync** replicas
 
@@ -67,23 +75,25 @@ After receving the request, the lead replica will:
     * Time or size
 
 
-### File format
+## File format
 
 - The format is the same used by producer <-> borker and broker <-> consumer. This avoid any compression and decompression and allows the zero copy optimization
 - File contains
     - Key, value and offset of the message
     - Message size
     - Magic byte:  indicates the version of the message format
-    - Codec compresssion (Snappy, GZip, LZ4)
+    - Codec compression (Snappy, GZip, LZ4)
 - Tool DumpLogSegment : allows to examine partition segement in filesystem 
     ```./bin/kafka-run-class.sh kafka.tools.DumpLogSegments```
-### Index
+
+## Index
 
 - Maps offset to segment files and position within the file
 - They are broken into segments , they can be deleted when messages are purged
-- Partition has **one** segement and **two** indexes files
+- Partition has **one** segment and **two** indexes files
 
-### Compaction
- - Keep only the lastest message value
- - If the key of message is **null** the compaction will fail
- - Message having null values are **deleted**
+## Compaction
+ 
+- Keep only the latest message value
+- If the key of message is **null** the compaction will fail
+- Message having null values are **deleted**

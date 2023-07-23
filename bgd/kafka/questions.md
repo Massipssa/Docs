@@ -12,9 +12,9 @@ Setting unclean.leader.election.enable to true means we allow out-of-sync replic
 
 * max.tasks in kafka connect ?
 
-* exactly once guarantee ?
-    - Using idemptence and the transaction from producer side
-    - isolation level from consumer side
+- exactly once guarantee ?
+  - Using idempotence and the transaction from producer side
+  - isolation level from consumer side
     
 * max.in.flight.requests.per.connection ?
 
@@ -28,3 +28,13 @@ Setting unclean.leader.election.enable to true means we allow out-of-sync replic
 
 
 See the full list of errors and their "retriable" status here: https://kafka.apache.org/protocol#protocol_error_codes
+
+
+- Why Kafka ?
+  - No serialization and deserialization 
+  - Zero copy
+
+- Kafka is more than messaging system 
+  - Publish / Subscribe mechanism 
+  - Storage in distributed way (replication and data recovery)
+  - Data processing 

@@ -1,32 +1,36 @@
 # BigQuery
 
-- Fully managed service
+- Fully managed serverless data warehouse
+- Provide storage and analytics at the same time
 - Deals with
   - Storage:
-    - Data is stored in structued table
+    - Data is stored in structured table
     - Replicated, distributed storage
   - Ingestion
-  - Quering
+  - Querying
+- Pay-as-you go pricing model
+- Encryption at the rest by default
 - Supports ***SQL***
 - Near real-time query analysis
 - Accept batch and streaming
 - Can be used for storage and analysis
 - Replicated and durable
 - Is columnar
+- Built-in machine learning models
 
 ## IAM
 
 - Control can be done by project, dataset and view
-- Has predifined roles ...
+- Has predefined roles ...
 - Sharding dataset
 - View can be used to restrict access to some data
-- Supports premitives roles for Project Level access
+- Supports primitives roles for Project Level access
 
 ## Cache
 
 - Enabled by default
 - Are per user
-- No charge for queries exectued from the cache
+- No charge for queries executed from the cache
 
 ## Partition
 
@@ -35,12 +39,12 @@
 
 ## UDF
 
-- Combine JaveScript with SQL
-- Allow more complexe operations like loops, combinaison, ...
+- Combine JavaScript with SQL
+- Allow more complex operations like loops, combination, ...
 
 ## Princing
 
-- Charged fro: Storage, Quering and Streaming insert
+- Charged for: Storage, Querying and Streaming insert
 - No charge for Batch Loading
 - **Flat rate ??**
 
@@ -50,21 +54,21 @@
     - Command
         - ```bq load names.baby_names gs://(YOUR_BUCKET)/names/yob*.txt Name:STRING,Gender:STRING,Number:INTEGER```
 - Export
-    - BigQuery <=> BigQuery
-    - Table's data can only be exported to **GCS** with one of this format csv, json, avro
-    - To get data from **Dataproc**, a connector is install by default in Dataporc and the data will be exported to GSP then to bucket will be read from BigQuey
-    - Can only export up to 1 GB
-    - Command
-        - ```bq extract 'projectid:dataset:table' gc://bucket_name/folder/object_name```
+  - BigQuery <=> BigQuery
+  - Table's data can only be exported to **GCS** with one of this format csv, json, avro
+  - To get data from **Dataproc**, a connector is installed by default in Dataproc and the data will be exported to GSP then to bucket will be read from BigQuey
+  - Can only export up to 1 GB
+  - Command
+    - ```bq extract 'projectid:dataset:table' gc://bucket_name/folder/object_name```
 
 ## Monitor & Logging
 
 - Monitor allows to visualize:
-    - Metrics (alter on metric)
-    - Performance
-    - Resource capacity/usage (Slots)
+  - Metrics (alter on metric)
+  - Performance
+  - Resource capacity/usage (Slots)
 - Logging:
-    - Who is doing what (show actions history)
+  Who is doing what (show actions history)
 
 - What does colors mean in query details ?
 
@@ -75,3 +79,20 @@
 
 - Select from table
     ```bq query --use_legacy_sql=false 'select * from ds_result.top_qsts' ```
+
+
+## Bigquery ML
+
+- ML model in two steps:
+  - Build the model 
+  - Train the model 
+- Manually or automatically control hyperparameters
+- Supports
+  - Supervised 
+  - Unsupervised
+- Steps 
+  - Extract, transform and load data into Bigquery
+  - Select and preprocess features
+  - Create the model inside Bigquery 
+  - Evaluate the performance of evaluated trained model
+  - Use the model to make predictions

@@ -4,17 +4,17 @@
 
 - VPC can only have one Internet Gateway
 - A virtual router to connect VPC to internet
-- It's reponsible for a Static Network Address Translation (transalte private ip to public ip)
+- It's responsible for a Static Network Address Translation (translate private ip to public ip)
 
 ## Route Table
 
 - One route table per VPC
-- Controls what's VPC router does with trafic leaving subnet
+- Controls what's VPC router does with traffic leaving subnet
 
 ## Subnet
   
 - ex: eu-west has 3 AZ => 3 subnets
-- By default is private
+- By default, is private
 
 ## Security group
 

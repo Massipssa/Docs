@@ -1,29 +1,35 @@
 ## Behavior Driven Development Test
 
-* Based on three 
-    * Context (Given): starting state  
-    * Event (When): what user does 
-    * Outcomes (Then): expected results 
-    
-* Can be written at any time 
-    * Before 
-    * During 
-    * After 
+- Based on three 
+  - Context (Given): starting state
+  - Event (When): what user does 
+  - Outcomes (Then): expected results 
+
+- Can be written at any time 
+  - Before 
+  - During 
+  - After 
     
   
-- Test types
-  - **Unit**
-    - Doest interact with external word
-  - **Integration:**
-    - Focus integrating different layers of the application, that means no mocking is involved
-    - Ideally, they should be keep separated from unit tests and should not run along with unit tests  
-    - Two types     
-        - Component
-        - System
-            - To realize test we can use for example in memory databases
-  - **Functional**
-        - Test the functionality of an application (create account, delete user, ...)
-        - Verify only the functionality purpose
+## Test types
+
+- **Unit**
+  - Doest interact with external word
+  - It helps to: 
+    - Understand the system that we're building 
+    - Document the code
+    - Design the units 
+    - Protect against regression
+- **Integration:**
+  - Focus integrating different layers of the application, that means no mocking is involved
+  - Ideally, they should be keep separated from unit tests and should not run along with unit tests  
+  - Two types     
+    - Component
+    - System
+      - To realize test we can use for example in memory databases
+- **Functional**
+  - Test the functionality of an application (create account, delete user, ...)
+  - Verify only the functionality purpose
     
 - Unit tests
   - Arrange
@@ -32,8 +38,14 @@
   
 
 ## Python 
-  - Unittest
-    - ``python -m unittest discover``
+- Main Components
+  - Test Case 
+  - Test Suite 
+  - Test Feature (setUp and tearDown)
+  - Test Runner 
+
+- Unittest
+  - ``python -m unittest discover``
   
   - Pytest
     - **fixtures:** are functions that create data or test doubles or initialize some system state

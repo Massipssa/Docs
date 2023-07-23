@@ -2,22 +2,22 @@
 
 - High performance and massively scalable NoSQL database
 - What is used for ?
-    - High throughtput analytic
-    - Huge datasets
-- **Access contorl**
-    - Project level or instance level
-    - Read/Write/Manage access
+  - High throughput analytic
+  - Huge datasets
+- **Access control**
+  - Project level or instance level
+  - Read/Write/Manage access
 
 ## Features
 
-- No-ops (Serveless)
+- No-ops (Servers)
 - An instance: is group of nodes (cluster)
 - Auto-scaling
 - 02 instances types:
-    - **Dev:** low cost, single node and no replication
-    - **Prod:** replication is available and throughput guarantee
+  - **Dev:** low cost, single node and no replication
+  - **Prod:** replication is available and throughput guarantee
 
-## Replicatios and changes
+## Replicates and changes
 
 - Synchronize date between clusters
 - Resizing: add or remove a node without downtime
@@ -25,7 +25,7 @@
 
 ## Interacting with Bigtable
 
-- Using **cbt** tool (recommanded)
+- Using **cbt** tool (recommended)
 - With **HBase shell**
 
 ## Example

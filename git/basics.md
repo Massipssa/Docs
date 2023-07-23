@@ -45,3 +45,9 @@
 - Pull and push
 - Delete branch on remote
   ```git push origin --delete [branch-name]```
+
+## Git objects
+- Blobs
+- Trees
+- Commits 
+- Annotated tags

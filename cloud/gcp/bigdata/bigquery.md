@@ -17,6 +17,7 @@
 - Replicated and durable
 - Is columnar
 - Built-in machine learning models
+- Supports repeated columns and nested schema 
 
 ## IAM
 
@@ -34,8 +35,14 @@
 
 ## Partition
 
-- Ingestion-time partitioned
-- Partition by specific timestamp/date column
+- Types
+  - Ingestion-time partitioned
+  - Partition by specific timestamp/date column
+  - Range partition (integer-type colum)
+- Best practice is to ensure that partition column is always invoked in querying
+
+## Clustering 
+- ?? 
 
 ## UDF
 

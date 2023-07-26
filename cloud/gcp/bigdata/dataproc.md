@@ -2,11 +2,13 @@
 
 - Deploy On demand, managed Hadoop, Spark cluster
 - Connectors to Google services are already added (reduce administrator work)
-- Other ecosystem tools can be instatted via ***initialization**
-  - Intialize action: install tools like Kafka by given the location of the bucket and when cluster starts, it'll install the tool
+- Other ecosystem tools can be instated via **initialization**
+  - Initialize action: install tools like Kafka by given the location of the bucket and when cluster starts, it'll install the tool
   - Bucket location: ```gsutil ls gs://dataproc-initialization-actions```
 - Create a cluster:
-  - ```gcloud dataproc create cluster [cluster_name] --zone [zone_name]```
+
+  ```gcloud dataproc create cluster [cluster_name] --zone [zone_name]```
+
 - Available connectors:
   - Spark, Hadoop <=> Bigquery, CloudStorage, Bigtable
 - Preemptive nodes (VMs)
@@ -26,3 +28,7 @@
 - Connect to vm:
   - Generate ssh key using ```ssh key-gen ....```
 - See: https://www.youtube.com/watch?v=6DD-vBdJJxk
+
+## Monitoring and logs
+
+- Use Cloud logging and Cloud monitoring

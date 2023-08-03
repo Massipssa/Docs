@@ -1,6 +1,7 @@
 # Pub/Sub
 
 - Distributed messagin service
+- Serverless
 - Global scale message buffer/coupler
 - No-ops, global availability and auto-scaling
 - Decouple sender and receiver

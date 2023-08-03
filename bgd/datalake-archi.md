@@ -37,7 +37,13 @@
   - Bucketing improves query performance by grouping similar data together and reducing the number of files 
     to scan during processing 
   - Reduce the number of files to scan and improves data locality 
-  
+ 
+
+## Drawbacks
+- Do not enforce data quality 
+- Do not support transactions
+- Lake of consistency and isolation
+ 
 ## Example of data ingestion in Uber
 - Decouple storage from query layer, each can be scaled independently
 - Two dataset types

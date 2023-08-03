@@ -65,3 +65,10 @@ It offers four options to build ML models
 3. Model serving 
    - Model deployment 
    - Model monitoring 
+
+## BigQuery ML
+
+- Extract data from dataset
+- Create the model (specify the type, hyperparameters)
+- Evaluate model 
+- Predict

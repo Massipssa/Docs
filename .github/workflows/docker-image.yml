@@ -3,7 +3,7 @@ name: Auto Pull Request
 on:
   push:
     branches:
-      - develop
+      - main
 
 jobs:
   create_pull_request:

@@ -3,7 +3,7 @@ name: Auto Pull Request
 on:
   push:
     branches:
-      - master
+      - develop
 
 jobs:
   create_pull_request:
@@ -25,6 +25,6 @@ jobs:
           commit-message: "Automatic Pull Request from Develop to Main"
           title: "Automatic Pull Request from Develop to Main"
           body: "This is an automatic pull request created by GitHub Actions."
-          branch: develop
+          branch: main
           #base: master
           draft: false

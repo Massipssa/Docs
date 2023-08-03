@@ -27,4 +27,4 @@ jobs:
           body: "This is an automatic pull request created by GitHub Actions. Develop"
           branch: master
           #base: master
-          draft: false
+          draft: true

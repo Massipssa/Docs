@@ -24,7 +24,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Automatic Pull Request from Develop to Main"
           title: "Automatic Pull Request from Develop to Main"
-          body: "This is an automatic pull request created by GitHub Actions."
+          body: "This is an automatic pull request created by GitHub Actions. Develop"
           branch: master
           #base: master
           draft: false

@@ -25,6 +25,6 @@ jobs:
           commit-message: "Automatic Pull Request from Develop to Main"
           title: "Automatic Pull Request from Develop to Main"
           body: "This is an automatic pull request created by GitHub Actions."
-          branch: master
-          #base: master
+          branch: develop
+          base: master
           draft: false

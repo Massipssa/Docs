@@ -1,10 +1,9 @@
-# Storage
+# Azure Storage Account
 
-- **Azure Storage Account**
-  - It's a big service designed for storage in Azure
-  - Highly scalable (up to petabytes of data)
-  - Highly durable
-  - It contains the following services
+- It's a big service designed for storage in Azure
+- Highly scalable (up to petabytes of data)
+- Highly durable
+- It contains the following services
      
 - **Azure Blob Storage**
   - Used to store any kind type of data (unstructured data)
@@ -28,18 +27,21 @@
   - Accessed via ***shared drive*** protocols
   - Designed to ***extend on-premise file shares*** or implement ***lift-and-shift*** scenarios
 
-
 - **Azure Disk Storage**
-    - Disk emulation in the cloud
-    - Persistent storage for virtual machines
-    - Different
-       - Sizes
-       - Types (SSD, HDD)
-       - Performance tiers
-    - Disk can be **undamaged** or **managed**
+  - Disk emulation in the cloud
+  - Persistent storage for virtual machines
+  - Different
+     - Sizes
+     - Types (SSD, HDD)
+     - Performance tiers
+  - Disk can be **undamaged** or **managed**
     
 ## Replication
     
+- Locally-redundant storage (LRS)
+- Zone-redundant storage (ZRS)
+- Geo-redundant storage (GRS)
+- Geo-zone-redundant storage (GZRS)
     
     
     

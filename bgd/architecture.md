@@ -45,7 +45,14 @@
   - Can it be free for wait and therefore deadlocks ?
 - **Security**
     - ??  
-  
+ 
+## Questions to ask 
+
+- Types of data to be stored
+- How the data will be transformed
+- Who should access the data
+- What are the typical access patterns
+ 
 ## Steps to mount cluster
 - Chose OS
 - Select the FS to use with disk

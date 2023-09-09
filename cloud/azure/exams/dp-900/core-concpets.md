@@ -17,7 +17,7 @@
 - Online Transactional Processing (OLTP)
   -  Uses databases optimized for read and write
   -  Require system with ACID 
-  -  Used to support live application called (LOB: line of busniss)
+  -  Used to support live application called (LOB: line of business)
 
 ## Analytic processing 
 
@@ -59,7 +59,7 @@
   - Used to create ETL
   - Can interact with other storage type
 - Azure Synapse Analytics 
-- HDinsght 
+- HInsight 
 - Databricks 
 - Azure Stream Analytics
 - Azure PureView

@@ -2,16 +2,16 @@
 
 ## 1. QuickSight
 
-* **Data sources**
-    * Redshift
-    * Aurora / RDS
-    * Athena
-    * EC2-hosted databases
-    * Files (S3 or on-premises)
-        * Excel
-        * CSV, TSV
-        * Commom or extended log format
-    * Data preparation allows limited ETL (ex: eliminate some column in excel file)
+- **Data sources**
+  - Redshift
+  - Aurora / RDS
+  - Athena
+  - EC2-hosted databases
+  - Files (S3 or on-premises)
+    - Excel
+    - CSV, TSV
+    - Common or extended log format
+  - Data preparation allows limited ETL (ex: eliminate some column in excel file)
 
 * SPICE
     * Data sets are imported into SPICE
@@ -20,6 +20,6 @@
         * Accelerates interactive queries on large datasets
     * Each user gets 10GB of SPICE
     * Highly available / durable
-    * Scles to hundreds of thousands of users
+    * Scales to hundreds of thousands of users
 
 

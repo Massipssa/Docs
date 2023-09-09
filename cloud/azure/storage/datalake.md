@@ -1,4 +1,5 @@
 # Data Lake Storage (Gen 2)
+
 ## Data lake
 - Hadoop compatible access
 - A superset of POSIX permissions
@@ -9,11 +10,10 @@
 - Storage tiers (Hot, cold, archive)
 - High availability and disaster recovery
 
-
 ## Access Control
 - Supports 
-    - Azure RBAC
-    - POSIX-like Access Control List (ACL) 
+  - Azure RBAC
+  - POSIX-like Access Control List (ACL) 
     
 ## Architecture
 

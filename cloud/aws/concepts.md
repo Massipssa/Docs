@@ -1,8 +1,14 @@
-* Zone
-* Availability Zone (AZ)
-* Connectivity
-* Services
-* VPC: Virtual Private Cloud
+- Region 
+  - Is a physical location 
+  - Consist of 2 or more AZ 
+- Availability Zone (AZ)
+  - Is one or multiple datacenters within region 
+- Edge location
+  - Endpoints for AWS that are used for caching content 
+
+- Connectivity
+- Services
+- VPC: Virtual Private Cloud
 
 ### Services locations 
 * S3, Dynamo DB .... on region
@@ -26,14 +32,9 @@
 to **EC2**
 
 
-### Retational Database Service (RDS)
 
-* Create reational databases
-* Instance for prod, dev/test and free tier
 
 ### Amazon lambda
-
-
 
 
 

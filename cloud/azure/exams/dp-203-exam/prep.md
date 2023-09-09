@@ -6,12 +6,12 @@
 - metadata
 
 ## Data can be
-- Structured (Microsoft SQL Server, Azure SQL Databases, Azure Data Warehouse):
+- Structured (Microsoft SQL Server, Azure SQL Databases, Azure Data Warehouse)
   - Data have a schema
   - Schema defined at design time 
   - React slowly to changes
-- Unstructured (Azure Blob Storage, Cosmoms DB, HDI): 
-  - each element can have its own shcema at query time (binary, audio and image file)
+- Unstructured (Azure Blob Storage, Cosmos DB, HDI) 
+  - each element can have its own schema at query time (binary, audio and image file)
   - Key value, document, graph and column database
 - Aggregated
 
@@ -23,13 +23,13 @@
 ## On-premise
 - Infra 
 - Licence (per sever or per CAL "client Access Licence")
-- Maintenace
+- Maintenance
 - Scalability
 - Availability
 - Support 
 - TCO total cost of ownership (TCO) describes the final cost of owning a given technology.
 
-## On-cloude 
+## On-Cloud
 - LCID (langauge code identifier) 
 - lift anf shift 
 
@@ -51,28 +51,29 @@
   - API 
   - SDKs in multiple languages 
   - PS and azure cli 
-- All data writen to azure storage is crypted
+- Support ACL and POSIX 
+- All data writen to azure storage is encrypted by using either Microsoft or customer-managed keys
 - Can be accessed via keys or shared access signature
 
 ## Cosmos DB
 - Globally dis
-- Multimodel 
+- Multimodal 
 - When to use:
   - Need NoSQL for supported API model 
   - Planet disb
   - 99,999 resp
   - response in 10 ms if correctly provisioned 
-- Stored Procedure, tirggers and UDFs can be added
+- Stored Procedure, triggers and UDFs can be added
 - Js API can be used
 - Security
-  - Support encyption, IP firewall configurations, and access from virtual networks
-  - Data is encrypted autmatically
-  - User authication is based tokens 
+  - Support encryption, IP firewall configurations, and access from virtual networks
+  - Data is encrypted automatically
+  - User authentication is based tokens 
   - Azure Active Directory provides role-based security
 
 ## Azure SQL Database
-- Structrued data
-- Support also unstructrued like spatial and xml
+- Structured data
+- Support also unstructured like spatial and xml
 - Is PaaS
 - Provides OLTP than can scale on demand
 - When to use
@@ -84,14 +85,9 @@
     - With T-SQL 
     - From Azure Data Factory
 
-##  Azure Stream Analytics
-- To process streaming data and respond to data anomalies in real time
-- For Internet of Things (IoT) monitoring, web logs, remote patient monitoring, and point of sale (POS) systems
-- Stream Analytics handles security at the transport layer between the device and Azure IoT Hub
-
 ## AzCopy 
 - Can copy 1TB
-- Splits files than execeed 200 GB
+- Splits files than executed 200 GB
 
 ## Azure Purview
 

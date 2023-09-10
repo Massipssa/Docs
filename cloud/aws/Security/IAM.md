@@ -1,5 +1,13 @@
 # Identity Access Management (IAM)
 
+- **Root account** 
+  - Has full access to all services
+  - The account must be secured (Use MFA to do it)
+
+## Permission
+- It's defined using JSON file 
+- Explicit deny overwrite Allow everywhere
+
 - **User**
   -  Identity to be identified in AWS account
   - Tow types access:

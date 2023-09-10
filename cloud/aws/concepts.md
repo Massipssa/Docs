@@ -28,8 +28,7 @@
 
 ### Amazon Load Balancer
 
-* When trafic come to the application it'll flow throw the **ALB** and will be dispatshed 
-to **EC2**
+* When traffic come to the application it'll flow throw the **ALB** and will be dispatched to **EC2**
 
 
 

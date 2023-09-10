@@ -11,14 +11,14 @@
 
 1. **Principal:** an identity that makes a request to be authenticated
 2. **Authentication:** process to authenticate a Principal
-3. **Identity:** object that requires authentication and are authaurized to access resources
-4. **Authorization:** process of checking and allowing or dening access to resource to an Identity
+3. **Identity:** object that requires authentication and are authorized to access resources
+4. **Authorization:** process of checking and allowing or denying access to resource to an Identity
 
-## Security Responsability Models <a name="securitymodels"></a>
+## Security Responsibility Models <a name="securitymodels"></a>
 
 - Two types of models
-    - Security ***IN*** cloud: is the customer responsability
-    - Security ***OF*** the cloud: AWS responsability
+    - Security ***IN*** cloud: is the customer responsibility
+    - Security ***OF*** the cloud: AWS responsibility
 
 ## Service Models <a name="servicemodels"></a>
 
@@ -50,15 +50,15 @@
 
 ## Tiered Application <a name="tiered"></a>
 
-- Monolothic
+- Monolithic
 - Micro services
 
 ## Encryption <a name="encryption"></a>
 
 - Encryption on fly (SSL)
     - Data encrypted before sending and decrypted when received by the server
-    - To protect againt the MIMD attack
+    - To protect against the MIMD attack
     - SSL certificates help to secure HTTPS
 - Server side encryption at rest
-- Client side encyption
+- Client side encryption
     * Data encypted by the client and **never** decrypted by the server

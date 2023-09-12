@@ -1,39 +1,39 @@
 # DynamoDB
 
-* Is made of tables (no need to create databases)
-* Each table must have a primary key (decided at creation time)
-* Each table can have an infinite items (rows)
-* Each item have **attributes** (can be added over time, can be null)
-* Maximum size of item is **400KB**
-* Supported data types:
-    * **Scalar types:** String, Number, Binary, Boolean, Null
-    * **Document Types:** List, Map
-    * **Set Types:** String set, Number Set, Binary Set
+- Is made of tables (no need to create databases)
+- Each table must have a primary key (decided at creation time)
+- Each table can have an infinite items (rows)
+- Each item have **attributes** (can be added over time, can be null)
+- Maximum size of item is **400KB**
+- Supported data types:
+  - **Scalar types:** String, Number, Binary, Boolean, Null
+  - **Document Types:** List, Map
+  - **Set Types:** String set, Number Set, Binary Set
     
 ## Primary Keys
 
-* **Option 1**: Partition key only (Hash)
-    * Partition Key must be unique for each item 
-    * Partition Key must be **diverse** so that the data is distibuted 
+- **Option 1**: Partition key only (Hash)
+  - Partition Key must be unique for each item 
+  - Partition Key must be **diverse** so that the data is distributed 
 
-* **Option 2: Partition Key + Sort Key**
-    * The combination must be unique
-    * Data is grouped by partition key
-    * Sort == range key
+- **Option 2: Partition Key + Sort Key**
+  - The combination must be unique
+  - Data is grouped by partition key
+  - Sort == range key
 
 ## Anti-Pattern
 
-* Prewritten application to traditional relational database => use RDS instead
-* Joins or complex transactions
-* Binary Large Object (BLOB) => Store in S3 & metadata in DynamoDB
+- Pre-written application to traditional relational database => use RDS instead
+- Joins or complex transactions
+- Binary Large Object (BLOB) => Store in S3 & metadata in DynamoDB
 
 * When you create table in DynamoDB you must provide:
 
-1. **Read Capacity Units:** throughtput for reads
+1. **Read Capacity Units:** throughput for reads
     * How we compute it ?
     * **Once write capacity unit:** represents one write per second for an item up to 1KB in size
 
-* **Write Capacity Units:** throughtput for writes
+* **Write Capacity Units:** throughput for writes
 
 ## Partitions
 

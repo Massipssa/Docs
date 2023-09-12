@@ -1,4 +1,5 @@
 # EC2
+
 - IaaS
 - Regional service
 - Has an AMI (Amazon Machine Image)
@@ -10,12 +11,25 @@
   - Storage optimized
   - Accelerated computing
 
+## EC2 Printing
+
+- **On-demand**
+  - Low cost and flexibility of Amazon EC2 without any upfront payment or long-term commitment 
+  - Good fot the short-term (test use cases)
+- **Reserved Instances (RI)**
+- **Spot Instances:** can be terminated at any time
+- **Dedicated**
+  - Most expensive
+  - Multi-Tenant (virtual isolation with other consumers) vs Single Tenant (physical isolation with other consumers)
+  
 ## Instance store volume
+
 - Volume attached to EC2
 - Offers some performance because is located in the same host as the instance
 - It's ephemeral, if the instance remove the storage is removed too
 
 ## Elastic Block Store (EBS)
+
 - A **virtual hard drive** in the cloud
 - Create new volumes attach to EC2 instances
 - Backup via snapshots
@@ -36,6 +50,7 @@
 <div style="text-align:center"> <img src="./screenshots/storage_ec2.png"> </div>
 
 ## Security Group (SG)
+
 - A maximum **Five** Security Group per ***Elastic Network Interface (ENI)*** 
 - Two types of rules: ***Inbound*** and ***Outbound***
 - **Important** the two rules have ***Hidden Rule*** which is **Default Deny Rule**
@@ -43,16 +58,24 @@
 - Can reference another SG
 - An SG can reference itself. Allow the services in the same groups to communicate between them
 
+## User data 
+
+- It's a boostrap script 
+
 ## Instance Metadata
+
 - Allows an application to get the information about the instance
 - Uses th url: **http://169.254.169.254/latest/meta-data**
 
-## EC2 Printing
-- **On-demand**
-- **Reserved Instances (RI)**
-- **Spot Instances:** can be terminated at any time
-- Dedicated
-  - Most expensive
-  - Multi-Tenant (virtual isolation with other consumers) vs Single Tenant (physical isolation with other consumers)
+
 
 <div style="text-align:center"> <img src="./screenshots/ec2_archi.png"> </div>
+
+
+## Scaling 
+
+- Define a template 
+- Network and purchasing 
+- ELB configuration 
+- Set scaling policy 
+- Notification 

@@ -94,6 +94,7 @@ Logically isolated part of cloud where you can define your owen network
 ## AWS Wavelength
 - AWS service embeds AWS compute and storage services within 5G networks,
 providing mobile edge computing infrastructure for developing, deploying, and scaling ultra-low-latency applications
+
 ## Bastion
 
 - Get access via SSH to private subnet

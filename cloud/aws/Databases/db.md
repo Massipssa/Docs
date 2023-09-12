@@ -1,0 +1,5 @@
+- AWS Document DB
+- Amazon keyspaces 
+- Neptune
+- GLDB
+- Amazon Timestream

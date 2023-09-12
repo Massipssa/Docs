@@ -18,18 +18,45 @@
 
 - Give an EC2 instance a series of instructions to do (Customize an instance)
 - We can use:
-    - Bash (linux) powershell (windows) file
-    - Cloudinit file
+  - Bash (linux) powershell (windows) file
+  - Cloudinit file
 - Used to dynamically provision an instance
 
-## ENI (Elastic Network Interface), IP, and DNS
+## Network
 
+### ENI (Elastic Network Interface), IP, and DNS
+
+- For day-to-day networking
+- It provides 
+  - Private IPv4 addresses
+  - Public IPv4 address
+  - Many IPv6 address
+  - MAC address 
+  - 1 or more Security Groups 
+  
 - Public instance
-    - Has public IP
-    - Public IP is changed when an instance is stopped
+  - Has public IP
+  - Public IP is changed when an instance is stopped
 - Private instance
-    - Private IP doesn't change
+  - Private IP doesn't change
+
+### EN (Enhanced Network)
+
+- Uses single I/O virtualization to provide high performance 
+
+### EFA (Elastic Fabric Adapter)
+
+- Accelerates High Performance Computing (HPC) and machine learning applications 
+
+
+## Placements 
+A way to logically grouping instances 
+- Cluster 
+- Spread 
+- Partition 
 
 ## Elastic IP
 
 - Allows to allocate IP address to an instance
+
+## Outposts 

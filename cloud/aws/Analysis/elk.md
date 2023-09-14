@@ -1,5 +1,6 @@
 # ELK
 
+- Named to Amazon OpenSearch
 - Search engine 
 - Analysis tool 
 - Visualization tool (Kibana)

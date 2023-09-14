@@ -5,12 +5,12 @@
 - Is serverless
 - It's schema on read
 - Accepts format:
-    - CSV
-    - Json
-    - Parquet (columnar, splittable)
-    - ORC (columnar, splittable)
-    - Avro (columnar, splittable)
-    - XML
+  - CSV
+  - Json
+  - Parquet (columnar, splittable)
+  - ORC (columnar, splittable)
+  - Avro (columnar, splittable)
+  - XML
 - Structured, semi-structured an unstructured data
 - Ad-hoc queries 
 - Athena detect automatically the tables from **Glue,** and it creates queryable table

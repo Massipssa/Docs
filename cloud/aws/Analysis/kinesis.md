@@ -1,8 +1,16 @@
-# Kinesis Analytic
+# Kinesis 
+
+- **Kinesis Streams** 
+  - Real-time for ingesting data 
+  - You're responsible for creating the consumer and scaling the stream 
+- **Data Firehose**
+  - Data transfer tool to get information to S3, Redshift, ELK or splunk 
+  - Near real-time (60 seconds)
+  - Plug and play with AWS architecture
 
 - Performs real-time analysis on streams using SQL
 
-<img src="./screenshots/kinesis.PNG">
+![kinesis](screenshots/kinesis.PNG)
 
 - **Common use-cases**
   - Streaming ETL 

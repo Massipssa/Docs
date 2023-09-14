@@ -19,3 +19,10 @@
 - Can be promoted to be their own databases
 - Require automatic backup
 - Used to boost performance
+
+## Scaling 
+
+- Vertical scaling 
+- Scaling storage 
+- Read replicas 
+- Aurora serverless 

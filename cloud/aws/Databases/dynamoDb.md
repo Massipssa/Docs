@@ -1,5 +1,6 @@
 # DynamoDB
 
+- Fully managed service 
 - Is made of tables (no need to create databases)
 - Each table must have a primary key (decided at creation time)
 - Each table can have an infinite items (rows)
@@ -48,3 +49,6 @@
     * Total partitions = ```CEILING(MAX(Capacity, Size))```
 
 * **WCU and RCU are spread evenly between partitions**
+
+## Auto Scaling
+

@@ -2,12 +2,13 @@
 
 ## Architecture
 
-<div style="text-align:center"><img src=/aws/Analysis/screenshots/redshift_archi.png/></div>
+![redshift_archi](screenshots/redshift_archi.PNG)
 
 - Performance
   - Massively Parallel Processing (MPP)
   - Columnar Data Storage
   - Column Compression (is column level operation, reduce space, reduce disc I/O)
+- Is a single AZ 
 - Block size of 1MB
 - Indexes are materialized but not required
 - Data is stored in three different places:

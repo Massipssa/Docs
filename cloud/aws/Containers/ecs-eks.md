@@ -8,3 +8,13 @@ quickly and reliably from one computing environment to another
 - Integrate with ELB 
 - Role integration 
 - Ease to use 
+
+## Amazon ECS Fargate
+
+- Fargate containers offer the least disruptive changes, while also minimizing the operational overhead of managing 
+ the compute service
+
+## EKS Distro
+
+- Amazon EKS is based on the EKS Distro, which allows you to leverage the best practices and established processes 
+  on-premises that Amazon EKS uses in AWS

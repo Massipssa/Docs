@@ -14,6 +14,7 @@ Logically isolated part of cloud where you can define your owen network
 - Controls what's VPC router does with traffic leaving subnet
 
 ## Subnet
+
 - Is a virtual firewall
 - ex: eu-west has 3 AZ => 3 subnets
 - By default, is private
@@ -91,7 +92,14 @@ Logically isolated part of cloud where you can define your owen network
 
 - Connects VPCs and on-premise networks through a central hub 
 
+## VPN connection
+
+- Utilizes IPSec to establish encrypted network connectivity between your intranet and Amazon VPC over the Internet.
+- VPN Connections can be configured in minutes and are a good solution if you have an immediate need, 
+  have low-to-modest bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity.
+
 ## AWS Wavelength
+
 - AWS service embeds AWS compute and storage services within 5G networks,
 providing mobile edge computing infrastructure for developing, deploying, and scaling ultra-low-latency applications
 

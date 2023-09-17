@@ -1,5 +1,8 @@
 # Redshift
 
+- Fully managed 
+- Petabyte-scale data warehouse service 
+
 ## Architecture
 
 ![redshift_archi](screenshots/redshift_archi.PNG)

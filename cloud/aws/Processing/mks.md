@@ -1,4 +1,4 @@
-# Amazon Managed Service for Apache Kafka
+# Amazon Managed Service for Apache Kafka (MSK)
 
 - Fully managed service for running data streaming that leverage Kafka 
 - Provide control plane applications (create, update, delete clusters as required)

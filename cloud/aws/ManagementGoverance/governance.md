@@ -8,7 +8,14 @@
 
 - Share resources with other AWS accounts 
 
-## Cross-Account Role Access 
+
+
+## Cross Account Role Access
+
+- Define an IAM Role for another account to access
+- Define which accounts can access this IAM Role
+- Use AWS STS to retriecve credentials and impersonate the IAM Role you have access to (AssumeRole API)
+- Temporary credentials can be valid betweeen 15 minutes to 1 hour
 
 
 ## AWS Config
@@ -30,8 +37,12 @@
 ## Trusted Advisor 
 
 - Fully managed best-practice auditing too
+- Provides realtime guidance to help you provision your resources following AWS best practices
+- Trust advisor checks help optimize your AWS infrastructure, increase security and performance, reduce your overall costs, 
+   and monitor service limits
 - It'll scan 5 different parts of your account and look for places where you could improve your adoption of the
   recommended best practices provided by AWS
+
 
 ## AWS Control Tower 
 

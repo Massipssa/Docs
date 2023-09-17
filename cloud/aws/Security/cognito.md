@@ -3,6 +3,10 @@
 - Decentralized managed way for authentication
   - Sign-in, sing-up for you app
   - Social identity provider Facebook,..
+- Authentication process 
+  1. Authenticate and get tokens 
+  2. Exchange tokens and get AWS credentials 
+  3. Access AWS service using credentials 
 
 ![cognito](../Other/Cognito/archi.PNG)
 

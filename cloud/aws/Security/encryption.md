@@ -8,3 +8,14 @@
 
 3. Client side encryption
     * Data encrypted by the client and **never** decrypted by the server
+
+
+* SSE-S3
+
+* SSE-KMS
+
+* SSE-C
+
+* Client Side Encyption
+
+* Encyption in tansit (SSL)

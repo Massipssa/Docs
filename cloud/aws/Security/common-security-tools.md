@@ -10,11 +10,6 @@
 - Continually audit your AWS usage 
 - Automated service that produces report to auditors for PCI, GDPR and more
 
-# Firewall manager 
-
-- Is security management service in single pane of glass. This allows to centrally set up and manage firewall rules
-across multiple AWS accounts and applications in AWS Organizations.  
-
 # GuardDuty
 
 - A threat detection service that uses machine learning to continuously monitor for malicious behavior
@@ -34,7 +29,7 @@ across multiple AWS accounts and applications in AWS Organizations.
 
 - Is an automated security assessment service that helps improve the security and compliance of application deployed 
   on AWS 
-- Inspects the network and EC2 instances
+- Inspects the **network** and **EC2 instances**
 - Two types of assessment 
   - Network assessment 
   - Host assessment 
@@ -43,7 +38,6 @@ across multiple AWS accounts and applications in AWS Organizations.
 
 - Create and control (manages) keys used to encrypt the data 
 - Fully managed 
-
 
 # Cloud HSM
 
@@ -80,11 +74,18 @@ across multiple AWS accounts and applications in AWS Organizations.
 # AWS Artifact 
 
 - Single source you can visit to get the compliance-related information that matters to you, such as AWS security and 
-compliance reports or select online agreements
+  compliance reports or select online agreements
+- Free service
 
 # Amazon Detective 
 
 - Analyze and investigate and quickly identify the root cause of potential security issue or suspicious activities
+
+# Firewall manager 
+
+- Is security management service in single pane of glass
+- This allows to centrally set up and manage firewall rules across multiple AWS accounts and applications in
+  AWS Organizations
 
 # Network firewall 
 
@@ -93,4 +94,7 @@ compliance reports or select online agreements
 # Security Hub 
 
 - A single place to view all your security alerts from services like Amazon GuardDuty, Inspector, Macie 
-and AWS Fire Wall.
+  and AWS Firewall
+- Performs security best practice checks
+- Aggregates alerts,
+- Enables automated remediation

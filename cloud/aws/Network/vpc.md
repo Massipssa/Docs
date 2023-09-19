@@ -1,6 +1,13 @@
-# VPC
+## VPC
 
 Logically isolated part of cloud where you can define your owen network
+
+## Subnet
+
+- Is a virtual firewall
+- ex: eu-west has 3 AZ => 3 subnets
+- By default, is private
+- A subnet is always assigned to one AZ 
 
 ## Internet Gateway
 
@@ -13,19 +20,16 @@ Logically isolated part of cloud where you can define your owen network
 - One route table per VPC
 - Controls what's VPC router does with traffic leaving subnet
 
-## Subnet
-
-- Is a virtual firewall
-- ex: eu-west has 3 AZ => 3 subnets
-- By default, is private
-- A subnet is always assigned to one AZ 
-
 ## Security group
 
 - We can add any **_allowing_** rules (open ports)
 - It's linked to instances
+- They are stateful
+- Default SG can't be deleted 
+- You can assign up to five security groups to the instance
 
-## Network Access Control Lists (NACLs):**
+## Network Access Control Lists (NACLs)
+
 - Is an optional layer of security for VPC that acts as a firewall controlling traffic in and out of one or more subnets
 - It is used to block specific IP address or range of IP address
 - Can **_allow_** and **_deny_** rules
@@ -94,9 +98,9 @@ Logically isolated part of cloud where you can define your owen network
 
 ## VPN connection
 
-- Utilizes IPSec to establish encrypted network connectivity between your intranet and Amazon VPC over the Internet.
-- VPN Connections can be configured in minutes and are a good solution if you have an immediate need, 
-  have low-to-modest bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity.
+- Utilizes IPSec to establish encrypted network connectivity between your intranet and Amazon VPC over the Internet
+- VPN Connections can be configured in minutes and are a good solution if you have an immediate need
+  have low-to-modest bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity
 
 ## AWS Wavelength
 

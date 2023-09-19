@@ -1,7 +1,7 @@
 # CloudFront
 
 - Fast content delivery Network (CDN)service that securely delivers data, videos, applications, and APIs to customers
-  globally. 
+  globally
 - It helps reduce latency and provide higher transfer speeds using AWS edge locations
 - The only option to add HTTPS to a static website being hosted in an S3 bucket  
 

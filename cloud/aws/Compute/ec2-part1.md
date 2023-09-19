@@ -47,7 +47,7 @@
 - **Data Lifecycle Manager**
   - Used to automate the creation of the snapshot
 
-<div style="text-align:center"> <img src="./screenshots/storage_ec2.png"> </div>
+![storage_ec2](./screenshots/storage_ec2.png)
 
 ## Security Group (SG)
 
@@ -67,9 +67,7 @@
 - Allows an application to get the information about the instance
 - Uses th url: **http://169.254.169.254/latest/meta-data**
 
-
-
-<div style="text-align:center"> <img src="./screenshots/ec2_archi.png"> </div>
+![ec2_archi](./screenshots/ec2_archi.png)
 
 
 ## Scaling 

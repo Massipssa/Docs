@@ -14,8 +14,8 @@
 
 - Define an IAM Role for another account to access
 - Define which accounts can access this IAM Role
-- Use AWS STS to retriecve credentials and impersonate the IAM Role you have access to (AssumeRole API)
-- Temporary credentials can be valid betweeen 15 minutes to 1 hour
+- Use AWS STS to retrieve credentials and impersonate the IAM Role you have access to (AssumeRole API)
+- Temporary credentials can be valid between 15 minutes to 1 hour
 
 
 ## AWS Config

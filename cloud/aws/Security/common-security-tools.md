@@ -96,5 +96,5 @@
 - A single place to view all your security alerts from services like Amazon GuardDuty, Inspector, Macie 
   and AWS Firewall
 - Performs security best practice checks
-- Aggregates alerts,
+- Aggregates alerts
 - Enables automated remediation

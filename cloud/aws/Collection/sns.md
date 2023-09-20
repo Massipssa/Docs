@@ -1,3 +1,4 @@
-## SNS 
+## Simple Notification Service (SNS) 
 
-- Push based 
+- Message publishing and processing service 
+- Push based

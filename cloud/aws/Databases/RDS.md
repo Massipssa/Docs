@@ -26,3 +26,12 @@
 - Scaling storage 
 - Read replicas 
 - Aurora serverless 
+
+## RDS Proxy 
+
+- Middleman between you and your RDS
+- Handles all network traffic including: 
+  - Establishing, maintaining and terminating connections 
+- Reduces DB workload by requiring fewer connections
+- Simplifies application logic 
+- Can be used with Postgres, MySQL or Aurora 

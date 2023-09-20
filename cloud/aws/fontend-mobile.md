@@ -21,3 +21,6 @@
 ## Amazon Pinpoint 
 
 - Enables to engage with customers through a variety of different messaging channels
+- It is geared towards **less technical teams**, like marketing teams, and simplifies engagement campaigns
+- The service also offers the ability to leverage **machine learning models** to better understand customer interactions 
+  for future engagements

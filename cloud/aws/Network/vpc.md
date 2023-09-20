@@ -1,4 +1,4 @@
-## VPC
+## Virtual Private Cloud (VPC)
 
 Logically isolated part of cloud where you can define your owen network
 
@@ -85,7 +85,7 @@ Logically isolated part of cloud where you can define your owen network
 
 ## Direct Connect
 
-- Establish connection from on-premise to AWS 
+- Establish a dedicated network connection from on-premise to AWS 
 - Two types 
   - Dedicated connection 
   - Hosted connection 

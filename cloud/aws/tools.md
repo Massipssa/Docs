@@ -1,2 +1,4 @@
 - AWS DataSync
+- Multipart upload
 - Database copy aws ? 
+- AWS Import/Export

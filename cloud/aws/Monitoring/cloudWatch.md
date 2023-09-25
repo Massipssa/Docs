@@ -10,7 +10,8 @@
 - They are metrics that you get  out iof the box. The more managed the service is, the more you get.
 
 ## Application metrics 
-By installing the CloudWatch agent, you can get information from inside your EC2 instances
+
+- By installing the CloudWatch agent, you can get information from inside your EC2 instances
 
 ## Alarms 
 

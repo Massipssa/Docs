@@ -48,15 +48,32 @@
 
 - Accelerates High Performance Computing (HPC) and machine learning applications 
 
+## Placements group
 
-## Placements 
 A way to logically grouping instances 
-- Cluster 
+- Cluster
+  - 1 AZ 
+  - Good for High Performance Application
 - Spread 
+  - Each instance is placed on a different rack 
+  - When critical instances should be keep separate from each other 
+  - You can spread a max 7 instances. Spreads can be multi-AZ
 - Partition 
+  - Spread instances across partitions 
+  - Each partition do not share the underlying hardware with each other (rack per partition)
+  - Well suite for large distributed and replicated workloads (Hadoop, Cassandra, Kafka)
 
 ## Elastic IP
 
 - Allows to allocate IP address to an instance
 
+
+## Launch Template 
+
+- IAM type 
+- EC2 role 
+- SG 
+
 ## Outposts 
+
+

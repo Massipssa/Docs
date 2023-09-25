@@ -1,6 +1,10 @@
 # Elastic Load Balancer
 
-Route the traffic to your instances that are healthy 
+- Route the traffic to your instances that are healthy
+- Must have at least two Availability Zone 
+- Cannot go cross-region. You must create one per region
+- Can attach Amazon Certification Manager SSL to any ELB for SSL
+
 ## Application Load Balancer 
 
 - Operates on the layer 7 of OSI model
@@ -26,7 +30,15 @@ Route the traffic to your instances that are healthy
 
 - Allow to bind a user's session to a specific EC2 instance
 
+### X-Forwarded-For
+
+- Allow to determine users IP 
+
 ### Registration Delay
 
 - Allows load balancer to keep existing connection open if the EC2 instance are de-registered or become unhealthy
 
+### Health Checks 
+
+- Communicates with instances to determine their state
+- ELB does not terminate (kill) unhealthy instance. It will just redirect traffic to healthy instance

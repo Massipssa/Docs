@@ -1,6 +1,8 @@
 ## Virtual Private Cloud (VPC)
 
-Logically isolated part of cloud where you can define your owen network
+- Logically isolated part of cloud where you can define your owen network
+- You can create up to 5 VPC per region 
+- Can have 200 subnets per VPC
 
 ## Subnet
 
@@ -11,12 +13,13 @@ Logically isolated part of cloud where you can define your owen network
 
 ## Internet Gateway
 
-- VPC can only have one Internet Gateway
 - A virtual router to connect VPC to internet
+- VPC can only have one Internet Gateway
 - It's responsible for a **_Static Network Address Translation_** (translate private ip to public ip)
 
 ## Route Table
 
+- Used to determine where network traffic is **directed** 
 - One route table per VPC
 - Controls what's VPC router does with traffic leaving subnet
 
@@ -27,14 +30,23 @@ Logically isolated part of cloud where you can define your owen network
 - They are stateful
 - Default SG can't be deleted 
 - You can assign up to five security groups to the instance
+- Can allow traffic from:
+  - Range or individual IP address 
+  - Another security group
+  - Rules are permissive
+- Can have
+  - Up to 10000 SG per region (default 2500) 
+  - 60 inbound and outbound rules per SG
+  - 16 SG per Elastic Network Interface 
 
 ## Network Access Control Lists (NACLs)
 
 - Is an optional layer of security for VPC that acts as a firewall controlling traffic in and out of one or more subnets
-- It is used to block specific IP address or range of IP address
+- It is used to **block** specific IP address or range of IP address
 - Can **_allow_** and **_deny_** rules
 - It can have multiple subnets but a subnet is only associated to only one NACLs
 - They are stateless
+- Default rule cannot be updated
 
 ## NAT Gateway
 
@@ -53,9 +65,16 @@ Logically isolated part of cloud where you can define your owen network
   - Interface endpoints 
   - Gateways endpoints (Support connection to S3 and DynamoDB)
 
-## VPC Flow logs ...
+## VPC Flow logs
 
+- Allow to capture IP traffic information in-and out of Network Interfaces within a VPC
+- Can be created for:
+  - VPC
+  - Subnets
+  - Network Interface
 - Track the logs
+- Cannot be tagged as other resources 
+- Contains source and destination IP addresses 
 
 ## Difference Security Group and NACLs
 
@@ -105,8 +124,18 @@ Logically isolated part of cloud where you can define your owen network
 ## AWS Wavelength
 
 - AWS service embeds AWS compute and storage services within 5G networks,
-providing mobile edge computing infrastructure for developing, deploying, and scaling ultra-low-latency applications
+  providing mobile edge computing infrastructure for developing, deploying, and scaling ultra-low-latency applications
 
-## Bastion
+## Bastion (Jumpbox)
 
 - Get access via SSH to private subnet
+
+## Interface Endpoints 
+
+- They are **Elastic Network Interfaces (ENI)** with private IP address
+- They serve as an entry point for traffic going to a supported service
+
+## Gateway Endpoints
+
+- Is a target for a specific route in the route table 
+- Supports only DynamoDB and S3

@@ -60,8 +60,11 @@
 # Parameter Store 
 
 
-# Presigned URLS 
+## Presigned URLS 
 
+- Generate an url which provides temporary access to an object to either upload or download object data
+- They are commonly used to provide access to private objects 
+- You can use AWS CLI or AWS SDK to generate presigned urls
 - Used to share private buckets in S3 
 
 # Certificate Manager

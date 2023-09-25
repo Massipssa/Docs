@@ -57,10 +57,12 @@
 - The traffic is stateful. We have juste to allow it in one direction
 - Can reference another SG
 - An SG can reference itself. Allow the services in the same groups to communicate between them
+- You can change the security groups for an instance when the instance is in the **running** or **stopped** state
 
 ## User data 
 
 - It's a boostrap script 
+- Uses th url: **http://169.254.169.254/latest/user-data**
 
 ## Instance Metadata
 
@@ -76,4 +78,7 @@
 - Network and purchasing 
 - ELB configuration 
 - Set scaling policy 
+  - Target Tracking Scaling Policy
+  - Simple Scaling Policy (Not recommended)
+  - Scaling Policies with steps
 - Notification 

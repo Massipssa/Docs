@@ -30,4 +30,4 @@
 - Snapshot: is a current state of the volume at point in time
 - For consistent snapshot it's recommended to stop the instance  then take the snap
 - Snapshot can only be shared in the region where they are created, to share them with other regions we need to copy them 
- to those regions
+  to those regions

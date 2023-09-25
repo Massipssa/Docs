@@ -3,6 +3,12 @@
 - Is declarative programming language 
 - It supports either JSON or YAML formatting 
 - Hard-coded IDs, especially AMIs can be the reason templates fail to create
+- **Parameters**
+  - Input that are allowed to be passed at runtime
+- **Mappings**
+  - A lookup table (e.g. IAM by region)
+- **Conditions**
+  - Whether resources are created or properties are assigned
 
 ## Elastic beanstalk
 

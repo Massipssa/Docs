@@ -61,4 +61,11 @@
     - SSL certificates help to secure HTTPS
 - Server side encryption at rest
 - Client side encryption
-    * Data encypted by the client and **never** decrypted by the server
+    * Data encrypted by the client and **never** decrypted by the server
+
+
+## AWS account 
+
+- Has:
+  - Account id
+  - Sign in url (it can be customized by creating account alias)

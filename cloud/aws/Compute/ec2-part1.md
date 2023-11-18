@@ -5,13 +5,15 @@
 - Has an AMI (Amazon Machine Image)
 - Can use ***Instance Store Volume***: they are not persistent and not secure
 - Instance families
-  - General purpose
-  - Compute optimized
-  - Memory optimized
-  - Storage optimized
-  - Accelerated computing
+  - **General purpose:** great for diversity of workloads such as web servers or code repositories
+    -  Balance between: memory, storage and networking
+  - **Compute optimized:** for compute-intensive tasks that require high performance processors 
+  - **Memory optimized:** fast performance for workloads that process large datasets in memory 
+  - **Storage optimized:** for storage intensive tasks that require high, sequential read and write access to large data 
+    sets on local storage 
+  - **Accelerated computing**
 
-## EC2 Printing
+## EC2 Princing
 
 - **On-demand**
   - Low cost and flexibility of Amazon EC2 without any upfront payment or long-term commitment 
@@ -36,6 +38,7 @@
 - Can be encrypted
 - **IOPS ??**
 - **Types ??**
+  - 
 - Size and the type can be changed without downtime
 - Can be copied from zone to author one
 - **Snapshot**
@@ -82,3 +85,4 @@
   - Simple Scaling Policy (Not recommended)
   - Scaling Policies with steps
 - Notification 
+

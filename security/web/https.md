@@ -1,0 +1,1 @@
+![handshake](../img/https-handshake.png)

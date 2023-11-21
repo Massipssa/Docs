@@ -1,4 +1,7 @@
 # Route 53
+
+- A highly available, scalable, fully managed and authoritative DNS 
+- It is also Domain Registrar
 - It's global service
 - It allows to register domain names, create hosted zones, and manage end create DNS records
 - **_CNAME:_** map domain name to another
@@ -7,10 +10,12 @@
 - **_An A Record_**
   - Allows to convert the name of a domain directly into an IP address
   - They can also be used on the root (naked domain) itself
+- **AAAA**
+  - maps a hostname to IPv6
 - Supports IPv4 and IPv6
 - 7 Routing policies are available
-- **TTL (time-to-live)** is the length of time that a DNS record get cached on the resolving server or the users own local
-  machine
+- **TTL (time-to-live)** is the length of time that a DNS record get cached on the resolving server or the users own
+ local machine
 
 ## Policies 
 
@@ -25,7 +30,7 @@
 
 ### Failover Routing Policy 
 
-- USed to create an active/passive setup
+- Used to create an active/passive setup
 
 ### Geolocation Routing Policy
 

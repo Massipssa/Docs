@@ -25,7 +25,7 @@
 - **KeyTab:** file that contains all keys related to specific service
 
 
-![picture alt](kerberos.png "kerberos")
+![picture alt](../img/kerberos.png "kerberos")
 
 
 ## Principal parts

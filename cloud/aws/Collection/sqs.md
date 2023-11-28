@@ -7,7 +7,7 @@
 - Low latency (< 10 ms on publish and receive)
 - Horizontal scaling in terms of number of consumers
 - Can have duplicate messages (at least once delivery, occasionally)
-- Can have out of order messages ( the best effort ordering)
+- Can have out of order messages (the best effort ordering)
 - Delivery delay: 0 to 15 minutes
 - Limitation of **_256KB_** per message sent
 - Message are encrypted by default in transit, **_but not_** at rest

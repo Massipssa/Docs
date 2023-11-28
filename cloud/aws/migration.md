@@ -12,16 +12,38 @@
 
 - Hybrid cloud storage service helps to merge on-premises resources with the cloud
 - It can help with a one-time migration or a long-term pairing of your architecture with AWS 
+- Types
+  - **S3 File Gateway**
+    - Configured S3 buckets are accessible using the NFS and SMB protocol
+    - Most recently used data is cached in the file gateway
+    - Bucket access using IAM roles for each File Gateway
+    - SMB Protocol has integration with Active Directory (AD) for user authentication
+ - **FSx File Gateway** 
+   - Native access to Amazon FSx for Windows File Server 
+   - Local cache for frequently accessed data
+ - **Volume Gateway**
+   - Block storage using **iSCSI** protocol backed by S3
+   - Two types
+     - Cached volumes 
+     - Stored volumes
+ - **Tape Gateway**
+   - Some companies have backup process using physical tapes  
 
 ## AWS DataSync 
 
+- Move large amount of data to and from 
+  - On-premises / other cloud to AWS (NFS, SMB, HDFS, S3 API ...) - needs agent 
 - An agent-based solution for migrating on-premises storage to AWS
-- It allows to easily move data between NFS and SMB shares and AWS storage solutions
+- It allows to easily move data between **NFS** and **SMB** shares and AWS storage solutions
 
 ## AWS Transfer Family
 
-- Allows to easily move files in and out of S3 or EFS using secure Transfer Protocol (SFTP), File Transfer Protocol
- over SSL (FTPS), or the File Transfer Protocol (FTP) 
+- Allows to easily move files **in** and **out** of S3 or EFS FTP Protocol
+- It supports:
+  - File Transfer Protocol (FTP)
+  - File Transfer Protocol over SSL (FTPS)
+  - Secure Transfer Protocol (SFTP)
+- Managed infrastructure, Scalable, Reliable, Highly Available (multi-AZ)
 
 ## Migration Hub
 

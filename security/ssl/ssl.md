@@ -1,21 +1,19 @@
 # SSL/TLS
 
-* SSL (Secured Sockets Layer) replaced by TLS (Transport Layer Security)
-* Protocol used to communicate over the internet with HTTPS 
-* Provides:
-    * Authentication 
-    * Encryption
+- SSL (Secured Sockets Layer) replaced by TLS (Transport Layer Security)
+- Protocol used to communicate over the internet with HTTPS 
+- Provides:
+  - Authentication 
+  - Encryption
 
 - Crypto sym (problème c'est dans l'échange des clés)
-	- private key
+  - private key
 
 - Crypto asym (assure la confidentialité de l'échange)
-	- private key 
-	- public key 
+  - private key 
+  - public key 
 	
-- Use cerificat to conter Man in middle attack
-
-
+- Use certificate to counter Man in middle attack
 
 
 - **Public Key Infrastructure (PKI)**

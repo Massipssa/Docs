@@ -1,5 +1,8 @@
 ## Oauth2
 
+
+![oauth2_openid](./img/oauth2_openID.png)
+
 - Authorization framework
 - Two endpoints
   - Authorization: handles interactions via user agent (browser)

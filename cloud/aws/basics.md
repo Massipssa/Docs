@@ -22,7 +22,7 @@
 
 ## Service Models <a name="servicemodels"></a>
 
-- **IaaS (Infrastructure as a Service):** Infrastructre to manage (ex: EC2)
+- **IaaS (Infrastructure as a Service):** Infrastructure to manage (ex: EC2)
 - ***PaaS (Platform as a Service):*** Data and Application to manage (ex: EMR)
 - ***SaaS (Software as a Service):*** only Data needs to be managed (Ex: ??)
 
@@ -34,7 +34,7 @@
 ## RPO and RTO <a name="rporto"></a>
 
 - **Recovery Point Objective**
-    - How much a busniss can tolerate to lose, expressed in time
+    - How much a business can tolerate to lose, expressed in time
     - The maximum time between failure and the last successful backup
 - **Recovery Time Objective**
     - Maximum amount of time a system can be down

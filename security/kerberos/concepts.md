@@ -5,7 +5,7 @@
 	- Service Principal Names (SPN)
 
 - **Realm**: A realm in Kerberos refers to an authentication administrative domain.
-  Principals are assigned to specific realms in order to establish boundaries and simplify administration
+  Principals are assigned to specific realms in order to establish boundaries and simplify administration.
 
 - **Key distribution center (KDC)**: contains all information about principals and realm. It consists of:
     - ***Kerberos database:*** it stores  

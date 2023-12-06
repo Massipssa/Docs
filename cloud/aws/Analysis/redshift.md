@@ -1,6 +1,7 @@
 # Redshift
 
 - Fully managed 
+- It's OLAP engine (analytics and data warehousing)
 - Petabyte-scale data warehouse service 
 
 ## Architecture

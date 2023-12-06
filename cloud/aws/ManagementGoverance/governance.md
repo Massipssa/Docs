@@ -8,8 +8,6 @@
 
 - Share resources with other AWS accounts 
 
-
-
 ## Cross Account Role Access
 
 - Define an IAM Role for another account to access

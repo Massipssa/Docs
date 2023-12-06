@@ -1,16 +1,35 @@
-# AWS Shield
+## AWS Shield
 
 - Free DDOS protection 
 - Protect against layer 3 and layer 4 attacks only 
 - Protects all AWS customers on ELB, CloudFront and Route S3
 - Protects against SYN/UDP floods, reflection attacks, and other Layer 3 and Layer 4 attacks
 
-# AWS Audit Manager 
+## SSM Parameter Store
+
+- Secure storage for configuration and secrets
+- Optional Seamless Encryption using KMS
+- Serverless, scalable, durable, easy SDK
+- Version tracking of configuration / secrets 
+- Security through IMA 
+- Notification with Amazon EventBridge
+- Integration with CloudFormation 
+
+## Secret Manager 
+
+- Store securely application secrets, database credentials, API Keys, SSH Keys, passwords, etc 
+- Rotation can be used  
+- Automate generation of secrets on rotation
+- Integrated with Amazon RDS
+- Replicate Secrets across multiple AWS Regions 
+- It keeps read replicas in sync with primary Secret
+
+## AWS Audit Manager 
 
 - Continually audit your AWS usage 
 - Automated service that produces report to auditors for PCI, GDPR and more
 
-# GuardDuty
+## GuardDuty
 
 - A threat detection service that uses machine learning to continuously monitor for malicious behavior
 - Looks for
@@ -34,11 +53,6 @@
   - Network assessment 
   - Host assessment 
 
-# Key Management Service (KMS)
-
-- Create and control (manages) keys used to encrypt the data 
-- Fully managed 
-
 # Cloud HSM
 
 - KMS => AWS Manages software for encryption
@@ -52,13 +66,6 @@
 - No free tier available
 - Must use the CloudHSM Client Software
 
-# Secret Manager 
-
-- Store securely application secrets, database credentials, API Keys, SSH Keys, passwords, etc 
-- Rotation can be used  
-
-# Parameter Store 
-
 
 ## Presigned URLS 
 
@@ -67,7 +74,7 @@
 - You can use AWS CLI or AWS SDK to generate presigned urls
 - Used to share private buckets in S3 
 
-# Certificate Manager
+# AWS Certificate Manager
 
 - Allows to create, manage, and deploy public and private SSL certificates for use with other AWS services 
 - No more paying for SSL certificates. You pay for the resources that utilize your certificates (such as ELB)

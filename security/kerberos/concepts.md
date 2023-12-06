@@ -1,44 +1,52 @@
 ## Kerberos concepts
 
-- **Principal**: an identity that needs to be verified
-	- User Principal Names (UPN)
-	- Service Principal Names (SPN)
-
-- **Realm**: A realm in Kerberos refers to an authentication administrative domain.
-  Principals are assigned to specific realms in order to establish boundaries and simplify administration.
-
-- **Key distribution center (KDC)**: contains all information about principals and realm. It consists of:
-    - ***Kerberos database:*** it stores  
-        - UPN and SPN
-        - To which realm principal belongs to
-        - Encryption keys
-        - Tickets validation duration
-        - Expiration date
-        - ...
-	- ***Authentication Server (AS):***
-	    - Delivers TGT (Ticket Granting Ticket)
-	    - Authenticates users
-        - TGT is delivered if authentication is successful
-	- ***Ticket Granting Server (TGS):***
-        - Validates **TGT**
-	    - Delivers TS (Ticket Service)
-- **KeyTab:** file that contains all keys related to specific service
-
+- It's a client/server based architecture 
 
 ![picture alt](../img/kerberos.png "kerberos")
 
 
+- **Principal**: an identity that needs to be verified
+  - **User Principal Names (UPN):** similar to usernames in operating systems.
+  - **Service Principal Names (SPN):** is the service that the user needs to access (database, server, ...).
+
+- **Realm**:
+  - A realm in Kerberos refers to an authentication administrative domain.
+  - Principals are assigned to specific realms in order to establish boundaries and simplify administration.
+
+- **Key Distribution Center (KDC)**: contains all information about principals and realm. It consists of:
+  - ***Kerberos database:*** it stores  
+    - UPN and SPN
+    - To which realm principal belongs to
+    - Encryption keys
+    - Tickets validation duration
+    - Expiration date
+    - ...
+  - ***Authentication Server (AS):***
+    - Delivers TGT (Ticket Granting Ticket)
+    - Authenticates users
+    - TGT is delivered if authentication is successful
+  - ***Ticket Granting Server (TGS):***
+    - Validates **TGT**
+    - Delivers TS (Ticket Service)
+- **KeyTab:** file that contains all keys related to specific service
+
 ## Principal parts
 
-- **Primary:** ```username@EXAMPLE.COM``` => user belongs to realm EXAMPLE.COM
-- **Instance:** ```username/admin@EXAMPLE.COM```
-- **Service:** ```hdfs/node1.domain.com@EXAMPLE.COM``` => service ```hdfs``` in the node ```node1.domain.com```
-- **PS**: naming is **case-sensitive**
+- **Primary**
+  - ```<shortname>@<REALM>```
+  - Example: ```bob@EXAMPLE.COM``` => bob belongs to realm EXAMPLE.COM
+- **Instance** 
+  - ```<shortname>/<instance>@<REALM>```
+  - Example: ```username/admin@EXAMPLE.COM```
+- **Service**
+  - ```<shortname>/<hostname>@<REALM>```
+  - Example: ```hdfs/node1.domain.com@EXAMPLE.COM``` => service ```hdfs``` in the node ```node1.domain.com```
 
-## Types
+**PS**: naming is **case-sensitive**
+
+## Trust
 
 - **One way**
-
 - **bidirectional trust or full trust**
 
 ## Advantages
@@ -151,7 +159,6 @@ addprinc username@REALM.COM
 
 ### Useful links
 
-```
-- https://examples.javacodegeeks.com/enterprise-java/apache-hadoop/hadoop-kerberos-authentication-tutorial/
+- https://examples.javacodegeeks.com/enterprise-java/apache-hadoop/hadoop-kerberos-authentication-tutorial
 - https://www.oreilly.com/library/view/hadoop-security/9781491900970/ch04.html
-```
+

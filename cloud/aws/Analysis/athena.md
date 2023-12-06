@@ -15,7 +15,17 @@
 - Ad-hoc queries 
 - Athena detect automatically the tables from **Glue,** and it creates queryable table
 
+## Performance 
+
+- Use columnar data for cost-savings (less scan)
+  - Apache Parquet or ORC is recommended
+  - Use Glue to convert data to Parquet or ORC 
+- Compress data for smaller retrievals (bzip2, gzip, lz4, snappy, zlip, zstd, ...)
+- Partition datasets in S3 for easy querying on virtual columns
+- Use larger files ( > 128 MB) to minimize overhead 
+
 ## Costs
+
 - Pay-as-you-go 
   - $5 per TB scanned
     - **Successful or cancelled** queries count, **failed** queries do not

@@ -1,6 +1,5 @@
-# ELK
+# Amazon OpenSearch (ELK)
 
-- Named to Amazon OpenSearch
 - Search engine 
 - Analysis tool 
 - Visualization tool (Kibana)
@@ -8,6 +7,7 @@
 - Horizontally scalable
 
 ## ELK in AWS
+
 - Fully manged service (but not serverless)
 - Scale up or down without downtime **(But this isn't automatic)**
 - Pay for use (instance-hours, storage, data transfer)

@@ -1,9 +1,8 @@
 ## Kerberos concepts
 
-- It's a client/server based architecture 
+- It's a client/server based architecture
 
 ![picture alt](../img/kerberos.png "kerberos")
-
 
 - **Principal**: an identity that needs to be verified
   - **User Principal Names (UPN):** similar to usernames in operating systems.
@@ -35,7 +34,7 @@
 - **Primary**
   - ```<shortname>@<REALM>```
   - Example: ```bob@EXAMPLE.COM``` => bob belongs to realm EXAMPLE.COM
-- **Instance** 
+- **Instance**
   - ```<shortname>/<instance>@<REALM>```
   - Example: ```username/admin@EXAMPLE.COM```
 - **Service**
@@ -53,7 +52,7 @@
 
 - Is Single sign on
 - Password do not travel in clear over the network
-- A centralized repository for all users and services credentials 
+- A centralized repository for all users and services credentials
 
 ## Example: Access hdfs
 
@@ -90,14 +89,7 @@
 
 - **Configure the realm**
 
-    ```
-    sudo echo
-    [realms]
-     HADOOP.COM = {  
-      kdc = server.hostname.com
-      admin_server = server.hostname.com 
-     } > /etc/krb5.conf 
-    ```
+```sudo vi /etc/krb5.conf```
 
 ```
 [realms]
@@ -110,7 +102,7 @@
  }
 ```
 
-* **Configure KDC**
+- **Configure KDC**
 
 ```vi /var/kerberos/krb5kdc/kdc.conf```
 
@@ -161,4 +153,3 @@ addprinc username@REALM.COM
 
 - https://examples.javacodegeeks.com/enterprise-java/apache-hadoop/hadoop-kerberos-authentication-tutorial
 - https://www.oreilly.com/library/view/hadoop-security/9781491900970/ch04.html
-

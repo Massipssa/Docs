@@ -20,7 +20,6 @@ echo "Number of args: $#"
 function my_function() {
     echo "Hello from function"
     return 100
-    
 }
 
 my_function

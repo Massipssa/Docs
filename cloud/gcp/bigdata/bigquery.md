@@ -17,7 +17,7 @@
 - Replicated and durable
 - Is columnar
 - Built-in machine learning models
-- Supports repeated columns and nested schema 
+- Supports repeated columns and nested schema
 
 ## IAM
 
@@ -41,8 +41,9 @@
   - Range partition (integer-type colum)
 - Best practice is to ensure that partition column is always invoked in querying
 
-## Clustering 
-- ?? 
+## Clustering
+
+- ??
 
 ## UDF
 
@@ -58,8 +59,10 @@
 ## Import and export data to BigQuery
 
 - Load
-    - Command
-        - ```bq load names.baby_names gs://(YOUR_BUCKET)/names/yob*.txt Name:STRING,Gender:STRING,Number:INTEGER```
+  - Command
+
+  ```bq load names.baby_names gs://(YOUR_BUCKET)/names/yob*.txt Name:STRING,Gender:STRING,Number:INTEGER```
+
 - Export
   - BigQuery <=> BigQuery
   - Table's data can only be exported to **GCS** with one of this format csv, json, avro
@@ -82,24 +85,25 @@
 ## bq tool
 
 - Create dataset
-    ```bq  mk --dataset ds_name```
+  
+```bq  mk --dataset ds_name```
 
 - Select from table
-    ```bq query --use_legacy_sql=false 'select * from ds_result.top_qsts' ```
-
+  
+```bq query --use_legacy_sql=false 'select * from ds_result.top_qsts' ```
 
 ## Bigquery ML
 
 - ML model in two steps:
-  - Build the model 
-  - Train the model 
+  - Build the model
+  - Train the model
 - Manually or automatically control hyperparameters
 - Supports
-  - Supervised 
+  - Supervised
   - Unsupervised
-- Steps 
+- Steps
   - Extract, transform and load data into Bigquery
   - Select and preprocess features
-  - Create the model inside Bigquery 
+  - Create the model inside Bigquery
   - Evaluate the performance of evaluated trained model
   - Use the model to make predictions

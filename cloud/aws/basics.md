@@ -16,9 +16,10 @@
 
 ## Security Responsibility Models <a name="securitymodels"></a>
 
-- Two types of models
-    - Security ***IN*** cloud: is the customer responsibility
-    - Security ***OF*** the cloud: AWS responsibility
+Two types of models
+
+- Security ***IN*** cloud: is the customer responsibility
+- Security ***OF*** the cloud: AWS responsibility
 
 ## Service Models <a name="servicemodels"></a>
 
@@ -34,19 +35,19 @@
 ## RPO and RTO <a name="rporto"></a>
 
 - **Recovery Point Objective**
-    - How much a business can tolerate to lose, expressed in time
-    - The maximum time between failure and the last successful backup
+  - How much a business can tolerate to lose, expressed in time
+  - The maximum time between failure and the last successful backup
 - **Recovery Time Objective**
-    - Maximum amount of time a system can be down
-    - How long a solution takes to recover
+  - Maximum amount of time a system can be down
+  - How long a solution takes to recover
 
 ## Scaling <a name="scaling"></a>
 
 - **Vertical**
-    - Increase the server capacity
-    - Add more CPU and RAM
+  - Increase the server capacity
+  - Add more CPU and RAM
 - **Horizontal**
-    - Add more servers (machines)
+  - Add more servers (machines)
 
 ## Tiered Application <a name="tiered"></a>
 
@@ -56,15 +57,14 @@
 ## Encryption <a name="encryption"></a>
 
 - Encryption on fly (SSL)
-    - Data encrypted before sending and decrypted when received by the server
-    - To protect against the MIMD attack
-    - SSL certificates help to secure HTTPS
+  - Data encrypted before sending and decrypted when received by the server
+  - To protect against the MIMD attack
+  - SSL certificates help to secure HTTPS
 - Server side encryption at rest
 - Client side encryption
-    * Data encrypted by the client and **never** decrypted by the server
+  - Data encrypted by the client and **never** decrypted by the server
 
-
-## AWS account 
+## AWS account
 
 - Has:
   - Account id

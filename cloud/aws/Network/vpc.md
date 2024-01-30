@@ -1,7 +1,7 @@
-## Virtual Private Cloud (VPC)
+# Virtual Private Cloud (VPC)
 
 - Logically isolated part of cloud where you can define your owen network
-- You can create up to 5 VPC per region 
+- You can create up to 5 VPC per region
 - Can have 200 subnets per VPC
 
 ## Subnet
@@ -9,7 +9,7 @@
 - Is a virtual firewall
 - ex: eu-west has 3 AZ => 3 subnets
 - By default, is private
-- A subnet is always assigned to one AZ 
+- A subnet is always assigned to one AZ
 
 ## Internet Gateway
 
@@ -19,7 +19,7 @@
 
 ## Route Table
 
-- Used to determine where network traffic is **directed** 
+- Used to determine where network traffic is **directed**
 - One route table per VPC
 - Controls what's VPC router does with traffic leaving subnet
 
@@ -28,16 +28,16 @@
 - We can add any **_allowing_** rules (open ports)
 - It's linked to instances
 - They are stateful
-- Default SG can't be deleted 
+- Default SG can't be deleted
 - You can assign up to five security groups to the instance
 - Can allow traffic from:
-  - Range or individual IP address 
+  - Range or individual IP address
   - Another security group
   - Rules are permissive
 - Can have
-  - Up to 10000 SG per region (default 2500) 
+  - Up to 10000 SG per region (default 2500)
   - 60 inbound and outbound rules per SG
-  - 16 SG per Elastic Network Interface 
+  - 16 SG per Elastic Network Interface
 
 ## Network Access Control Lists (NACLs)
 
@@ -52,9 +52,9 @@
 
 - Access internet from private subnet
 - One sense private subnet **==>** internet
-- Redundant inside AZ 
+- Redundant inside AZ
 - Start at 5 Gbps and scales currently to 45 Gbps (Bandwidth)
-- No need to patch 
+- No need to patch
 - No associated to Security Group
 - Automatically assigned a public IP address
 
@@ -62,7 +62,7 @@
 
 - Access AWS services from private subnet
 - Two types
-  - Interface endpoints 
+  - Interface endpoints
   - Gateways endpoints (Support connection to S3 and DynamoDB)
 
 ## VPC Flow logs
@@ -73,8 +73,8 @@
   - Subnets
   - Network Interface
 - Track the logs
-- Cannot be tagged as other resources 
-- Contains source and destination IP addresses 
+- Cannot be tagged as other resources
+- Contains source and destination IP addresses
 
 ## Difference Security Group and NACLs
 
@@ -85,7 +85,7 @@
 ## VPC Peering
 
 - Link VPCs together
-- Allows you to connect 1 VPC with another via a direct network route using private IP address   
+- Allows you to connect 1 VPC with another via a direct network route using private IP address
 - Instances behave as they were in the same VPC
 - We can peer between region
 - Transitive peering is not supported
@@ -94,32 +94,24 @@
 
 ## PrivateLinks
 
-- ???
+- Connect services privately from your service VPC to customers VPC
+- Doesn't need VPC Peering, public internet, NAT Gateway, Route Tables
+- Must be used with Network Load Balancer & ENI
 
-## CloudHub
+## Direct Connect (DX)
 
-- Connect multiple sites 
-- Low cost and easy to manage 
-- It operates over public network, but all traffic between customer gateway and AWS VPN CloudHub is encrypted
-
-## Direct Connect
-
-- Establish a dedicated network connection from on-premise to AWS 
-- Two types 
-  - Dedicated connection 
-  - Hosted connection 
-- Useful for high throughput workloads 
+- Establish a dedicated network connection from on-premise to AWS
+- Two types
+  - Dedicated connection ??
+  - Hosted connection ??
+- Useful for high throughput workloads
 - Helpful when you need stable and reliable secure connection  
 
-## Transit Gateway
-
-- Connects VPCs and on-premise networks through a central hub 
 
 ## VPN connection
 
 - Utilizes IPSec to establish encrypted network connectivity between your intranet and Amazon VPC over the Internet
-- VPN Connections can be configured in minutes and are a good solution if you have an immediate need
-  have low-to-modest bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity
+- VPN Connections can be configured in minutes and are a good solution if you have an immediate need have low-to-modest bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity
 
 ## AWS Wavelength
 
@@ -130,12 +122,32 @@
 
 - Get access via SSH to private subnet
 
-## Interface Endpoints 
+## Interface Endpoints
 
 - They are **Elastic Network Interfaces (ENI)** with private IP address
 - They serve as an entry point for traffic going to a supported service
 
 ## Gateway Endpoints
 
-- Is a target for a specific route in the route table 
-- Supports only DynamoDB and S3
+- Is a target for a specific route in the route table
+- Supports only **DynamoDB** and **S3**
+
+## CloudHub
+
+- Connect multiple sites
+- Low cost and easy to manage
+- It operates over public network, but all traffic between Customer Gateway and AWS VPN CloudHub is encrypted
+
+## Site-To-Site
+
+- Customer Gateways: Create on-premise side
+- Vitual Private Gateways: created on AWS side
+
+## Transit Gateway
+
+- Connects VPCs and on-premise networks through a central hub
+
+## Egress-only Internet Gateway
+
+- Used for IPv8 only
+- Similar to a NAT Gateway but for IPv6

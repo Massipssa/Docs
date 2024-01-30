@@ -21,20 +21,20 @@
     - ```cat /etc/passwd | grep massi | cut -d: -f6```
 
 - **wc**
-    - count number of lines: ```wc my_file.txt```
+  - count number of lines: ```wc my_file.txt```
 
 - **grep**
-    - find words start with M ```grep -E ^M my_test.txt```
+  - find words start with M ```grep -E ^M my_test.txt```
 
 - Rerun the last command I used
-    - ex: ```!cat```
+  - ex: ```!cat```
 
 ## Files and Directories
 
 - IO redirection
-    - ```>``` : stout
-    - ```<``` : sdin
-    - ```>>``` : append
+  - ```>``` : stout
+  - ```<``` : sdin
+  - ```>>``` : append
 
 ## Security
 
@@ -45,7 +45,7 @@
 - `/etc/login.defs` contains login configurations
 
 - Difference between system user and standard user ?
-    - System user (Service account) do not have a login shell
+  - System user (Service account) do not have a login shell
 
 ## Users and groups
 
@@ -56,10 +56,10 @@
 - Assign password to user ```passwd usename```
 - ```/etc/skel:``` folder contains all files to be added in user's home when it's created
 - UID:
-    - 0: root
-    - 1-99: system users
-    - 100+: standard users
-    - 65534: user nobody
+  - 0: root
+  - 1-99: system users
+  - 100+: standard users
+  - 65534: user nobody
 
 ### Groups
 

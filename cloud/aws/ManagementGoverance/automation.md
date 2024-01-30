@@ -1,7 +1,9 @@
-## CloudFormation 
+# Automation
 
-- Is declarative programming language 
-- It supports either JSON or YAML formatting 
+## CloudFormation
+
+- Is declarative programming language
+- It supports either JSON or YAML formatting
 - Hard-coded IDs, especially AMIs can be the reason templates fail to create
 - **Parameters**
   - Input that are allowed to be passed at runtime
@@ -12,8 +14,7 @@
 
 ## Elastic beanstalk
 
-- You can quickly deploy and manage applications in the AWS Cloud without having to learn about the infrastructure that 
-  runs those applications
+- You can quickly deploy and manage applications in the AWS Cloud without having to learn about the infrastructure that runs those applications
 - Reduces management complexity without restricting choice or control
 - You simply upload your application, and Elastic Beanstalk automatically handles the details of capacity provisioning,
   load balancing, scaling, and application health monitoring
@@ -24,5 +25,5 @@
 ## System Manager
 
 - Automation documents
-- Parameter Store 
+- Parameter Store
 - Session Manager

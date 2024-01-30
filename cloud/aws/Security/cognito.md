@@ -3,10 +3,10 @@
 - Decentralized managed way for authentication
   - Sign-in, sing-up for you app
   - Social identity provider Facebook,..
-- Authentication process 
-  1. Authenticate and get tokens 
-  2. Exchange tokens and get AWS credentials 
-  3. Access AWS service using credentials 
+- Authentication process
+  1. Authenticate and get tokens
+  2. Exchange tokens and get AWS credentials
+  3. Access AWS service using credentials
 
 ![cognito](../Other/Cognito/archi.PNG)
 
@@ -29,18 +29,16 @@
   - Provides ***temporary AWS credentials*** to access services eg. S3, DynamoDB, ...
   - It is generated using SDK
 
-    <div style="text-align:center"><img src="/aws/Other/Cognito/identy_pool.png"/></div>
+  ![identity_pool](../Other/Cognito/identy_pool.png)
 
 - **Cognito Sync**
-    - Sync ***user data***  and ***preferences*** across devices with one line of code
-    - Uses: 
-        * **Push synchronization** to push updates and synchronize data
-        * Simple Notification Service (SNS) to send notifications to all user devices when data in cloud changes
-    
-    <div style="text-align:center"><img src="/aws/Other/Cognito/sync.png"/></div>
-    
+  - Sync ***user data***  and ***preferences*** across devices with one line of code
+  - Uses:
+    - **Push synchronization** to push updates and synchronize data
+    - Simple Notification Service (SNS) to send notifications to all user devices when data in cloud changes
 
-    ### Conclusion
+    ![sync](../Other/Cognito/sync.png)
 
-    <div style="text-align:center"><img src="/aws/Other/Cognito/resume.png"/></div>
-    
+## Conclusion
+
+![resume](../Other/Cognito/resume.png)

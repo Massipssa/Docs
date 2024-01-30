@@ -1,6 +1,6 @@
-# AWS Batch 
+# AWS Batch
 
 - Jobs
 - Job definitions
-- Job Queues 
-- Compute environment 
+- Job Queues
+- Compute environment

@@ -15,4 +15,4 @@
   - When (or even before) the temporary security credentials expire, the user can request new credentials,
   as long as the user requesting them still has permissions to do so.
 
-![sts](./screenshots/sts.png)
+  ![sts](./screenshots/sts.png)

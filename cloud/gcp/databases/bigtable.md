@@ -39,8 +39,7 @@
 
 ## Schema Design ??
 
-
-## Tall and Narrow Tables ?? 
+## Tall and Narrow Tables ??
 
 ## Key ??
 

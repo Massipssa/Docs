@@ -31,31 +31,32 @@
 
 - Allows to allocate IP address to an instance
 - You can only have 5 Elastic IP in the account (Ask AWS to increase the number)
- 
+
 ## Placements group
 
-A way to logically grouping instances 
+A way to logically grouping instances
+
 - **Cluster**
-  - 1 AZ 
+  - 1 AZ
   - Good for High Performance Application
-- **Spread** 
-  - Each instance is placed on a different rack 
-  - When critical instances should be keep separate from each other 
+- **Spread**
+  - Each instance is placed on a different rack
+  - When critical instances should be keep separate from each other
   - You can spread a max 7 instances. Spreads can be multi-AZ
-- **Partition** 
-  - Spread instances across partitions 
+- **Partition**
+  - Spread instances across partitions
   - Each partition do not share the underlying hardware with each other (rack per partition)
   - Well suite for large distributed and replicated workloads (Hadoop, Cassandra, Kafka)
 
 ### ENI (Elastic Network Interface), IP, and DNS
 
 - For day-to-day networking (Which gives EC2 instance networking connectivity)
-- It provides 
+- It provides
   - Private IPv4 addresses (one primary private IPv4 and one or more secondary private IPv4)
   - Public IPv4 address
   - Many IPv6 address
-  - MAC address 
-  - One or more Security Groups 
+  - MAC address
+  - One or more Security Groups
   
 - Public instance
   - Has public IP
@@ -65,18 +66,16 @@ A way to logically grouping instances
 
 ### EN (Enhanced Network)
 
-- Uses single I/O virtualization to provide high performance 
+- Uses single I/O virtualization to provide high performance
 
 ### EFA (Elastic Fabric Adapter)
 
-- Accelerates High Performance Computing (HPC) and machine learning applications 
+- Accelerates High Performance Computing (HPC) and machine learning applications
 
-## Launch Template 
+## Launch Template
 
-- IAM type 
-- EC2 role 
-- SG 
+- IAM type
+- EC2 role
+- SG
 
-## Outposts 
-
-
+## Outposts

@@ -1,8 +1,9 @@
+# Databases
+
 ## Decision tree
 
-<div> <img src="/gcp/linuxacadimy/databases/screenshots/databases.png"/> </div>
+![databases](./screenshots/databases.png)
 
 ## Comapraison
 
-<div> <img src="/gcp/linuxacadimy/databases/screenshots/compare_db.png"/></div> 
-
+![compare_db](./screenshots/compare_db.png)

@@ -42,5 +42,3 @@ Example: Predict person income (labels) based on the age (feature)
 - Wide neural and Deep neural ?
   - Wide models are used for memorization. Deep models are for generalization
   - Deep and wide models are ideal for a recommendation application.
-
-

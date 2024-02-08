@@ -1,6 +1,8 @@
+
 ````shell
 gcloud config set compute/region us-central1
 gcloud config set compute/zone us-central1-f
+
 # create the cluster
 gcloud container clusters create --machine-type=e2-medium --zone=us-central1-f lab-cluster 
 

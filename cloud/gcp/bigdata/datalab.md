@@ -1,4 +1,4 @@
-# Datalab
+# Datalab (Deprecated)
 
 - Interactive tool for exploring and visualize data
 - Build on Jupyter

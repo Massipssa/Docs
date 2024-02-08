@@ -24,6 +24,7 @@
 ## IAM
 
 ## Connect to Dataproc
+
 - Open ssh tunel to service like yarn GUI ```gclould compute ssh ....```
 - Connect to vm:
   - Generate ssh key using ```ssh key-gen ....```
@@ -31,4 +32,4 @@
 
 ## Monitoring and logs
 
-- Use Cloud logging and Cloud monitoring
+- Use Cloud logging and Cloud Monitoring

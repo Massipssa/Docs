@@ -1,8 +1,8 @@
 # Redshift
 
-- Fully managed 
+- Fully managed
 - It's OLAP engine (analytics and data warehousing)
-- Petabyte-scale data warehouse service 
+- Petabyte-scale data warehouse service
 
 ## Architecture
 
@@ -12,7 +12,7 @@
   - Massively Parallel Processing (MPP)
   - Columnar Data Storage
   - Column Compression (is column level operation, reduce space, reduce disc I/O)
-- Is a single AZ 
+- Is a single AZ
 - Block size of 1MB
 - Indexes are materialized but not required
 - Data is stored in three different places:

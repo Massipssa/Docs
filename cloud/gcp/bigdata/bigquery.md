@@ -14,14 +14,23 @@
 - Near real-time query analysis
 - Accept batch and streaming
 - Can be used for storage and analysis
+- Tables are immutable are optimized for reading and appending data and not optimized for updating
 - Replicated and durable
 - Is columnar
 - Built-in machine learning models
 - Supports repeated columns and nested schema
+- Supports view and materialized views
+- Policy Tag used to hide or obfuscate a column
+
+## Queries types
+
+- Native tables
+- Federated queries
+  - Bq create tmp table to query the data. It's retained for 24h. so if you run the exact same query again, and if the results would not be different, then BigQuery will simply return a pointer to the cached results  
 
 ## IAM
 
-- Control can be done by project, dataset and view
+- Control can be done by project, dataset, tables, views or columns
 - Has predefined roles ...
 - Sharding dataset
 - View can be used to restrict access to some data

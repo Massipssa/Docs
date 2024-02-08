@@ -107,10 +107,9 @@
 - Useful for high throughput workloads
 - Helpful when you need stable and reliable secure connection  
 
-
 ## VPN connection
 
-- Utilizes IPSec to establish encrypted network connectivity between your intranet and Amazon VPC over the Internet
+- Utilizes IPSec to establish **encrypted** network connectivity between your intranet and Amazon VPC over the Internet
 - VPN Connections can be configured in minutes and are a good solution if you have an immediate need have low-to-modest bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity
 
 ## AWS Wavelength
@@ -138,7 +137,7 @@
 - Low cost and easy to manage
 - It operates over public network, but all traffic between Customer Gateway and AWS VPN CloudHub is encrypted
 
-## Site-To-Site
+## Site-To-Site (VPN Connection)
 
 - Customer Gateways: Create on-premise side
 - Vitual Private Gateways: created on AWS side

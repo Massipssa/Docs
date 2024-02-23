@@ -23,7 +23,7 @@
 
 - Helps to increase the storage on the RDS instance
 - When RDS detects you are running out of free database storage, it scales automatically
-- Need ti set Maximum Storage Threshold (maximum limit for DB storage)
+- Need to set Maximum Storage Threshold (maximum limit for DB storage)
 - Automatically modify storage if:
   - Free storage is less than 10 %
   - Low-storage lasts at least 5 minutes

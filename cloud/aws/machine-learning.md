@@ -4,10 +4,10 @@
 
 ## Amazon Comprehend Medical
 
-- Detects and returns useful information in unstructured clinical text. 
+- Detects and returns useful information in unstructured clinical text
 - Uses NLP to detect Protected Health Information (PHI)
 
-## Amazon Textract 
+## Amazon Textract
 
 - Uses ML to automatically extract text, handwriting, and data from scanned documents
 

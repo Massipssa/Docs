@@ -80,7 +80,7 @@
 
 ## AWS Certificate Manager
 
-- Allows to create, manage, and deploy public and private SSL certificates for use with other AWS services
+- Allows to create, manage, and deploy **public** and **private** SSL certificates for use with other AWS services
 - No more paying for SSL certificates. You pay for the resources that utilize your certificates (such as ELB)
 - Renew and deployment can be automated
 - Easy to set up

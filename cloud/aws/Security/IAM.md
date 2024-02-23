@@ -1,17 +1,18 @@
 # Identity Access Management (IAM)
 
-- **Root account** 
+- **Root account**
   - Has full access to all services
   - The account must be secured (Use MFA to do it)
 
 ## Permission
-- It's defined using JSON file 
+
+- It's defined using JSON file
 - Explicit deny overwrite Allow everywhere
 
 - **User**
-  -  Identity to be identified in AWS account
+  - Identity to be identified in AWS account
   - Tow types access:
-    - Programmatic 
+    - Programmatic
     - AWS management access
   - Once new user is created => new url to login into the account will be generated
 
@@ -23,18 +24,18 @@
   - Ex: give access to EC2 full access to S3
 
 - **Policy**
-    - To assign a permission to a users, group, or resource we create a policy, which is a document which explicitly lists permissions
+  - To assign a permission to a users, group, or resource we create a policy, which is a document which explicitly lists permissions (the actions)
 
 - **Policy Types**
-  -  Managed
+  - ***Managed***
     - Created by AWS
     - Read only
     - Useful when we need to assign them to many users
-  - Customer
+  - ***Customer***
     - Created by the user
     - Are readable
     - Useful when we need to assign them to many users
-  - Inline
+  - ***Inline***
     - Attached directly to the user
     - Useful for exception permissions
 
@@ -47,7 +48,7 @@
 
 - Allows programmatically access to AWS
 - Contains
-  - Access Key ID 
+  - Access Key ID
   - Secret Access Key
 - A user can have only ***two*** access key
 

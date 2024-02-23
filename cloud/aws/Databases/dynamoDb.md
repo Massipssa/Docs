@@ -1,6 +1,6 @@
 # DynamoDB
 
-- Fully managed service 
+- Fully managed service
 - Is made of tables (no need to create databases)
 - Each table must have a primary key (decided at creation time)
 - Each table can have an infinite items (rows)
@@ -10,12 +10,12 @@
   - **Scalar types:** String, Number, Binary, Boolean, Null
   - **Document Types:** List, Map
   - **Set Types:** String set, Number Set, Binary Set
-    
+
 ## Primary Keys
 
 - **Option 1**: Partition key only (Hash)
-  - Partition Key must be unique for each item 
-  - Partition Key must be **diverse** so that the data is distributed 
+  - Partition Key must be unique for each item
+  - Partition Key must be **diverse** so that the data is distributed
 
 - **Option 2: Partition Key + Sort Key**
   - The combination must be unique

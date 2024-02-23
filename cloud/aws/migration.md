@@ -11,7 +11,7 @@
 ## Storage Gateway
 
 - Hybrid cloud storage service helps to merge on-premises resources with the cloud
-- It can help with a one-time migration or a long-term pairing of your architecture with AWS 
+- It can help with a one-time migration or a long-term pairing of your architecture with AWS
 - Types
   - **S3 File Gateway**
     - Configured S3 buckets are accessible using the NFS and SMB protocol
@@ -50,14 +50,18 @@
 - Gives a single place to track the progress of your applications migration to AWS
 - It integrates with Server Migration Service (SMS) and Database Migration Service (DMS)
 
-# AWS Application Discovery Service
+## AWS Application Discovery Service
 
-- Helps plan migrations to AWS via collection of usage and configuration data from on-premise servers
+- Helps plan (track) migrations to AWS via collection of usage and configuration data from on-premise servers
 - Two types:
   - Agentless Discovery (AWS Agentless Discovery Connector)
   - Agent-based Discovery (AWS Application Discovery Agent)
 
-# AWS Application Migration Service
+## AWS Application Migration Service
+
+- Is the primary migration service recommended for lift-and-shift migrations to AWS
+- AWS encourages customers who are currently using AWS Elastic Disaster Recovery to switch to AWS MGN for future migrations
+- AWS MGN enables organizations to move applications to AWS without having to make any changes to the applications, their architecture, or the migrated servers
 
 ## AWS Database Migration Service
 

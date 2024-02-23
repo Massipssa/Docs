@@ -1,18 +1,19 @@
 # ML in GCP
 
 It offers four options to build ML models
+
 - **BigQuery ML:** uses sql query to create ml models
-- **Pre-Builds APIs:** programming options 
+- **Pre-Builds APIs:** programming options
 - **Auto ML:** no code options to build models on Vertex AI
 - **Custom training:** custom environment
 
 ![ml_options](../screenshots/ml/gcp_ml_options.png)
+
 - [source]: google training session
 
 ## How to choose ?
 
 ![ml_options](../screenshots/ml/choose_model.png)
-
 
 ## Pre-Builds APIs
 
@@ -39,7 +40,7 @@ It offers four options to build ML models
 
 ## AutoML
 
-- Transfer learning 
+- Transfer learning
 - Neural Architecture Search: find the optimal model for the relevant project.
 
 ## Custom training
@@ -48,27 +49,30 @@ It offers four options to build ML models
   - Pre-built container: Tensorflow, Pytorch, Scikit-learn, ...
   - Custom container
 
-
 ## Vertex AI
 
 1. Data preparation
-   - Upload data: text, tabular, image, video, 
-   - Feature engineering
-2. Train model 
-   - Model training 
-   - Model evaluation
+
+- Upload data: text, tabular, image, video,
+- Feature engineering
+
+2. Train model
+
+- Model training
+- Model evaluation
 
 ![model_types](../screenshots/ml/model_types.png)
 
 - [source]: google training session
 
-3. Model serving 
-   - Model deployment 
-   - Model monitoring 
+3. Model serving
+
+- Model deployment
+- Model monitoring
 
 ## BigQuery ML
 
 - Extract data from dataset
 - Create the model (specify the type, hyperparameters)
-- Evaluate model 
+- Evaluate model
 - Predict

@@ -1,3 +1,11 @@
+# Monittoring
+
+## AWS Health
+
+- Gain visibility of resources and availability of AWS services or accounts
+- Receive notifications and alerts for affected resources and upcoming events
+- Automate actions based on events using **EventBridge**
+
 ## AWS Health Dashboard
 
 - Provides alerts and remediation guidance when AWS is experiencing events that may impact you

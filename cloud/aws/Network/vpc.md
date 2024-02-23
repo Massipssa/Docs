@@ -139,12 +139,14 @@
 
 ## Site-To-Site (VPN Connection)
 
-- Customer Gateways: Create on-premise side
-- Vitual Private Gateways: created on AWS side
+- **Customer Gateways**: Created on-premise side
+- **Vitual Private Gateways**: Created on AWS side
 
 ## Transit Gateway
 
-- Connects VPCs and on-premise networks through a central hub
+- Connects VPCs and on-premise networks through a central hub (single gateway)
+- Scales elastically based on the volume of network traffic
+- Routing through a transit gateway operates at layer 3, where the packets are sent to a specific next-hop attachment, based on their destination IP addresses
 
 ## Egress-only Internet Gateway
 

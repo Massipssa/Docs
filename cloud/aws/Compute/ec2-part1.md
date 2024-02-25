@@ -54,7 +54,7 @@
 
 ## Security Group (SG)
 
-- A maximum **Five** Security Group per ***Elastic Network Interface (ENI)*** 
+- A maximum **Five** Security Group per ***Elastic Network Interface (ENI)***
 - Two types of rules: ***Inbound*** and ***Outbound***
 - **Important** the two rules have ***Hidden Rule*** which is **Default Deny Rule**
 - The traffic is stateful. We have juste to allow it in one direction
@@ -62,9 +62,9 @@
 - An SG can reference itself. Allow the services in the same groups to communicate between them
 - You can change the security groups for an instance when the instance is in the **running** or **stopped** state
 
-## User data 
+## User data
 
-- It's a boostrap script 
+- It's a boostrap script
 - Uses th url: **http://169.254.169.254/latest/user-data**
 
 ## Instance Metadata
@@ -74,15 +74,18 @@
 
 ![ec2_archi](./screenshots/ec2_archi.png)
 
+## Auto-Scaling
 
-## Scaling 
-
-- Define a template 
-- Network and purchasing 
-- ELB configuration 
-- Set scaling policy 
-  - Target Tracking Scaling Policy
-  - Simple Scaling Policy (Not recommended)
-  - Scaling Policies with steps
-- Notification 
-
+- Define a template
+- Network and purchasing
+- ELB configuration
+- Set scaling policy
+  - **Dynamic scaling**
+    - Target Tracking Scaling: Increase and decrease the current capacity of the group based on a **Amazon CloudWatch metric and a target value**
+    - Step Scaling: increase and decrease based on a **set** of scaling adjustment
+    - Simple Scaling (Not recommended): increase and decrease based on a **single** scaling adjustment, with cooldown period between each scaling activity
+  - **Scheduled scaling**
+    - Anticipate scaling based on known usage pattern (at 10 am increase capacity to 5 instances)
+  - **Predictive scaling**
+    - Continuously forecast load and schedule scaling ahead
+- Notification

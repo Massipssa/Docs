@@ -121,12 +121,14 @@
 
 - Get access via SSH to private subnet
 
-## Interface Endpoints
+## Endpoints
+
+### Interface Endpoints
 
 - They are **Elastic Network Interfaces (ENI)** with private IP address
 - They serve as an entry point for traffic going to a supported service
 
-## Gateway Endpoints
+### Gateway Endpoints
 
 - Is a target for a specific route in the route table
 - Supports only **DynamoDB** and **S3**
@@ -140,7 +142,7 @@
 ## Site-To-Site (VPN Connection)
 
 - **Customer Gateways**: Created on-premise side
-- **Vitual Private Gateways**: Created on AWS side
+- **Vitual Private Gateway**: Created on AWS side
 
 ## Transit Gateway
 

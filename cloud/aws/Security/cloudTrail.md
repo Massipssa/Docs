@@ -16,6 +16,6 @@
   - Get a detailed list of all events you chose
   - Ability to store these events in S3 for further analysis
   - Can be region specific or global
-- CloudTrail Logs have SSE-S3 encryption when placed into S3
+- CloudTrail Logs have **SSE-S3 encryption** when placed into S3
 - Control access to S3 using IAM, Bucket Policy, etc ...
 - Near real-time intrusion detection

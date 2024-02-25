@@ -42,7 +42,7 @@
   - Reconnaissance by would-be attackers
   - Port scanning, failed logins
 - Log analyzed
-  - Cloud Trail logs
+  - CloudTrail logs
   - VPC Flow logs  
   - DNS logs
 

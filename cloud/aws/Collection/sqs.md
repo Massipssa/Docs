@@ -12,11 +12,12 @@
 - Limitation of **_256KB_** per message sent
 - Message are encrypted by default in transit, **_but not_** at rest
 - Default retention of messages: _**1 minutes, to 14 days**_ default 4 days
+- Long Polling
+  - When a consumer requests messages from the queue, it can optionally **wait** for messages to arrive if there are none in the queue
+  - The **ReceiveMessageWaitTimeSeconds** is the queue attribute that determines whether you are using Short or Long polling. By default, its value is zero which means it is using Short polling. If it is set to a value greater than zero, then it is Long polling
 
-## Dead Letter Queues 
+## Dead Letter Queues
 
-## Standard and FIFO 
+## Standard and FIFO
 
 - FIFO doesn't have same performance then Standard
-
-

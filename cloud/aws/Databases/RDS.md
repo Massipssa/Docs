@@ -39,12 +39,13 @@
 
 - Read-only copy of primary database
 - Great for read-heavy workloads and takes the load off your primary database
-- Can be within AZ, cross-AZ or Cross-region
+- Can be **within AZ**, **cross-AZ** or **Cross-region**
 - Can be promoted to be their own databases
 - Require automatic backup
 - Used to boost performance
-- Can have up to 5 replicas of a database
+- Can have **up to 5 replicas** of a database
 - Each Read Replicas will have its own DNS Endpoint
+- Provides asynchronous replication
 
 ## RDS Custom
 
@@ -58,7 +59,7 @@
 ## Backups
 
 - Automated backup
-  - Retention period between 1 and 35 days
+  - Retention period between **1 and 35 days**
   - Stores transaction logs throughout the day
   - They are enabled by default
   - All data is stored inside S3
@@ -70,13 +71,16 @@
 
 ## RDS & Aurora Security
 
-- At-rest encryption
+- **At-rest encryption**
   - Database master and replicas encryption using AWS KMS must be defined as launch time
   - If the master is not encrypted, the read replicas cannot be encrypted
   - To encrypt an un-encrypted database, go through a DB Snapshot and restore as encrypted
-- In-flight encryption: TLS-ready by default, use the AWS TLS root certificate client-side
-- IAM Authentication: IAM roles to connect to your database (instead of username/pwd)
-- Security Groups: Control Network access to your RDS / Aurora DB
+- **In-flight encryption**
+  - TLS-ready by default, use the AWS TLS root certificate client-side
+- **IAM Authentication**
+  - IAM roles to connect to your database (instead of username/pwd)
+- **Security Groups**
+  - Control Network access to your RDS / Aurora DB
 - No SSH available except on RDS Custom
 - Audit Logs can be enabled and sent to CloudWatch Logs for longer retention
 

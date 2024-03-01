@@ -14,8 +14,8 @@
 - It can help with a one-time migration or a long-term pairing of your architecture with AWS
 - Types
   - **S3 File Gateway**
-    - Configured S3 buckets are accessible using the NFS and SMB protocol
-    - Most recently used data is cached in the file gateway
+    - Configured S3 buckets are accessible using the **NFS** and **SMB** protocol
+    - Most recently used data is cached in the File gateway
     - Bucket access using IAM roles for each File Gateway
     - SMB Protocol has integration with Active Directory (AD) for user authentication
   - **FSx File Gateway**

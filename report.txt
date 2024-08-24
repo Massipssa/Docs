@@ -1,1 +1,18 @@
-1694683201
+const groupedData = apiResponse.reduce((acc, current) => {
+      const { id, data } = current;
+      if (!acc[id]) {
+        acc[id] = [];
+      }
+      acc[id].push(data);
+      return acc;
+    }, {});
+
+    // Step 2: Transform into desired structure
+    const transformed = Object.keys(groupedData).map((key) => {
+      const [ok, nok] = groupedData[key];
+      return {
+        id: Number(key),
+        ok: ok,
+        nok: nok
+      };
+    });

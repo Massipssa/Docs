@@ -1,18 +1,102 @@
-const groupedData = apiResponse.reduce((acc, current) => {
-      const { id, data } = current;
-      if (!acc[id]) {
-        acc[id] = [];
-      }
-      acc[id].push(data);
-      return acc;
-    }, {});
+import React, { useState } from 'react';
+import {
+  Drawer, Button, Box, TextField, Select, MenuItem, InputLabel, FormControl,
+} from '@mui/material';
+import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
-    // Step 2: Transform into desired structure
-    const transformed = Object.keys(groupedData).map((key) => {
-      const [ok, nok] = groupedData[key];
-      return {
-        id: Number(key),
-        ok: ok,
-        nok: nok
-      };
-    });
+const CustomDrawer = () => {
+  const [open, setOpen] = useState(false);
+  const [date1, setDate1] = useState(new Date());
+  const [date2, setDate2] = useState(new Date());
+  const [select1, setSelect1] = useState('');
+  const [select2, setSelect2] = useState('');
+
+  const toggleDrawer = (open) => () => {
+    setOpen(open);
+  };
+
+  return (
+    <>
+      <Button variant="contained" onClick={toggleDrawer(true)}>Open Drawer</Button>
+      <Drawer anchor="right" open={open} onClose={toggleDrawer(false)}>
+        <Box
+          sx={{
+            width: 400,
+            padding: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DesktopDatePicker
+                label="Start Date"
+                inputFormat="MM/dd/yyyy"
+                value={date1}
+                onChange={(newValue) => setDate1(newValue)}
+                renderInput={(params) => <TextField {...params} />}
+              />
+            </LocalizationProvider>
+
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DesktopDatePicker
+                label="End Date"
+                inputFormat="MM/dd/yyyy"
+                value={date2}
+                onChange={(newValue) => setDate2(newValue)}
+                renderInput={(params) => <TextField {...params} />}
+              />
+            </LocalizationProvider>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <FormControl fullWidth>
+              <InputLabel id="select1-label">Option 1</InputLabel>
+              <Select
+                labelId="select1-label"
+                value={select1}
+                label="Option 1"
+                onChange={(e) => setSelect1(e.target.value)}
+              >
+                <MenuItem value={10}>Ten</MenuItem>
+                <MenuItem value={20}>Twenty</MenuItem>
+                <MenuItem value={30}>Thirty</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel id="select2-label">Option 2</InputLabel>
+              <Select
+                labelId="select2-label"
+                value={select2}
+                label="Option 2"
+                onChange={(e) => setSelect2(e.target.value)}
+              >
+                <MenuItem value={10}>Ten</MenuItem>
+                <MenuItem value={20}>Twenty</MenuItem>
+                <MenuItem value={30}>Thirty</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      </Drawer>
+    </>
+  );
+};
+
+export default CustomDrawer;

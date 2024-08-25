@@ -1,52 +1,8 @@
-import React, { useState } from 'react';
-import { Box, TextField } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-
-function DatePickerSync() {
-  const [integrationDate, setIntegrationDate] = useState(null);
-  const [activityDate, setActivityDate] = useState(null);
-
-  // Handle date changes
-  const handleIntegrationDateChange = (newDate) => {
-    setIntegrationDate(newDate);
-    // Update activityDate to be one day before the new integrationDate
-    if (newDate) {
-      const newActivityDate = new Date(newDate);
-      newActivityDate.setDate(newActivityDate.getDate() - 1);
-      setActivityDate(newActivityDate);
-    }
-  };
-
-  const handleActivityDateChange = (newDate) => {
-    setActivityDate(newDate);
-    // Update integrationDate to be one day after the new activityDate
-    if (newDate) {
-      const newIntegrationDate = new Date(newDate);
-      newIntegrationDate.setDate(newIntegrationDate.getDate() + 1);
-      setIntegrationDate(newIntegrationDate);
-    }
-  };
-
-  return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <DatePicker
-          label="Integration Date"
-          value={integrationDate}
-          onChange={handleIntegrationDateChange}
-          renderInput={(params) => <TextField {...params} />}
-        />
-        <DatePicker
-          label="Activity Date"
-          value={activityDate}
-          onChange={handleActivityDateChange}
-          renderInput={(params) => <TextField {...params} />}
-        />
-      </Box>
-    </LocalizationProvider>
-  );
-}
-
-export default DatePickerSync;
+<DatePicker
+            label="End Date"
+            value={endDate}
+            onChange={(newDate) => setEndDate(newDate)}
+            renderInput={(params) => <TextField {...params} fullWidth />}
+            disableFuture
+            minDate={startDate} // Prevent selecting an end date before the start date
+          />

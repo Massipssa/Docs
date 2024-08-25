@@ -1,102 +1,52 @@
 import React, { useState } from 'react';
-import {
-  Drawer, Button, Box, TextField, Select, MenuItem, InputLabel, FormControl,
-} from '@mui/material';
-import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { Box, TextField } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-const CustomDrawer = () => {
-  const [open, setOpen] = useState(false);
-  const [date1, setDate1] = useState(new Date());
-  const [date2, setDate2] = useState(new Date());
-  const [select1, setSelect1] = useState('');
-  const [select2, setSelect2] = useState('');
+function DatePickerSync() {
+  const [integrationDate, setIntegrationDate] = useState(null);
+  const [activityDate, setActivityDate] = useState(null);
 
-  const toggleDrawer = (open) => () => {
-    setOpen(open);
+  // Handle date changes
+  const handleIntegrationDateChange = (newDate) => {
+    setIntegrationDate(newDate);
+    // Update activityDate to be one day before the new integrationDate
+    if (newDate) {
+      const newActivityDate = new Date(newDate);
+      newActivityDate.setDate(newActivityDate.getDate() - 1);
+      setActivityDate(newActivityDate);
+    }
+  };
+
+  const handleActivityDateChange = (newDate) => {
+    setActivityDate(newDate);
+    // Update integrationDate to be one day after the new activityDate
+    if (newDate) {
+      const newIntegrationDate = new Date(newDate);
+      newIntegrationDate.setDate(newIntegrationDate.getDate() + 1);
+      setIntegrationDate(newIntegrationDate);
+    }
   };
 
   return (
-    <>
-      <Button variant="contained" onClick={toggleDrawer(true)}>Open Drawer</Button>
-      <Drawer anchor="right" open={open} onClose={toggleDrawer(false)}>
-        <Box
-          sx={{
-            width: 400,
-            padding: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              gap: 2,
-            }}
-          >
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DesktopDatePicker
-                label="Start Date"
-                inputFormat="MM/dd/yyyy"
-                value={date1}
-                onChange={(newValue) => setDate1(newValue)}
-                renderInput={(params) => <TextField {...params} />}
-              />
-            </LocalizationProvider>
-
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DesktopDatePicker
-                label="End Date"
-                inputFormat="MM/dd/yyyy"
-                value={date2}
-                onChange={(newValue) => setDate2(newValue)}
-                renderInput={(params) => <TextField {...params} />}
-              />
-            </LocalizationProvider>
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              gap: 2,
-            }}
-          >
-            <FormControl fullWidth>
-              <InputLabel id="select1-label">Option 1</InputLabel>
-              <Select
-                labelId="select1-label"
-                value={select1}
-                label="Option 1"
-                onChange={(e) => setSelect1(e.target.value)}
-              >
-                <MenuItem value={10}>Ten</MenuItem>
-                <MenuItem value={20}>Twenty</MenuItem>
-                <MenuItem value={30}>Thirty</MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth>
-              <InputLabel id="select2-label">Option 2</InputLabel>
-              <Select
-                labelId="select2-label"
-                value={select2}
-                label="Option 2"
-                onChange={(e) => setSelect2(e.target.value)}
-              >
-                <MenuItem value={10}>Ten</MenuItem>
-                <MenuItem value={20}>Twenty</MenuItem>
-                <MenuItem value={30}>Thirty</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        </Box>
-      </Drawer>
-    </>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <DatePicker
+          label="Integration Date"
+          value={integrationDate}
+          onChange={handleIntegrationDateChange}
+          renderInput={(params) => <TextField {...params} />}
+        />
+        <DatePicker
+          label="Activity Date"
+          value={activityDate}
+          onChange={handleActivityDateChange}
+          renderInput={(params) => <TextField {...params} />}
+        />
+      </Box>
+    </LocalizationProvider>
   );
-};
+}
 
-export default CustomDrawer;
+export default DatePickerSync;

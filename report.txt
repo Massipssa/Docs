@@ -1,8 +1,89 @@
-<DatePicker
-            label="End Date"
-            value={endDate}
-            onChange={(newDate) => setEndDate(newDate)}
-            renderInput={(params) => <TextField {...params} fullWidth />}
-            disableFuture
-            minDate={startDate} // Prevent selecting an end date before the start date
-          />
+import React, { useState } from 'react';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import HomeIcon from '@mui/icons-material/Home';
+import InfoIcon from '@mui/icons-material/Info';
+import ContactMailIcon from '@mui/icons-material/ContactMail';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import Box from '@mui/material/Box';
+
+function NavBar() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const toggleDrawer = () => {
+    setDrawerOpen(!drawerOpen);
+  };
+
+  const drawerWidth = drawerOpen ? 240 : 60;
+
+  return (
+    <div style={{ display: 'flex' }}>
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            transition: 'width 0.3s',
+            overflowX: 'hidden',
+          },
+        }}
+      >
+        <List>
+          {[
+            { text: 'Home', icon: <HomeIcon /> },
+            { text: 'About', icon: <InfoIcon /> },
+            { text: 'Contact', icon: <ContactMailIcon /> },
+          ].map((item, index) => (
+            <ListItem button key={index}>
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              {drawerOpen && <ListItemText primary={item.text} />}
+            </ListItem>
+          ))}
+        </List>
+        <IconButton
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            left: drawerOpen ? 'auto' : 0,
+            right: drawerOpen ? 0 : 'auto',
+            backgroundColor: 'white',
+            transition: 'transform 0.3s',
+            transform: drawerOpen ? 'translateX(-50%)' : 'none',
+          }}
+          onClick={toggleDrawer}
+        >
+          {drawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        </IconButton>
+      </Drawer>
+      <Box
+        component="main"
+        sx={{ flexGrow: 1, p: 3, transition: 'margin-left 0.3s', marginLeft: drawerWidth }}
+      >
+        <AppBar position="static">
+          <Toolbar>
+            <Typography variant="h6" noWrap>
+              NavBar
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        {/* Content goes here */}
+        <Typography paragraph>
+          This is the main content area. Adjust the drawer to see the effect.
+        </Typography>
+      </Box>
+    </div>
+  );
+}
+
+export default NavBar;

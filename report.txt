@@ -76,40 +76,40 @@ function ResponsiveDrawer() {
                     <Toolbar />
                     <List>
                         {menuItems.map((item, index) => (
-                            <Tooltip key={item.text} title={drawerOpen ? '' : item.text} placement="right">
-                                <ListItem button>
+                            <ListItem button key={item.text}>
+                                <Tooltip title={drawerOpen ? '' : item.text} placement="right">
                                     <ListItemIcon>
                                         {item.icon}
                                     </ListItemIcon>
-                                    {drawerOpen && (
-                                        <ListItemText primary={item.text} />
-                                    )}
-                                </ListItem>
-                            </Tooltip>
+                                </Tooltip>
+                                <Collapse in={drawerOpen} timeout="auto" unmountOnExit>
+                                    <ListItemText primary={item.text} />
+                                </Collapse>
+                            </ListItem>
                         ))}
-                        <Tooltip title={drawerOpen ? '' : collapsibleItem.text} placement="right">
-                            <ListItem button onClick={handleCollapseToggle}>
+                        <ListItem button onClick={handleCollapseToggle}>
+                            <Tooltip title={drawerOpen ? '' : collapsibleItem.text} placement="right">
                                 <ListItemIcon>
                                     {collapsibleItem.icon}
                                 </ListItemIcon>
-                                {drawerOpen && (
-                                    <>
-                                        <ListItemText primary={collapsibleItem.text} />
-                                        {collapseOpen ? <ExpandLess /> : <ExpandMore />}
-                                    </>
-                                )}
-                            </ListItem>
-                        </Tooltip>
-                        <Collapse in={collapseOpen} timeout="auto" unmountOnExit>
+                            </Tooltip>
+                            <Collapse in={drawerOpen} timeout="auto" unmountOnExit>
+                                <ListItemText primary={collapsibleItem.text} />
+                                {collapseOpen ? <ExpandLess /> : <ExpandMore />}
+                            </Collapse>
+                        </ListItem>
+                        <Collapse in={collapseOpen && drawerOpen} timeout="auto" unmountOnExit>
                             <List component="div" disablePadding>
                                 {collapsibleItem.subItems.map((subItem, index) => (
                                     <ListItem button key={subItem.text} sx={{ pl: 4 }}>
-                                        <ListItemIcon>
-                                            {subItem.icon}
-                                        </ListItemIcon>
-                                        {drawerOpen && (
+                                        <Tooltip title={drawerOpen ? '' : subItem.text} placement="right">
+                                            <ListItemIcon>
+                                                {subItem.icon}
+                                            </ListItemIcon>
+                                        </Tooltip>
+                                        <Collapse in={drawerOpen} timeout="auto" unmountOnExit>
                                             <ListItemText primary={subItem.text} />
-                                        )}
+                                        </Collapse>
                                     </ListItem>
                                 ))}
                             </List>

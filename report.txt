@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Drawer, CssBaseline, AppBar, Toolbar, Typography, Box, IconButton } from '@mui/material';
+import { Drawer, CssBaseline, AppBar, Toolbar, Typography, Box, IconButton, Button, Divider, List, ListItem, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import InboxIcon from '@mui/icons-material/Inbox';
+import MailIcon from '@mui/icons-material/Mail';
 
 const drawerWidth = 240;
 
@@ -10,6 +12,12 @@ function ResponsiveDrawer() {
     const handleDrawerToggle = () => {
         setDrawerOpen(!drawerOpen);
     };
+
+    const menuItems = [
+        { text: 'Inbox', icon: <InboxIcon /> },
+        { text: 'Mail', icon: <MailIcon /> },
+        // Add more items here as needed
+    ];
 
     return (
         <Box sx={{ display: 'flex', width: '100vw' }}>
@@ -40,12 +48,37 @@ function ResponsiveDrawer() {
                     '& .MuiDrawer-paper': {
                         width: drawerWidth,
                         boxSizing: 'border-box',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
                     },
                 }}
             >
-                <Toolbar />
-                <Box sx={{ overflow: 'auto' }}>
-                    {/* Drawer content here */}
+                <Box sx={{ overflow: 'auto', flexGrow: 1 }}>
+                    <Toolbar />
+                    <List>
+                        {menuItems.map((item, index) => (
+                            <Tooltip key={item.text} title={drawerOpen ? '' : item.text} placement="right">
+                                <ListItem button>
+                                    <ListItemIcon>
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    {drawerOpen && (
+                                        <ListItemText primary={item.text} />
+                                    )}
+                                </ListItem>
+                            </Tooltip>
+                        ))}
+                    </List>
+                </Box>
+                <Box>
+                    <Divider />
+                    <Button
+                        onClick={handleDrawerToggle}
+                        fullWidth
+                    >
+                        {drawerOpen ? '>< Collapse' : '<> Expand'}
+                    </Button>
                 </Box>
             </Drawer>
             <Box

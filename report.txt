@@ -1,155 +1,51 @@
-import React, { useState } from 'react';
-import { Drawer, CssBaseline, AppBar, Toolbar, Typography, Box, Button, Divider, List, ListItem, ListItemIcon, ListItemText, Tooltip, IconButton, Collapse, Avatar } from '@mui/material';
-import InboxIcon from '@mui/icons-material/Inbox';
-import MailIcon from '@mui/icons-material/Mail';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import { Outlet } from 'react-router-dom'; // Import Outlet
+import React from 'react';
+import { Grid, Paper, Box, Typography, CssBaseline } from '@mui/material';
 
-const drawerWidth = 240;
-const closedDrawerWidth = 60;
-
-function ResponsiveDrawer() {
-    const [drawerOpen, setDrawerOpen] = useState(true);
-    const [collapseOpen, setCollapseOpen] = useState(false);
-
-    const handleDrawerToggle = () => {
-        setDrawerOpen(!drawerOpen);
-    };
-
-    const handleCollapseToggle = () => {
-        setCollapseOpen(!collapseOpen);
-    };
-
-    const menuItems = [
-        { text: 'Inbox', icon: <InboxIcon /> },
-        { text: 'Mail', icon: <MailIcon /> },
-        // Add more items here as needed
+function Dashboard() {
+    const cards = [
+        { title: 'Card 1', content: 'Content for card 1' },
+        { title: 'Card 2', content: 'Content for card 2' },
+        { title: 'Card 3', content: 'Content for card 3' },
+        { title: 'Card 4', content: 'Content for card 4' },
+        { title: 'Card 5', content: 'Content for card 5' },
+        { title: 'Card 6', content: 'Content for card 6' },
+        { title: 'Card 7', content: 'Content for card 7' },
     ];
 
-    const collapsibleItem = {
-        text: 'Collapsible Menu',
-        icon: <InboxIcon />,
-        subItems: [
-            { text: 'Sub Item 1', icon: <MailIcon /> },
-            { text: 'Sub Item 2', icon: <MailIcon /> },
-        ],
-    };
-
     return (
-        <Box sx={{ display: 'flex', width: '100vw', height: '100vh' }}>
+        <Box sx={{ flexGrow: 1, p: 3 }}>
             <CssBaseline />
-            <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-                <Toolbar>
-                    <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                        Responsive Drawer
-                    </Typography>
-                    <IconButton color="inherit">
-                        <NotificationsIcon />
-                    </IconButton>
-                    <IconButton color="inherit">
-                        <Avatar>
-                            <AccountCircleIcon />
-                        </Avatar>
-                    </IconButton>
-                </Toolbar>
-            </AppBar>
-            <Drawer
-                variant="permanent"
-                open={drawerOpen}
-                sx={{
-                    width: drawerOpen ? drawerWidth : closedDrawerWidth,
-                    flexShrink: 0,
-                    '& .MuiDrawer-paper': {
-                        width: drawerOpen ? drawerWidth : closedDrawerWidth,
-                        boxSizing: 'border-box',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        overflowX: 'hidden', // Prevent horizontal overflow
-                        overflowY: drawerOpen ? 'auto' : 'hidden', // Manage vertical overflow
-                    },
-                }}
-            >
-                <Box sx={{ overflow: 'hidden', flexGrow: 1 }}>
-                    <Toolbar />
-                    <List>
-                        {menuItems.map((item, index) => (
-                            <ListItem button key={item.text}>
-                                <Tooltip title={drawerOpen ? '' : item.text} placement="right">
-                                    <ListItemIcon>
-                                        {item.icon}
-                                    </ListItemIcon>
-                                </Tooltip>
-                                <Collapse in={drawerOpen} timeout="auto" unmountOnExit>
-                                    <ListItemText primary={item.text} />
-                                </Collapse>
-                            </ListItem>
-                        ))}
-                        <ListItem button onClick={handleCollapseToggle}>
-                            <Tooltip title={drawerOpen ? '' : collapsibleItem.text} placement="right">
-                                <ListItemIcon>
-                                    {collapsibleItem.icon}
-                                </ListItemIcon>
-                            </Tooltip>
-                            <Collapse in={drawerOpen} timeout="auto" unmountOnExit>
-                                <ListItemText primary={collapsibleItem.text} />
-                                {collapseOpen ? <ExpandLess /> : <ExpandMore />}
-                            </Collapse>
-                        </ListItem>
-                        <Collapse in={collapseOpen && drawerOpen} timeout="auto" unmountOnExit>
-                            <List component="div" disablePadding>
-                                {collapsibleItem.subItems.map((subItem, index) => (
-                                    <ListItem button key={subItem.text} sx={{ pl: 4 }}>
-                                        <Tooltip title={drawerOpen ? '' : subItem.text} placement="right">
-                                            <ListItemIcon>
-                                                {subItem.icon}
-                                            </ListItemIcon>
-                                        </Tooltip>
-                                        <Collapse in={drawerOpen} timeout="auto" unmountOnExit>
-                                            <ListItemText primary={subItem.text} />
-                                        </Collapse>
-                                    </ListItem>
-                                ))}
-                            </List>
-                        </Collapse>
-                    </List>
-                </Box>
-                <Box>
-                    <Divider />
-                    <Button
-                        onClick={handleDrawerToggle}
-                        fullWidth
-                    >
-                        {drawerOpen ? '>< Collapse' : '<> Expand'}
-                    </Button>
-                </Box>
-            </Drawer>
-            <Box
-                component="main"
-                sx={{
-                    flexGrow: 1,
-                    p: 3,
-                    width: `calc(100vw - ${drawerOpen ? drawerWidth : closedDrawerWidth}px)`,
-                    transition: (theme) =>
-                        theme.transitions.create('width', {
-                            easing: theme.transitions.easing.sharp,
-                            duration: theme.transitions.duration.leavingScreen,
-                        }),
-                    overflow: 'hidden', // Ensure no overflow
-                    height: '100vh', // Ensure full height of the viewport
-                }}
-            >
-                <Toolbar />
-                <Box sx={{ overflowY: 'auto', height: 'calc(100% - 64px)' }}>
-                    {/* The 64px subtraction is for the AppBar height */}
-                    <Outlet />
-                </Box>
-            </Box>
+            <Grid container spacing={3}>
+                {/* Row 1: 3 cards */}
+                {cards.slice(0, 3).map((card, index) => (
+                    <Grid item xs={12} md={4} key={index}>
+                        <Paper elevation={3} sx={{ p: 2 }}>
+                            <Typography variant="h6">{card.title}</Typography>
+                            <Typography>{card.content}</Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+                {/* Row 2: 2 cards */}
+                {cards.slice(3, 5).map((card, index) => (
+                    <Grid item xs={12} md={6} key={index + 3}>
+                        <Paper elevation={3} sx={{ p: 2 }}>
+                            <Typography variant="h6">{card.title}</Typography>
+                            <Typography>{card.content}</Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+                {/* Row 3: 2 cards */}
+                {cards.slice(5, 7).map((card, index) => (
+                    <Grid item xs={12} md={6} key={index + 5}>
+                        <Paper elevation={3} sx={{ p: 2 }}>
+                            <Typography variant="h6">{card.title}</Typography>
+                            <Typography>{card.content}</Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
         </Box>
     );
 }
 
-export default ResponsiveDrawer;
+export default Dashboard;

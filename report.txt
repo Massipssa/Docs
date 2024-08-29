@@ -68,11 +68,12 @@ function ResponsiveDrawer() {
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
-                        overflowX: 'hidden',
+                        overflowX: 'hidden', // Prevent horizontal overflow
+                        overflowY: drawerOpen ? 'auto' : 'hidden', // Manage vertical overflow
                     },
                 }}
             >
-                <Box sx={{ overflow: 'auto', flexGrow: 1 }}>
+                <Box sx={{ overflow: 'hidden', flexGrow: 1 }}>
                     <Toolbar />
                     <List>
                         {menuItems.map((item, index) => (

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Drawer, CssBaseline, AppBar, Toolbar, Typography, Box, IconButton, Button, Divider, List, ListItem, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { Drawer, CssBaseline, AppBar, Toolbar, Typography, Box, Button, Divider, List, ListItem, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
 import InboxIcon from '@mui/icons-material/Inbox';
 import MailIcon from '@mui/icons-material/Mail';
 
 const drawerWidth = 240;
+const closedDrawerWidth = 60;  // Define the width of the drawer when closed
 
 function ResponsiveDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(true);
@@ -24,33 +24,24 @@ function ResponsiveDrawer() {
             <CssBaseline />
             <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
                 <Toolbar>
-                    <IconButton
-                        color="inherit"
-                        aria-label="open drawer"
-                        edge="start"
-                        onClick={handleDrawerToggle}
-                        sx={{ marginRight: 2, ...(drawerOpen && { display: 'none' }) }}
-                    >
-                        <MenuIcon />
-                    </IconButton>
                     <Typography variant="h6" noWrap component="div">
                         Responsive Drawer
                     </Typography>
                 </Toolbar>
             </AppBar>
             <Drawer
-                variant="persistent"
+                variant="permanent"
                 open={drawerOpen}
-                onClose={handleDrawerToggle}
                 sx={{
-                    width: drawerOpen ? drawerWidth : 0,
+                    width: drawerOpen ? drawerWidth : closedDrawerWidth,
                     flexShrink: 0,
                     '& .MuiDrawer-paper': {
-                        width: drawerWidth,
+                        width: drawerOpen ? drawerWidth : closedDrawerWidth,
                         boxSizing: 'border-box',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
+                        overflowX: 'hidden',
                     },
                 }}
             >
@@ -86,7 +77,7 @@ function ResponsiveDrawer() {
                 sx={{
                     flexGrow: 1,
                     p: 3,
-                    width: `calc(100vw - ${drawerOpen ? drawerWidth : 0}px)`,
+                    width: `calc(100vw - ${drawerOpen ? drawerWidth : closedDrawerWidth}px)`,
                     transition: (theme) =>
                         theme.transitions.create('width', {
                             easing: theme.transitions.easing.sharp,

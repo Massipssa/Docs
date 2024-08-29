@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Drawer, CssBaseline, AppBar, Toolbar, Typography, Box, Button, Divider, List, ListItem, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
 import InboxIcon from '@mui/icons-material/Inbox';
 import MailIcon from '@mui/icons-material/Mail';
+import { Outlet } from 'react-router-dom'; // Import Outlet
 
 const drawerWidth = 240;
-const closedDrawerWidth = 60;  // Define the width of the drawer when closed
+const closedDrawerWidth = 60;
 
 function ResponsiveDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(true);
@@ -20,7 +21,7 @@ function ResponsiveDrawer() {
     ];
 
     return (
-        <Box sx={{ display: 'flex', width: '100vw' }}>
+        <Box sx={{ display: 'flex', width: '100vw', height: '100vh' }}>
             <CssBaseline />
             <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
                 <Toolbar>
@@ -83,12 +84,15 @@ function ResponsiveDrawer() {
                             easing: theme.transitions.easing.sharp,
                             duration: theme.transitions.duration.leavingScreen,
                         }),
+                    overflow: 'hidden', // Ensure no overflow
+                    height: '100vh', // Ensure full height of the viewport
                 }}
             >
                 <Toolbar />
-                <Typography paragraph>
-                    Main content goes here.
-                </Typography>
+                <Box sx={{ overflowY: 'auto', height: 'calc(100% - 64px)' }}>
+                    {/* The 64px subtraction is for the AppBar height */}
+                    <Outlet />
+                </Box>
             </Box>
         </Box>
     );

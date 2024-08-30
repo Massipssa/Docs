@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput, TextField } from '@mui/material';
 
 const options = [
   'Option 1',
@@ -15,6 +15,8 @@ const options = [
 ];
 
 function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
+  const [searchQuery, setSearchQuery] = useState('');
+
   const handleChange = (event) => {
     const {
       target: { value },
@@ -23,6 +25,14 @@ function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
       typeof value === 'string' ? value.split(',') : value,
     );
   };
+
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+  };
+
+  const filteredOptions = options.filter((option) =>
+    option.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <Box sx={{ width: 300 }}>
@@ -38,18 +48,33 @@ function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
           MenuProps={{
             PaperProps: {
               style: {
-                maxHeight: 224,  // Adjust maxHeight to control the scrollable area
+                maxHeight: 300, // Adjust maxHeight to control the scrollable area
                 width: 250,
               },
             },
           }}
         >
-          {options.map((option) => (
-            <MenuItem key={option} value={option}>
-              <Checkbox checked={selectedOptions.indexOf(option) > -1} />
-              <ListItemText primary={option} />
-            </MenuItem>
-          ))}
+          {/* Search Box */}
+          <MenuItem>
+            <TextField
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              fullWidth
+              variant="standard"
+            />
+          </MenuItem>
+          {/* Filtered Options */}
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option) => (
+              <MenuItem key={option} value={option}>
+                <Checkbox checked={selectedOptions.indexOf(option) > -1} />
+                <ListItemText primary={option} />
+              </MenuItem>
+            ))
+          ) : (
+            <MenuItem disabled>No options found</MenuItem>
+          )}
         </Select>
       </FormControl>
     </Box>

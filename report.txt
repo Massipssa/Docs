@@ -1,31 +1,69 @@
-import React, { useState } from 'react';
-import { TextField, Box } from '@mui/material';
+import React, { useState, useMemo } from 'react';
+import { Box, TextField } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { format, eachDayOfInterval, isBefore } from 'date-fns';
+import MaterialReactTable from 'material-react-table';
 
-function RangeDatePicker() {
+function DynamicColumnTable() {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
 
+  const data = useMemo(
+    () => [
+      { date: '2023-01-01', name: 'Test', vacation: '1' },
+      { date: '2023-01-02', name: 'Test2', vacation: '4' },
+      // Add more data entries as needed
+    ],
+    []
+  );
+
+  const [columns, setColumns] = useState([]);
+
   const handleStartDateChange = (newDate) => {
     setStartDate(newDate);
-    if (endDate && newDate > endDate) {
-      setEndDate(newDate);
+    if (endDate && newDate && isBefore(newDate, endDate)) {
+      generateColumns(newDate, endDate);
     }
   };
 
   const handleEndDateChange = (newDate) => {
-    if (startDate && newDate < startDate) {
-      setEndDate(startDate);
-    } else {
-      setEndDate(newDate);
+    setEndDate(newDate);
+    if (startDate && newDate && isBefore(startDate, newDate)) {
+      generateColumns(startDate, newDate);
     }
   };
 
+  const generateColumns = (start, end) => {
+    const dates = eachDayOfInterval({ start, end });
+    const formattedDates = dates.map((date) => ({
+      accessorKey: format(date, 'yyyy-MM-dd'),
+      header: format(date, 'yyyy-MM-dd'),
+      Cell: ({ row }) => {
+        const rowData = data.find((item) => item.date === format(date, 'yyyy-MM-dd'));
+        return rowData ? `${rowData.name} (${rowData.vacation})` : '-';
+      },
+    }));
+    setColumns([
+      { accessorKey: 'item', header: 'Item' },
+      ...formattedDates,
+    ]);
+  };
+
+  const tableData = useMemo(() => {
+    return data.map((item) => ({
+      item: item.name,
+      ...data.reduce((acc, curr) => {
+        acc[curr.date] = `${curr.name} (${curr.vacation})`;
+        return acc;
+      }, {}),
+    }));
+  }, [data]);
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ display: 'flex', gap: 2 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <DatePicker
           label="Start Date"
           value={startDate}
@@ -39,8 +77,13 @@ function RangeDatePicker() {
           renderInput={(params) => <TextField {...params} />}
         />
       </Box>
+
+      <MaterialReactTable
+        columns={columns}
+        data={tableData}
+      />
     </LocalizationProvider>
   );
 }
 
-export default RangeDatePicker;
+export default DynamicColumnTable;

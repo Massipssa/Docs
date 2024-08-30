@@ -1,14 +1,13 @@
-// DynamicTable.js
 import React, { useMemo } from 'react';
-import { Box } from '@mui/material';
+import { Box, TableCell, TableRow } from '@mui/material';
 import MaterialReactTable from 'material-react-table';
-import { format, eachDayOfInterval, parse } from 'date-fns';
+import { format, eachDayOfInterval } from 'date-fns';
 import { enGB } from 'date-fns/locale';
 
 function DynamicTable({ startDate, endDate }) {
   const data = [
-    { date: '01/01/2023', name: 'Test', vacation: '1' },
-    { date: '02/01/2023', name: 'Test2', vacation: '4' },
+    { date: '01/01/2023', name: 'Test', vacation: '1', status: 'error' },
+    { date: '02/01/2023', name: 'Test2', vacation: '4', status: 'ignored' },
     // Add more data entries as needed
   ];
 
@@ -21,9 +20,28 @@ function DynamicTable({ startDate, endDate }) {
       ...dates.map(date => ({
         accessorKey: format(date, 'dd/MM/yyyy'),
         header: format(date, 'dd/MM/yyyy'),
-        cell: ({ row }) => {
-          const rowData = data.find(item => item.date === format(date, 'dd/MM/yyyy'));
-          return rowData ? rowData.vacation : '-';
+        cell: ({ row, column }) => {
+          const dateStr = format(date, 'dd/MM/yyyy');
+          const rowData = data.find(item => item.date === dateStr);
+          const cellValue = rowData ? rowData.vacation : '-';
+          const cellStatus = rowData ? rowData.status : '';
+
+          const handleClick = () => {
+            // Handle cell click event
+            alert(`Clicked on ${dateStr}: ${cellValue}`);
+          };
+
+          // Determine background color based on status
+          const cellBackgroundColor = cellStatus === 'error' ? 'red' : cellStatus === 'ignored' ? 'yellow' : 'transparent';
+
+          return (
+            <TableCell
+              onClick={handleClick}
+              sx={{ backgroundColor: cellBackgroundColor, color: 'black', cursor: 'pointer' }}
+            >
+              {cellValue}
+            </TableCell>
+          );
         }
       }))
     ];
@@ -36,7 +54,8 @@ function DynamicTable({ startDate, endDate }) {
     return data.map(item => ({
       name: item.name,
       ...dates.reduce((acc, date) => {
-        acc[format(date, 'dd/MM/yyyy')] = item.date === format(date, 'dd/MM/yyyy') ? item.vacation : '-';
+        const formattedDate = format(date, 'dd/MM/yyyy');
+        acc[formattedDate] = item.date === formattedDate ? item.vacation : '-';
         return acc;
       }, {}),
     }));

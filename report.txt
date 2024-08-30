@@ -1,89 +1,55 @@
-import React, { useState, useMemo } from 'react';
-import { Box, TextField } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { format, eachDayOfInterval, isBefore } from 'date-fns';
+// DynamicTable.js
+import React, { useMemo } from 'react';
+import { Box } from '@mui/material';
 import MaterialReactTable from 'material-react-table';
+import { format, eachDayOfInterval, parse } from 'date-fns';
+import { enGB } from 'date-fns/locale';
 
-function DynamicColumnTable() {
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+function DynamicTable({ startDate, endDate }) {
+  const data = [
+    { date: '01/01/2023', name: 'Test', vacation: '1' },
+    { date: '02/01/2023', name: 'Test2', vacation: '4' },
+    // Add more data entries as needed
+  ];
 
-  const data = useMemo(
-    () => [
-      { date: '2023-01-01', name: 'Test', vacation: '1' },
-      { date: '2023-01-02', name: 'Test2', vacation: '4' },
-      // Add more data entries as needed
-    ],
-    []
-  );
+  const columns = useMemo(() => {
+    if (!startDate || !endDate) return [];
 
-  const [columns, setColumns] = useState([]);
-
-  const handleStartDateChange = (newDate) => {
-    setStartDate(newDate);
-    if (endDate && newDate && isBefore(newDate, endDate)) {
-      generateColumns(newDate, endDate);
-    }
-  };
-
-  const handleEndDateChange = (newDate) => {
-    setEndDate(newDate);
-    if (startDate && newDate && isBefore(startDate, newDate)) {
-      generateColumns(startDate, newDate);
-    }
-  };
-
-  const generateColumns = (start, end) => {
-    const dates = eachDayOfInterval({ start, end });
-    const formattedDates = dates.map((date) => ({
-      accessorKey: format(date, 'yyyy-MM-dd'),
-      header: format(date, 'yyyy-MM-dd'),
-      Cell: ({ row }) => {
-        const rowData = data.find((item) => item.date === format(date, 'yyyy-MM-dd'));
-        return rowData ? `${rowData.name} (${rowData.vacation})` : '-';
-      },
-    }));
-    setColumns([
-      { accessorKey: 'item', header: 'Item' },
-      ...formattedDates,
-    ]);
-  };
+    const dates = eachDayOfInterval({ start: startDate, end: endDate });
+    return [
+      { accessorKey: 'name', header: 'Name' },
+      ...dates.map(date => ({
+        accessorKey: format(date, 'dd/MM/yyyy'),
+        header: format(date, 'dd/MM/yyyy'),
+        cell: ({ row }) => {
+          const rowData = data.find(item => item.date === format(date, 'dd/MM/yyyy'));
+          return rowData ? rowData.vacation : '-';
+        }
+      }))
+    ];
+  }, [startDate, endDate, data]);
 
   const tableData = useMemo(() => {
-    return data.map((item) => ({
-      item: item.name,
-      ...data.reduce((acc, curr) => {
-        acc[curr.date] = `${curr.name} (${curr.vacation})`;
+    if (!startDate || !endDate) return [];
+
+    const dates = eachDayOfInterval({ start: startDate, end: endDate });
+    return data.map(item => ({
+      name: item.name,
+      ...dates.reduce((acc, date) => {
+        acc[format(date, 'dd/MM/yyyy')] = item.date === format(date, 'dd/MM/yyyy') ? item.vacation : '-';
         return acc;
       }, {}),
     }));
-  }, [data]);
+  }, [startDate, endDate, data]);
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <DatePicker
-          label="Start Date"
-          value={startDate}
-          onChange={handleStartDateChange}
-          renderInput={(params) => <TextField {...params} />}
-        />
-        <DatePicker
-          label="End Date"
-          value={endDate}
-          onChange={handleEndDateChange}
-          renderInput={(params) => <TextField {...params} />}
-        />
-      </Box>
-
+    <Box sx={{ padding: 2 }}>
       <MaterialReactTable
         columns={columns}
         data={tableData}
       />
-    </LocalizationProvider>
+    </Box>
   );
 }
 
-export default DynamicColumnTable;
+export default DynamicTable;

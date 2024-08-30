@@ -1,96 +1,62 @@
-// DynamicTable.js
-import React, { useState, useEffect, useMemo } from 'react';
-import { Box, TableCell, TableRow } from '@mui/material';
-import MaterialReactTable from 'material-react-table';
-import { format, eachDayOfInterval } from 'date-fns';
-import { enGB } from 'date-fns/locale';
+import React, { useState } from 'react';
+import { Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput } from '@mui/material';
 
-function DynamicTable({ startDate, endDate }) {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+const options = [
+  'Option 1',
+  'Option 2',
+  'Option 3',
+  'Option 4',
+  'Option 5',
+  'Option 6',
+  'Option 7',
+  'Option 8',
+  'Option 9',
+  'Option 10',
+];
 
-  // Fetch data from API when startDate or endDate changes
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch('https://api.example.com/data'); // Replace with your API URL
-        const result = await response.json();
-        setData(result);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+function MultiChoiceDropdown() {
+  const [selectedOptions, setSelectedOptions] = useState([]);
 
-    if (startDate && endDate) {
-      fetchData();
-    }
-  }, [startDate, endDate]);
-
-  const columns = useMemo(() => {
-    if (!startDate || !endDate) return [];
-
-    const dates = eachDayOfInterval({ start: startDate, end: endDate });
-    return [
-      { accessorKey: 'name', header: 'Name' },
-      ...dates.map(date => ({
-        accessorKey: format(date, 'dd/MM/yyyy'),
-        header: format(date, 'dd/MM/yyyy'),
-        cell: ({ row, column }) => {
-          const dateStr = format(date, 'dd/MM/yyyy');
-          const rowData = data.find(item => item.date === dateStr);
-          const cellValue = rowData ? rowData.vacation : '-';
-          const cellStatus = rowData ? rowData.status : '';
-
-          const handleClick = () => {
-            // Handle cell click event
-            alert(`Clicked on ${dateStr}: ${cellValue}`);
-          };
-
-          // Determine background color based on status
-          const cellBackgroundColor = cellStatus === 'error' ? 'red' : cellStatus === 'ignored' ? 'yellow' : 'transparent';
-
-          return (
-            <TableCell
-              onClick={handleClick}
-              sx={{ backgroundColor: cellBackgroundColor, color: 'black', cursor: 'pointer' }}
-            >
-              {cellValue}
-            </TableCell>
-          );
-        }
-      }))
-    ];
-  }, [startDate, endDate, data]);
-
-  const tableData = useMemo(() => {
-    if (!startDate || !endDate) return [];
-
-    const dates = eachDayOfInterval({ start: startDate, end: endDate });
-    return data.map(item => ({
-      name: item.name,
-      ...dates.reduce((acc, date) => {
-        const formattedDate = format(date, 'dd/MM/yyyy');
-        acc[formattedDate] = item.date === formattedDate ? item.vacation : '-';
-        return acc;
-      }, {}),
-    }));
-  }, [startDate, endDate, data]);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const handleChange = (event) => {
+    const {
+      target: { value },
+    } = event;
+    setSelectedOptions(
+      // On autofill we get a stringified value, so we need to split it if it's a string.
+      typeof value === 'string' ? value.split(',') : value,
+    );
+  };
 
   return (
-    <Box sx={{ padding: 2 }}>
-      <MaterialReactTable
-        columns={columns}
-        data={tableData}
-      />
+    <Box sx={{ width: 300 }}>
+      <FormControl fullWidth>
+        <InputLabel id="multi-select-label">Select Options</InputLabel>
+        <Select
+          labelId="multi-select-label"
+          multiple
+          value={selectedOptions}
+          onChange={handleChange}
+          input={<OutlinedInput label="Select Options" />}
+          renderValue={(selected) => selected.join(', ')}
+          MenuProps={{
+            PaperProps: {
+              style: {
+                maxHeight: 224,  // Adjust maxHeight to control the scrollable area
+                width: 250,
+              },
+            },
+          }}
+        >
+          {options.map((option) => (
+            <MenuItem key={option} value={option}>
+              <Checkbox checked={selectedOptions.indexOf(option) > -1} />
+              <ListItemText primary={option} />
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
     </Box>
   );
 }
 
-export default DynamicTable;
+export default MultiChoiceDropdown;

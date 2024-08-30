@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput } from '@mui/material';
 
 const options = [
@@ -14,15 +14,12 @@ const options = [
   'Option 10',
 ];
 
-function MultiChoiceDropdown() {
-  const [selectedOptions, setSelectedOptions] = useState([]);
-
+function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
   const handleChange = (event) => {
     const {
       target: { value },
     } = event;
     setSelectedOptions(
-      // On autofill we get a stringified value, so we need to split it if it's a string.
       typeof value === 'string' ? value.split(',') : value,
     );
   };

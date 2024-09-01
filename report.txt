@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import {
-  Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput, TextField, ListSubheader, Button,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  OutlinedInput,
+  TextField,
+  ListSubheader,
+  Button,
 } from '@mui/material';
 
 const options = [
@@ -19,33 +29,35 @@ const options = [
 function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Handle selection change
   const handleChange = (event) => {
     const {
       target: { value },
     } = event;
-    setSelectedOptions(
-      typeof value === 'string' ? value.split(',') : value,
-    );
+    setSelectedOptions(typeof value === 'string' ? value.split(',') : value);
   };
 
+  // Handle Select All toggle
   const handleSelectAll = () => {
-    if (selectedOptions.length === options.length) {
-      setSelectedOptions([]);
+    if (selectedOptions.length === filteredOptions.length) {
+      setSelectedOptions([]); // Deselect all if all are already selected
     } else {
-      setSelectedOptions(options);
+      setSelectedOptions(filteredOptions); // Select all options in the current filter
     }
   };
 
+  // Handle Clear Selection
   const handleClearSelection = () => {
     setSelectedOptions([]);
   };
 
-  const filteredOptions = options.filter(option =>
+  // Filter options based on search query
+  const filteredOptions = options.filter((option) =>
     option.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <Box sx={{ width: 300 }}>
+    <Box sx={{ width: 300, mb: 2 }}>
       <FormControl fullWidth>
         <InputLabel id="multi-select-label">Select Options</InputLabel>
         <Select
@@ -58,12 +70,13 @@ function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
           MenuProps={{
             PaperProps: {
               style: {
-                maxHeight: 300,  // Adjust maxHeight to control the scrollable area
+                maxHeight: 300,
                 width: 300,
               },
             },
           }}
         >
+          {/* Search Field */}
           <ListSubheader>
             <TextField
               size="small"
@@ -75,17 +88,16 @@ function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
             />
           </ListSubheader>
 
-          <MenuItem
-            value="all"
-            onClick={handleSelectAll}
-          >
+          {/* Select All Option */}
+          <MenuItem value="select-all" onClick={handleSelectAll}>
             <Checkbox
-              checked={selectedOptions.length === options.length}
-              indeterminate={selectedOptions.length > 0 && selectedOptions.length < options.length}
+              checked={selectedOptions.length === filteredOptions.length && filteredOptions.length > 0}
+              indeterminate={selectedOptions.length > 0 && selectedOptions.length < filteredOptions.length}
             />
             <ListItemText primary="Select All" />
           </MenuItem>
 
+          {/* Filtered Options */}
           {filteredOptions.map((option) => (
             <MenuItem key={option} value={option}>
               <Checkbox checked={selectedOptions.indexOf(option) > -1} />
@@ -93,8 +105,14 @@ function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
             </MenuItem>
           ))}
 
-          <MenuItem onClick={handleClearSelection}>
-            <Button fullWidth variant="outlined" color="secondary">
+          {/* Clear Selection Button */}
+          <MenuItem disableGutters>
+            <Button
+              fullWidth
+              variant="outlined"
+              color="secondary"
+              onClick={handleClearSelection}
+            >
               Clear Selection
             </Button>
           </MenuItem>

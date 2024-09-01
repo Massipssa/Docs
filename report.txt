@@ -26,14 +26,13 @@ const options = [
   'Option 10',
 ];
 
-function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
+function MultiChoiceDropdown() {
+  const [selectedOptions, setSelectedOptions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleChange = (event) => {
     const { target: { value } } = event;
-    setSelectedOptions(
-      typeof value === 'string' ? value.split(',') : value
-    );
+    setSelectedOptions(typeof value === 'string' ? value.split(',') : value);
   };
 
   const handleSelectAll = () => {

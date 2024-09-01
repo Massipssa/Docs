@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput, TextField, Button, ListSubheader,
+  Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput, TextField, ListSubheader, Button,
 } from '@mui/material';
 
 const options = [
@@ -71,6 +71,7 @@ function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
               fullWidth
               variant="outlined"
               onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ mb: 1 }}
             />
           </ListSubheader>
 
@@ -91,10 +92,13 @@ function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
               <ListItemText primary={option} />
             </MenuItem>
           ))}
+
+          <MenuItem onClick={handleClearSelection}>
+            <Button fullWidth variant="outlined" color="secondary">
+              Clear Selection
+            </Button>
+          </MenuItem>
         </Select>
-        <Button onClick={handleClearSelection} sx={{ marginTop: 1 }}>
-          Clear Selection
-        </Button>
       </FormControl>
     </Box>
   );

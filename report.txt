@@ -10,8 +10,9 @@ import {
   OutlinedInput,
   TextField,
   ListSubheader,
-  Button,
+  IconButton,
 } from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
 
 const options = [
   'Option 1',
@@ -71,26 +72,20 @@ function MultiChoiceDropdown() {
             },
           }}
         >
-          {/* Search Field */}
+          {/* Search Field with Clear Button */}
           <ListSubheader>
-            <TextField
-              size="small"
-              placeholder="Search..."
-              fullWidth
-              variant="outlined"
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ mb: 1 }}
-            />
-            {/* Clear Selection Button */}
-            <Button
-              fullWidth
-              variant="outlined"
-              color="secondary"
-              onClick={handleClearSelection}
-              sx={{ mb: 1 }}
-            >
-              Clear Selection
-            </Button>
+            <Box display="flex" alignItems="center">
+              <TextField
+                size="small"
+                placeholder="Search..."
+                fullWidth
+                variant="outlined"
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <IconButton onClick={handleClearSelection} sx={{ ml: 1 }}>
+                <ClearIcon />
+              </IconButton>
+            </Box>
           </ListSubheader>
 
           {/* Select All Option */}

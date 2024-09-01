@@ -29,29 +29,25 @@ const options = [
 function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Handle selection change
   const handleChange = (event) => {
-    const {
-      target: { value },
-    } = event;
-    setSelectedOptions(typeof value === 'string' ? value.split(',') : value);
+    const { target: { value } } = event;
+    setSelectedOptions(
+      typeof value === 'string' ? value.split(',') : value
+    );
   };
 
-  // Handle Select All toggle
   const handleSelectAll = () => {
     if (selectedOptions.length === filteredOptions.length) {
-      setSelectedOptions([]); // Deselect all if all are already selected
+      setSelectedOptions([]); // Deselect all if already selected
     } else {
-      setSelectedOptions(filteredOptions); // Select all options in the current filter
+      setSelectedOptions(filteredOptions); // Select all visible options
     }
   };
 
-  // Handle Clear Selection
   const handleClearSelection = () => {
     setSelectedOptions([]);
   };
 
-  // Filter options based on search query
   const filteredOptions = options.filter((option) =>
     option.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -86,6 +82,16 @@ function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
               onChange={(e) => setSearchQuery(e.target.value)}
               sx={{ mb: 1 }}
             />
+            {/* Clear Selection Button */}
+            <Button
+              fullWidth
+              variant="outlined"
+              color="secondary"
+              onClick={handleClearSelection}
+              sx={{ mb: 1 }}
+            >
+              Clear Selection
+            </Button>
           </ListSubheader>
 
           {/* Select All Option */}
@@ -104,18 +110,6 @@ function MultiChoiceDropdown({ selectedOptions, setSelectedOptions }) {
               <ListItemText primary={option} />
             </MenuItem>
           ))}
-
-          {/* Clear Selection Button */}
-          <MenuItem disableGutters>
-            <Button
-              fullWidth
-              variant="outlined"
-              color="secondary"
-              onClick={handleClearSelection}
-            >
-              Clear Selection
-            </Button>
-          </MenuItem>
         </Select>
       </FormControl>
     </Box>

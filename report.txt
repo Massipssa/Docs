@@ -9,8 +9,10 @@ import {
   ListItemText,
   OutlinedInput,
   IconButton,
+  InputBase,
 } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
+import SearchIcon from '@mui/icons-material/Search';
 
 const options = [
   'Option 1',
@@ -27,6 +29,7 @@ const options = [
 
 function MultiChoiceDropdown() {
   const [selectedOptions, setSelectedOptions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleChange = (event) => {
     const { target: { value } } = event;
@@ -47,10 +50,17 @@ function MultiChoiceDropdown() {
     }
   };
 
-  const handleClearSelection = (e) => {
-    e.stopPropagation(); // Prevent the dropdown from opening when clearing
+  const handleClearSelection = () => {
     setSelectedOptions([]);
   };
+
+  const handleSearch = (event) => {
+    setSearchQuery(event.target.value);
+  };
+
+  const filteredOptions = options.filter((option) =>
+    option.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <Box sx={{ width: 300, mb: 2 }}>
@@ -65,19 +75,6 @@ function MultiChoiceDropdown() {
           renderValue={(selected) => (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <span>{selected.join(', ')}</span>
-              {selected.length > 0 && (
-                <IconButton
-                  size="small"
-                  onClick={handleClearSelection}
-                  sx={{
-                    padding: 0,
-                    marginLeft: 'auto',
-                    marginRight: -1, // Adjust to align the button inside the select box
-                  }}
-                >
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              )}
             </Box>
           )}
           MenuProps={{
@@ -86,6 +83,39 @@ function MultiChoiceDropdown() {
                 maxHeight: 300,
                 width: 300,
               },
+            },
+            // Adding the search and clear buttons at the top of the menu
+            MenuListProps: {
+              sx: {
+                padding: 0,
+              },
+              subheader: (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 16px',
+                  }}
+                >
+                  <InputBase
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={handleSearch}
+                    startAdornment={<SearchIcon sx={{ mr: 1 }} />}
+                    sx={{ width: '100%' }}
+                  />
+                  <IconButton
+                    onClick={handleClearSelection}
+                    sx={{
+                      padding: 0,
+                      marginLeft: 1,
+                    }}
+                  >
+                    <ClearIcon />
+                  </IconButton>
+                </Box>
+              ),
             },
           }}
         >
@@ -98,8 +128,8 @@ function MultiChoiceDropdown() {
             <ListItemText primary="Select All" />
           </MenuItem>
 
-          {/* All Options */}
-          {options.map((option) => (
+          {/* Filtered Options */}
+          {filteredOptions.map((option) => (
             <MenuItem key={option} value={option}>
               <Checkbox checked={selectedOptions.indexOf(option) > -1} />
               <ListItemText primary={option} />

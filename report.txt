@@ -1,144 +1,83 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Bar } from 'react-chartjs-2';
+import { Box, Typography } from '@mui/material';
 import {
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Checkbox,
-  ListItemText,
-  OutlinedInput,
-  IconButton,
-  InputBase,
-} from '@mui/material';
-import ClearIcon from '@mui/icons-material/Clear';
-import SearchIcon from '@mui/icons-material/Search';
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 
-const options = [
-  'Option 1',
-  'Option 2',
-  'Option 3',
-  'Option 4',
-  'Option 5',
-  'Option 6',
-  'Option 7',
-  'Option 8',
-  'Option 9',
-  'Option 10',
-];
+// Register necessary components with ChartJS
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-function MultiChoiceDropdown() {
-  const [selectedOptions, setSelectedOptions] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const handleChange = (event) => {
-    const { target: { value } } = event;
-    const newSelectedOptions = typeof value === 'string' ? value.split(',') : value;
-
-    if (newSelectedOptions.length > selectedOptions.length) {
-      setSelectedOptions(options);
-    } else {
-      setSelectedOptions(newSelectedOptions);
-    }
+const CreBarChart = () => {
+  // Hardcoded data for demonstration purposes
+  const data = {
+    dates: ['01/09/2023', '02/09/2023', '03/09/2023', '04/09/2023', '05/09/2023'],
+    received: [10, 20, 15, 30, 25],
+    integrated: [8, 18, 12, 28, 22],
   };
 
-  const handleSelectAll = () => {
-    if (selectedOptions.length === options.length) {
-      setSelectedOptions([]); // Deselect all if already selected
-    } else {
-      setSelectedOptions(options); // Select all options
-    }
+  const chartData = {
+    labels: data.dates, // Already formatted as dd/MM/yyyy
+    datasets: [
+      {
+        label: 'Received CRE by Day',
+        data: data.received,
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+      },
+      {
+        label: 'Integrated CRE by Day',
+        data: data.integrated,
+        backgroundColor: 'rgba(153, 102, 255, 0.6)',
+        borderColor: 'rgba(153, 102, 255, 1)',
+        borderWidth: 1,
+      },
+    ],
   };
-
-  const handleClearSelection = () => {
-    setSelectedOptions([]);
-  };
-
-  const handleSearch = (event) => {
-    setSearchQuery(event.target.value);
-  };
-
-  const filteredOptions = options.filter((option) =>
-    option.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
-    <Box sx={{ width: 300, mb: 2 }}>
-      <FormControl fullWidth>
-        <InputLabel id="multi-select-label">Select Options</InputLabel>
-        <Select
-          labelId="multi-select-label"
-          multiple
-          value={selectedOptions}
-          onChange={handleChange}
-          input={<OutlinedInput label="Select Options" />}
-          renderValue={(selected) => (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <span>{selected.join(', ')}</span>
-            </Box>
-          )}
-          MenuProps={{
-            PaperProps: {
-              style: {
-                maxHeight: 300,
-                width: 300,
+    <Box p={4} textAlign="center">
+      <Typography variant="h4" gutterBottom>
+        CRE Activity Over Time
+      </Typography>
+      <Bar
+        data={chartData}
+        options={{
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            title: {
+              display: true,
+              text: 'Received vs Integrated CRE',
+            },
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Date',
               },
             },
-            // Adding the search and clear buttons at the top of the menu
-            MenuListProps: {
-              sx: {
-                padding: 0,
+            y: {
+              title: {
+                display: true,
+                text: 'Number of CRE',
               },
-              subheader: (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 16px',
-                  }}
-                >
-                  <InputBase
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={handleSearch}
-                    startAdornment={<SearchIcon sx={{ mr: 1 }} />}
-                    sx={{ width: '100%' }}
-                  />
-                  <IconButton
-                    onClick={handleClearSelection}
-                    sx={{
-                      padding: 0,
-                      marginLeft: 1,
-                    }}
-                  >
-                    <ClearIcon />
-                  </IconButton>
-                </Box>
-              ),
             },
-          }}
-        >
-          {/* Select All Option */}
-          <MenuItem value="select-all" onClick={handleSelectAll}>
-            <Checkbox
-              checked={selectedOptions.length === options.length}
-              indeterminate={selectedOptions.length > 0 && selectedOptions.length < options.length}
-            />
-            <ListItemText primary="Select All" />
-          </MenuItem>
-
-          {/* Filtered Options */}
-          {filteredOptions.map((option) => (
-            <MenuItem key={option} value={option}>
-              <Checkbox checked={selectedOptions.indexOf(option) > -1} />
-              <ListItemText primary={option} />
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+          },
+        }}
+      />
     </Box>
   );
-}
+};
 
-export default MultiChoiceDropdown;
+export default CreBarChart;

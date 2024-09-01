@@ -9,7 +9,6 @@ import {
   ListItemText,
   OutlinedInput,
   IconButton,
-  ListSubheader,
 } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 
@@ -33,7 +32,6 @@ function MultiChoiceDropdown() {
     const { target: { value } } = event;
     const newSelectedOptions = typeof value === 'string' ? value.split(',') : value;
 
-    // Select all if any option is selected
     if (newSelectedOptions.length > selectedOptions.length) {
       setSelectedOptions(options);
     } else {
@@ -57,45 +55,55 @@ function MultiChoiceDropdown() {
     <Box sx={{ width: 300, mb: 2 }}>
       <FormControl fullWidth>
         <InputLabel id="multi-select-label">Select Options</InputLabel>
-        <Box display="flex" alignItems="center">
-          <Select
-            labelId="multi-select-label"
-            multiple
-            value={selectedOptions}
-            onChange={handleChange}
-            input={<OutlinedInput label="Select Options" />}
-            renderValue={(selected) => selected.join(', ')}
-            sx={{ flexGrow: 1 }}
-            MenuProps={{
-              PaperProps: {
-                style: {
-                  maxHeight: 300,
-                  width: 300,
-                },
+        <Select
+          labelId="multi-select-label"
+          multiple
+          value={selectedOptions}
+          onChange={handleChange}
+          input={<OutlinedInput label="Select Options" />}
+          renderValue={(selected) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <span>{selected.join(', ')}</span>
+              {selected.length > 0 && (
+                <IconButton
+                  size="small"
+                  onClick={handleClearSelection}
+                  sx={{
+                    padding: 0,
+                    marginLeft: 'auto',
+                  }}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              )}
+            </Box>
+          )}
+          MenuProps={{
+            PaperProps: {
+              style: {
+                maxHeight: 300,
+                width: 300,
               },
-            }}
-          >
-            {/* Select All Option */}
-            <MenuItem value="select-all" onClick={handleSelectAll}>
-              <Checkbox
-                checked={selectedOptions.length === options.length}
-                indeterminate={selectedOptions.length > 0 && selectedOptions.length < options.length}
-              />
-              <ListItemText primary="Select All" />
-            </MenuItem>
+            },
+          }}
+        >
+          {/* Select All Option */}
+          <MenuItem value="select-all" onClick={handleSelectAll}>
+            <Checkbox
+              checked={selectedOptions.length === options.length}
+              indeterminate={selectedOptions.length > 0 && selectedOptions.length < options.length}
+            />
+            <ListItemText primary="Select All" />
+          </MenuItem>
 
-            {/* All Options */}
-            {options.map((option) => (
-              <MenuItem key={option} value={option}>
-                <Checkbox checked={selectedOptions.indexOf(option) > -1} />
-                <ListItemText primary={option} />
-              </MenuItem>
-            ))}
-          </Select>
-          <IconButton onClick={handleClearSelection} sx={{ ml: 1 }}>
-            <ClearIcon />
-          </IconButton>
-        </Box>
+          {/* All Options */}
+          {options.map((option) => (
+            <MenuItem key={option} value={option}>
+              <Checkbox checked={selectedOptions.indexOf(option) > -1} />
+              <ListItemText primary={option} />
+            </MenuItem>
+          ))}
+        </Select>
       </FormControl>
     </Box>
   );

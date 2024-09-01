@@ -47,7 +47,8 @@ function MultiChoiceDropdown() {
     }
   };
 
-  const handleClearSelection = () => {
+  const handleClearSelection = (e) => {
+    e.stopPropagation(); // Prevent the dropdown from opening when clearing
     setSelectedOptions([]);
   };
 
@@ -71,6 +72,7 @@ function MultiChoiceDropdown() {
                   sx={{
                     padding: 0,
                     marginLeft: 'auto',
+                    marginRight: -1, // Adjust to align the button inside the select box
                   }}
                 >
                   <ClearIcon fontSize="small" />

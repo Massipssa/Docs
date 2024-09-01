@@ -8,9 +8,8 @@ import {
   Checkbox,
   ListItemText,
   OutlinedInput,
-  TextField,
-  ListSubheader,
   IconButton,
+  ListSubheader,
 } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 
@@ -29,18 +28,24 @@ const options = [
 
 function MultiChoiceDropdown() {
   const [selectedOptions, setSelectedOptions] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const handleChange = (event) => {
     const { target: { value } } = event;
-    setSelectedOptions(typeof value === 'string' ? value.split(',') : value);
+    const newSelectedOptions = typeof value === 'string' ? value.split(',') : value;
+
+    // Select all if any option is selected
+    if (newSelectedOptions.length > selectedOptions.length) {
+      setSelectedOptions(options);
+    } else {
+      setSelectedOptions(newSelectedOptions);
+    }
   };
 
   const handleSelectAll = () => {
-    if (selectedOptions.length === filteredOptions.length) {
+    if (selectedOptions.length === options.length) {
       setSelectedOptions([]); // Deselect all if already selected
     } else {
-      setSelectedOptions(filteredOptions); // Select all visible options
+      setSelectedOptions(options); // Select all options
     }
   };
 
@@ -48,63 +53,49 @@ function MultiChoiceDropdown() {
     setSelectedOptions([]);
   };
 
-  const filteredOptions = options.filter((option) =>
-    option.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
     <Box sx={{ width: 300, mb: 2 }}>
       <FormControl fullWidth>
         <InputLabel id="multi-select-label">Select Options</InputLabel>
-        <Select
-          labelId="multi-select-label"
-          multiple
-          value={selectedOptions}
-          onChange={handleChange}
-          input={<OutlinedInput label="Select Options" />}
-          renderValue={(selected) => selected.join(', ')}
-          MenuProps={{
-            PaperProps: {
-              style: {
-                maxHeight: 300,
-                width: 300,
+        <Box display="flex" alignItems="center">
+          <Select
+            labelId="multi-select-label"
+            multiple
+            value={selectedOptions}
+            onChange={handleChange}
+            input={<OutlinedInput label="Select Options" />}
+            renderValue={(selected) => selected.join(', ')}
+            sx={{ flexGrow: 1 }}
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  maxHeight: 300,
+                  width: 300,
+                },
               },
-            },
-          }}
-        >
-          {/* Search Field with Clear Button */}
-          <ListSubheader>
-            <Box display="flex" alignItems="center">
-              <TextField
-                size="small"
-                placeholder="Search..."
-                fullWidth
-                variant="outlined"
-                onChange={(e) => setSearchQuery(e.target.value)}
+            }}
+          >
+            {/* Select All Option */}
+            <MenuItem value="select-all" onClick={handleSelectAll}>
+              <Checkbox
+                checked={selectedOptions.length === options.length}
+                indeterminate={selectedOptions.length > 0 && selectedOptions.length < options.length}
               />
-              <IconButton onClick={handleClearSelection} sx={{ ml: 1 }}>
-                <ClearIcon />
-              </IconButton>
-            </Box>
-          </ListSubheader>
-
-          {/* Select All Option */}
-          <MenuItem value="select-all" onClick={handleSelectAll}>
-            <Checkbox
-              checked={selectedOptions.length === filteredOptions.length && filteredOptions.length > 0}
-              indeterminate={selectedOptions.length > 0 && selectedOptions.length < filteredOptions.length}
-            />
-            <ListItemText primary="Select All" />
-          </MenuItem>
-
-          {/* Filtered Options */}
-          {filteredOptions.map((option) => (
-            <MenuItem key={option} value={option}>
-              <Checkbox checked={selectedOptions.indexOf(option) > -1} />
-              <ListItemText primary={option} />
+              <ListItemText primary="Select All" />
             </MenuItem>
-          ))}
-        </Select>
+
+            {/* All Options */}
+            {options.map((option) => (
+              <MenuItem key={option} value={option}>
+                <Checkbox checked={selectedOptions.indexOf(option) > -1} />
+                <ListItemText primary={option} />
+              </MenuItem>
+            ))}
+          </Select>
+          <IconButton onClick={handleClearSelection} sx={{ ml: 1 }}>
+            <ClearIcon />
+          </IconButton>
+        </Box>
       </FormControl>
     </Box>
   );

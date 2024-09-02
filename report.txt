@@ -8,12 +8,12 @@ const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSeverity, setSelectedSeverity] = useState('');
 
-  // Mock data for statistics
+  // Mock data for statistics with added 'total' field
   const statistics = {
-    datacheck: { server: 1, medium: 2, fatal: 3 },
-    metadata: { server: 1, medium: 2, fatal: 3 },
-    parameter: { server: 1, medium: 2, fatal: 3 },
-    monitoring: { server: 1, medium: 2, fatal: 3 },
+    datacheck: { total: 100, server: 1, medium: 2, fatal: 3 },
+    metadata: { total: 80, server: 1, medium: 2, fatal: 3 },
+    parameter: { total: 90, server: 1, medium: 2, fatal: 3 },
+    monitoring: { total: 120, server: 1, medium: 2, fatal: 3 },
   };
 
   // Function to determine the color based on severity
@@ -36,7 +36,7 @@ const Dashboard = () => {
   const renderCard = (checkType, stats) => (
     <Grid item xs={12} sm={6} md={3} key={checkType}>
       <Paper
-        onClick={() => handleNavigation(`/${checkType}-check`)}
+        onClick={() => navigate(`/${checkType}-check`)}
         sx={{
           padding: 2,
           cursor: 'pointer',
@@ -49,10 +49,13 @@ const Dashboard = () => {
           boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
         }}
       >
-        <Typography variant="h6">
+        <Typography variant="h6" gutterBottom>
           {checkType.charAt(0).toUpperCase() + checkType.slice(1)}
         </Typography>
-        {Object.entries(stats).map(([severity, count]) => (
+        <Typography variant="h5" sx={{ mb: 2 }}>
+          Total: {stats.total}
+        </Typography>
+        {Object.entries(stats).filter(([key]) => key !== 'total').map(([severity, count]) => (
           <Typography
             key={severity}
             variant="body1"

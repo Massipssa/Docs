@@ -1,12 +1,12 @@
 import React from 'react';
-import { Box, Grid, Typography, Paper, Link } from '@mui/material';
-import { useHistory } from 'react-router-dom';
+import { Box, Grid, Typography, Paper } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleNavigation = (path) => {
-    history.push(path);
+    navigate(path);
   };
 
   return (

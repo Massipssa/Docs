@@ -17,7 +17,8 @@ public class MissingCreProcessor {
                         Collectors.teeing(
                                 Collectors.summingInt(cre -> "c".equals(cre.getCritical()) ? 1 : 0),
                                 Collectors.summingInt(cre -> "x".equals(cre.getCritical()) ? 1 : 0),
-                                ProjectMissingCreDto::new
+                                (missingCritical, missingNotCritical) -> 
+                                    new ProjectMissingCreDto(missingCritical.getProjectName(), missingCritical, missingNotCritical)
                         )
                 ))
                 .values()

@@ -18,11 +18,11 @@ public class MissingCreProcessor {
                                 Collectors.summingInt(cre -> "c".equals(cre.getCritical()) ? 1 : 0),
                                 Collectors.summingInt(cre -> "x".equals(cre.getCritical()) ? 1 : 0),
                                 (missingCritical, missingNotCritical) -> 
-                                    new ProjectMissingCreDto(missingCritical.getProjectName(), missingCritical, missingNotCritical)
+                                    new ProjectMissingCreDto("", missingCritical, missingNotCritical)
                         )
                 ))
-                .values()
-                .stream()
+                .entrySet().stream()
+                .map(entry -> new ProjectMissingCreDto(entry.getKey(), entry.getValue().missingCritical, entry.getValue().missingNotCritical))
                 .collect(Collectors.toList());
     }
 

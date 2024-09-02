@@ -1,53 +1,144 @@
-import React from 'react';
-import { Box, Grid, Typography, Paper } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Grid, Typography, Paper, FormControl, Button, TextField } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [statistics, setStatistics] = useState({
+    dataCheck: { total: 0, errors: 0, warnings: 0, severity: 'low' },
+    metadataCheck: { total: 0, errors: 0, warnings: 0, severity: 'medium' },
+    parameterCheck: { total: 0, errors: 0, warnings: 0, severity: 'high' },
+    monitoringCheck: { total: 0, errors: 0, warnings: 0, severity: 'critical' },
+  });
+
+  // Handle filter based on date change
+  const handleDateChange = (newValue) => {
+    setSelectedDate(newValue);
+    // Add your API call to fetch statistics based on the selected date
+    console.log('Selected Date:', newValue);
+  };
+
+  const severityColor = (severity) => {
+    switch (severity) {
+      case 'low':
+        return '#4caf50'; // green
+      case 'medium':
+        return '#ffeb3b'; // yellow
+      case 'high':
+        return '#ff9800'; // orange
+      case 'critical':
+        return '#f44336'; // red
+      default:
+        return '#e0e0e0'; // gray
+    }
+  };
 
   const handleNavigation = (path) => {
     navigate(path);
   };
 
-  const statistics = {
-    dataCheck: { total: 150, errors: 5, warnings: 10 },
-    metadataCheck: { total: 120, errors: 2, warnings: 5 },
-    parameterCheck: { total: 90, errors: 1, warnings: 3 },
-    monitoringCheck: { total: 200, errors: 0, warnings: 8 },
-  };
-
   return (
     <Box p={3}>
+      {/* Title */}
       <Typography variant="h4" align="center" gutterBottom>
         Data Quality Dashboard
       </Typography>
+
+      {/* Date Picker */}
+      <Grid container spacing={3} justifyContent="center" alignItems="center" mb={3}>
+        <Grid item xs={12} sm={4}>
+          <DatePicker
+            label="Filter by Date"
+            value={selectedDate}
+            onChange={handleDateChange}
+            renderInput={(params) => <TextField {...params} fullWidth />}
+          />
+        </Grid>
+        <Grid item xs={12} sm={2}>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={() => console.log('Apply filter')}
+          >
+            Apply Filter
+          </Button>
+        </Grid>
+      </Grid>
+
+      {/* Cards */}
       <Grid container spacing={3}>
+        {/* Data Check */}
         <Grid item xs={12} sm={6} md={3}>
-          <Paper onClick={() => handleNavigation('/data-check')} sx={{ padding: 2, cursor: 'pointer', textAlign: 'center' }}>
+          <Paper
+            onClick={() => handleNavigation('/data-check')}
+            sx={{
+              padding: 2,
+              cursor: 'pointer',
+              textAlign: 'center',
+              backgroundColor: severityColor(statistics.dataCheck.severity),
+              color: 'white',
+            }}
+          >
             <Typography variant="h6">Data Check</Typography>
             <Typography>Total: {statistics.dataCheck.total}</Typography>
             <Typography>Errors: {statistics.dataCheck.errors}</Typography>
             <Typography>Warnings: {statistics.dataCheck.warnings}</Typography>
           </Paper>
         </Grid>
+
+        {/* Metadata Check */}
         <Grid item xs={12} sm={6} md={3}>
-          <Paper onClick={() => handleNavigation('/metadata-check')} sx={{ padding: 2, cursor: 'pointer', textAlign: 'center' }}>
+          <Paper
+            onClick={() => handleNavigation('/metadata-check')}
+            sx={{
+              padding: 2,
+              cursor: 'pointer',
+              textAlign: 'center',
+              backgroundColor: severityColor(statistics.metadataCheck.severity),
+              color: 'white',
+            }}
+          >
             <Typography variant="h6">Metadata Check</Typography>
             <Typography>Total: {statistics.metadataCheck.total}</Typography>
             <Typography>Errors: {statistics.metadataCheck.errors}</Typography>
             <Typography>Warnings: {statistics.metadataCheck.warnings}</Typography>
           </Paper>
         </Grid>
+
+        {/* Parameter Check */}
         <Grid item xs={12} sm={6} md={3}>
-          <Paper onClick={() => handleNavigation('/parameter-check')} sx={{ padding: 2, cursor: 'pointer', textAlign: 'center' }}>
+          <Paper
+            onClick={() => handleNavigation('/parameter-check')}
+            sx={{
+              padding: 2,
+              cursor: 'pointer',
+              textAlign: 'center',
+              backgroundColor: severityColor(statistics.parameterCheck.severity),
+              color: 'white',
+            }}
+          >
             <Typography variant="h6">Parameter Check</Typography>
             <Typography>Total: {statistics.parameterCheck.total}</Typography>
             <Typography>Errors: {statistics.parameterCheck.errors}</Typography>
             <Typography>Warnings: {statistics.parameterCheck.warnings}</Typography>
           </Paper>
         </Grid>
+
+        {/* Monitoring Check */}
         <Grid item xs={12} sm={6} md={3}>
-          <Paper onClick={() => handleNavigation('/monitoring-check')} sx={{ padding: 2, cursor: 'pointer', textAlign: 'center' }}>
+          <Paper
+            onClick={() => handleNavigation('/monitoring-check')}
+            sx={{
+              padding: 2,
+              cursor: 'pointer',
+              textAlign: 'center',
+              backgroundColor: severityColor(statistics.monitoringCheck.severity),
+              color: 'white',
+            }}
+          >
             <Typography variant="h6">Monitoring Check</Typography>
             <Typography>Total: {statistics.monitoringCheck.total}</Typography>
             <Typography>Errors: {statistics.monitoringCheck.errors}</Typography>

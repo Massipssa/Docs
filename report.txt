@@ -8,34 +8,20 @@ const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSeverity, setSelectedSeverity] = useState('');
 
-  const handleNavigation = (path) => {
-    navigate(path);
-  };
-
   // Mock data for statistics
   const statistics = {
-    dataCheck: [
-      { total: 150, errors: 5, warnings: 10, severity: 'high' },
-      { total: 120, errors: 10, warnings: 15, severity: 'medium' }
-    ],
-    metadataCheck: [
-      { total: 100, errors: 3, warnings: 7, severity: 'low' },
-      { total: 80, errors: 2, warnings: 5, severity: 'medium' }
-    ],
-    parameterCheck: [
-      { total: 90, errors: 1, warnings: 3, severity: 'low' }
-    ],
-    monitoringCheck: [
-      { total: 200, errors: 0, warnings: 8, severity: 'critical' }
-    ]
+    datacheck: { server: 1, medium: 2, fatal: 3 },
+    metadata: { server: 1, medium: 2, fatal: 3 },
+    parameter: { server: 1, medium: 2, fatal: 3 },
+    monitoring: { server: 1, medium: 2, fatal: 3 },
   };
 
   // Function to determine the color based on severity
   const getSeverityColor = (severity) => {
     switch (severity) {
-      case 'critical':
+      case 'fatal':
         return 'red';
-      case 'high':
+      case 'server':
         return 'orange';
       case 'medium':
         return 'yellow';
@@ -46,40 +32,37 @@ const Dashboard = () => {
     }
   };
 
-  // Function to render cards for a specific check type
-  const renderCards = (checkType, statsArray) => (
-    statsArray.map((stats, index) => (
-      <Grid item xs={12} sm={6} md={3} key={`${checkType}-${index}`}>
-        <Paper
-          onClick={() => handleNavigation(`/${checkType}-check`)}
-          sx={{
-            padding: 2,
-            cursor: 'pointer',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            backgroundColor: getSeverityColor(stats.severity),
-            color: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-          }}
-        >
-          <Typography variant="h6">
-            {`${checkType.replace(/([A-Z])/g, ' $1').toUpperCase()} ${index + 1}`}
+  // Function to render a single card for a check type
+  const renderCard = (checkType, stats) => (
+    <Grid item xs={12} sm={6} md={3} key={checkType}>
+      <Paper
+        onClick={() => handleNavigation(`/${checkType}-check`)}
+        sx={{
+          padding: 2,
+          cursor: 'pointer',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+        }}
+      >
+        <Typography variant="h6">
+          {checkType.charAt(0).toUpperCase() + checkType.slice(1)}
+        </Typography>
+        {Object.entries(stats).map(([severity, count]) => (
+          <Typography
+            key={severity}
+            variant="body1"
+            sx={{ color: getSeverityColor(severity), fontWeight: 'bold' }}
+          >
+            {`${severity.charAt(0).toUpperCase() + severity.slice(1)}: ${count}`}
           </Typography>
-          <Typography variant="h5">
-            Total: {stats.total}
-          </Typography>
-          <Typography variant="body1">
-            Errors: {stats.errors}
-          </Typography>
-          <Typography variant="body1">
-            Warnings: {stats.warnings}
-          </Typography>
-        </Paper>
-      </Grid>
-    ))
+        ))}
+      </Paper>
+    </Grid>
   );
 
   return (
@@ -89,45 +72,42 @@ const Dashboard = () => {
       </Typography>
 
       {/* Filter Section */}
-      <Box mb={3} textAlign="center">
-        <FormControl fullWidth>
+      <Box mb={3} display="flex" justifyContent="center" alignItems="center" gap={2}>
+        <FormControl variant="outlined" sx={{ minWidth: 150 }}>
           <DatePicker
             label="Filter by Date"
             value={selectedDate}
             onChange={(newValue) => setSelectedDate(newValue)}
-            renderInput={(params) => <TextField {...params} fullWidth />}
-            sx={{ marginBottom: 2 }}
+            renderInput={(params) => <TextField {...params} />}
           />
-          <FormControl fullWidth>
-            <InputLabel id="severity-label">Select Severity</InputLabel>
-            <Select
-              labelId="severity-label"
-              value={selectedSeverity}
-              onChange={(event) => setSelectedSeverity(event.target.value)}
-              label="Select Severity"
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="low">Low</MenuItem>
-              <MenuItem value="medium">Medium</MenuItem>
-              <MenuItem value="high">High</MenuItem>
-              <MenuItem value="critical">Critical</MenuItem>
-            </Select>
-          </FormControl>
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ marginTop: 2 }}
-            onClick={() => console.log('Filters applied', { selectedDate, selectedSeverity })}
-          >
-            Apply Filters
-          </Button>
         </FormControl>
+        <FormControl variant="outlined" sx={{ minWidth: 150 }}>
+          <InputLabel id="severity-label">Select Severity</InputLabel>
+          <Select
+            labelId="severity-label"
+            value={selectedSeverity}
+            onChange={(event) => setSelectedSeverity(event.target.value)}
+            label="Select Severity"
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="low">Low</MenuItem>
+            <MenuItem value="medium">Medium</MenuItem>
+            <MenuItem value="server">Server</MenuItem>
+            <MenuItem value="fatal">Fatal</MenuItem>
+          </Select>
+        </FormControl>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => console.log('Filters applied', { selectedDate, selectedSeverity })}
+        >
+          Apply Filters
+        </Button>
       </Box>
 
       {/* Statistics Cards */}
       <Grid container spacing={3}>
-        {Object.entries(statistics).map(([checkType, statsArray]) => renderCards(checkType, statsArray))}
+        {Object.entries(statistics).map(([checkType, stats]) => renderCard(checkType, stats))}
       </Grid>
     </Box>
   );

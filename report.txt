@@ -1,64 +1,62 @@
 import React from 'react';
-import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from '@mui/material';
-import CheckBreadcrumbAndFilters from './CheckBreadcrumbAndFilters';
+import { Box, Grid, Typography, Paper } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
-// Mock data for demonstration
-const data = [
-  { id: 1, name: 'Item 1', status: 'Ok', date: '01/09/2023', severity: 'low' },
-  { id: 2, name: 'Item 2', status: 'Error', date: '02/09/2023', severity: 'high' },
-];
+const Dashboard = () => {
+  const navigate = useNavigate();
 
-const DataCheck = () => {
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
+
+  const statistics = {
+    dataCheck: { total: 150, errors: 5, warnings: 10 },
+    metadataCheck: { total: 120, errors: 2, warnings: 5 },
+    parameterCheck: { total: 90, errors: 1, warnings: 3 },
+    monitoringCheck: { total: 200, errors: 0, warnings: 8 },
+  };
+
   return (
-    <Box>
-      <CheckBreadcrumbAndFilters checkType="Data Check" />
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Severity</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>{row.id}</TableCell>
-                <TableCell>{row.name}</TableCell>
-                <TableCell>{row.status}</TableCell>
-                <TableCell>{row.date}</TableCell>
-                <TableCell>{row.severity}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+    <Box p={3}>
+      <Typography variant="h4" align="center" gutterBottom>
+        Data Quality Dashboard
+      </Typography>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper onClick={() => handleNavigation('/data-check')} sx={{ padding: 2, cursor: 'pointer', textAlign: 'center' }}>
+            <Typography variant="h6">Data Check</Typography>
+            <Typography>Total: {statistics.dataCheck.total}</Typography>
+            <Typography>Errors: {statistics.dataCheck.errors}</Typography>
+            <Typography>Warnings: {statistics.dataCheck.warnings}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper onClick={() => handleNavigation('/metadata-check')} sx={{ padding: 2, cursor: 'pointer', textAlign: 'center' }}>
+            <Typography variant="h6">Metadata Check</Typography>
+            <Typography>Total: {statistics.metadataCheck.total}</Typography>
+            <Typography>Errors: {statistics.metadataCheck.errors}</Typography>
+            <Typography>Warnings: {statistics.metadataCheck.warnings}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper onClick={() => handleNavigation('/parameter-check')} sx={{ padding: 2, cursor: 'pointer', textAlign: 'center' }}>
+            <Typography variant="h6">Parameter Check</Typography>
+            <Typography>Total: {statistics.parameterCheck.total}</Typography>
+            <Typography>Errors: {statistics.parameterCheck.errors}</Typography>
+            <Typography>Warnings: {statistics.parameterCheck.warnings}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper onClick={() => handleNavigation('/monitoring-check')} sx={{ padding: 2, cursor: 'pointer', textAlign: 'center' }}>
+            <Typography variant="h6">Monitoring Check</Typography>
+            <Typography>Total: {statistics.monitoringCheck.total}</Typography>
+            <Typography>Errors: {statistics.monitoringCheck.errors}</Typography>
+            <Typography>Warnings: {statistics.monitoringCheck.warnings}</Typography>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
 
-export const MetadataCheck = () => (
-  <Box>
-    <CheckBreadcrumbAndFilters checkType="Metadata Check" />
-    <Typography variant="h6">Metadata Check Table will be displayed here.</Typography>
-  </Box>
-);
-
-export const ParameterCheck = () => (
-  <Box>
-    <CheckBreadcrumbAndFilters checkType="Parameter Check" />
-    <Typography variant="h6">Parameter Check Table will be displayed here.</Typography>
-  </Box>
-);
-
-export const MonitoringCheck = () => (
-  <Box>
-    <CheckBreadcrumbAndFilters checkType="Monitoring Check" />
-    <Typography variant="h6">Monitoring Check Table will be displayed here.</Typography>
-  </Box>
-);
-
-export default DataCheck;
+export default Dashboard;

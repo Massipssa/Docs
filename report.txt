@@ -1,50 +1,26 @@
-import java.util.*;
-import java.util.stream.Collectors;
+import React from 'react';
+import { Card, CardContent, Typography } from '@mui/material';
 
-public class MissingCreProcessor {
+const StatusCard = ({ id, expectedCre, notReceivedCre }) => {
+  let cardColor = 'white'; // Default color
 
-    public static List<ProjectMissingCreDto> processMissingCre(List<MissingCre> missingCreList, List<ProjectCre> projectCreList) {
-        // Convert MissingCre list to a set of names for fast lookup
-        Set<String> missingCreNames = missingCreList.stream()
-                .map(MissingCre::getName)
-                .collect(Collectors.toSet());
+  if (expectedCre.length > 0 && notReceivedCre.length > 0) {
+    cardColor = 'red';
+  } else if (expectedCre.length > 0) {
+    cardColor = 'yellow';
+  } else if (notReceivedCre.length > 0) {
+    cardColor = 'orange';
+  }
 
-        // Process the projectCreList
-        return projectCreList.stream()
-                .filter(projectCre -> missingCreNames.contains(projectCre.getCreName())) // Keep only missing CREs
-                .collect(Collectors.groupingBy(
-                        ProjectCre::getProjectName,
-                        Collectors.teeing(
-                                Collectors.summingInt(cre -> "c".equals(cre.getCritical()) ? 1 : 0),
-                                Collectors.summingInt(cre -> "x".equals(cre.getCritical()) ? 1 : 0),
-                                (missingCritical, missingNotCritical) -> 
-                                    new ProjectMissingCreDto("", missingCritical, missingNotCritical)
-                        )
-                ))
-                .entrySet().stream()
-                .map(entry -> new ProjectMissingCreDto(entry.getKey(), entry.getValue().missingCritical, entry.getValue().missingNotCritical))
-                .collect(Collectors.toList());
-    }
+  return (
+    <Card sx={{ backgroundColor: cardColor, margin: 2, width: '200px', height: '100px' }}>
+      <CardContent>
+        <Typography variant="h6">Card {id}</Typography>
+        <Typography variant="body2">Expected: {expectedCre.length}</Typography>
+        <Typography variant="body2">Not Received: {notReceivedCre.length}</Typography>
+      </CardContent>
+    </Card>
+  );
+};
 
-    public static void main(String[] args) {
-        // Example missing CREs
-        List<MissingCre> missingCreList = List.of(
-                new MissingCre("CRE1", "2024-01-01"),
-                new MissingCre("CRE2", "2024-01-02"),
-                new MissingCre("CRE3", "2024-01-03")
-        );
-
-        // Example project CREs
-        List<ProjectCre> projectCreList = List.of(
-                new ProjectCre("ProjectA", "CRE1", "c"),
-                new ProjectCre("ProjectA", "CRE2", "x"),
-                new ProjectCre("ProjectB", "CRE2", "c"),
-                new ProjectCre("ProjectB", "CRE3", "x"),
-                new ProjectCre("ProjectC", "CRE1", "c")
-        );
-
-        // Process the data
-        List<ProjectMissingCreDto> result = processMissingCre(missingCreList, projectCreList);
-        result.forEach(System.out::println);
-    }
-}
+export default StatusCard;

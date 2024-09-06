@@ -1,26 +1,105 @@
 import React from 'react';
-import { Card, CardContent, Typography } from '@mui/material';
+import { Typography, Box, Grid, Card, CardContent, List, ListItem, ListItemText, Divider } from '@mui/material';
 
-const StatusCard = ({ id, expectedCre, notReceivedCre }) => {
-  let cardColor = 'white'; // Default color
-
-  if (expectedCre.length > 0 && notReceivedCre.length > 0) {
-    cardColor = 'red';
-  } else if (expectedCre.length > 0) {
-    cardColor = 'yellow';
-  } else if (notReceivedCre.length > 0) {
-    cardColor = 'orange';
-  }
-
+const CREDetailView = ({ cre }) => {
   return (
-    <Card sx={{ backgroundColor: cardColor, margin: 2, width: '200px', height: '100px' }}>
-      <CardContent>
-        <Typography variant="h6">Card {id}</Typography>
-        <Typography variant="body2">Expected: {expectedCre.length}</Typography>
-        <Typography variant="body2">Not Received: {notReceivedCre.length}</Typography>
-      </CardContent>
-    </Card>
+    <Box sx={{ padding: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        CRE Details
+      </Typography>
+
+      <Card variant="outlined" sx={{ marginBottom: 2 }}>
+        <CardContent>
+          <Typography variant="h6">General Information</Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body1"><strong>Name:</strong> {cre.name}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body1"><strong>Code Boîte:</strong> {cre.codeBoite}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body1"><strong>Description:</strong> {cre.description}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body1"><strong>Date of Operation (Date OPC):</strong> {cre.dateopc}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body1"><strong>Type:</strong> {cre.type}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body1"><strong>Frequency:</strong> {cre.frequency}</Typography>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined" sx={{ marginBottom: 2 }}>
+        <CardContent>
+          <Typography variant="h6">Versions</Typography>
+          <List>
+            {cre.versions.map((version, index) => (
+              <ListItem key={index}>
+                <ListItemText primary={`Version ${index + 1}`} secondary={`Modification Date: ${version.modifDate}`} />
+              </ListItem>
+            ))}
+          </List>
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined" sx={{ marginBottom: 2 }}>
+        <CardContent>
+          <Typography variant="h6">Projects</Typography>
+          <List>
+            {cre.projects.map((project, index) => (
+              <ListItem key={index}>
+                <ListItemText
+                  primary={project.name}
+                  secondary={`Critique: ${project.isCritique ? 'Yes' : 'No'}`}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined" sx={{ marginBottom: 2 }}>
+        <CardContent>
+          <Typography variant="h6">Chantier</Typography>
+          <List>
+            {cre.chantier.map((chantier, index) => (
+              <ListItem key={index}>
+                <ListItemText primary={`Chantier ${index + 1}: ${chantier}`} />
+              </ListItem>
+            ))}
+          </List>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 
-export default StatusCard;
+// Example usage with dummy data
+const creData = {
+  name: 'CRE 101',
+  description: 'This is a description of CRE 101.',
+  codeBoite: 'CB101',
+  dateopc: '2023-08-01',
+  type: 'External',
+  frequency: 'Monthly',
+  versions: [
+    { modifDate: '2023-01-01' },
+    { modifDate: '2023-06-15' },
+  ],
+  projects: [
+    { name: 'Project Alpha', isCritique: true },
+    { name: 'Project Beta', isCritique: false },
+  ],
+  chantier: ['Chantier 1', 'Chantier 2'],
+};
+
+const App = () => {
+  return <CREDetailView cre={creData} />;
+};
+
+export default App;

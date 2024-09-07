@@ -1,105 +1,53 @@
 import React from 'react';
-import { Typography, Box, Grid, Card, CardContent, List, ListItem, ListItemText, Divider } from '@mui/material';
+import MaterialReactTable from 'material-react-table';
+import { Box, Grid, TextField } from '@mui/material';
 
-const CREDetailView = ({ cre }) => {
+const ExampleTable = () => {
+  const columns = [
+    { accessorKey: 'name', header: 'Name' },
+    { accessorKey: 'age', header: 'Age' },
+    { accessorKey: 'email', header: 'Email' }
+  ];
+
+  const data = [
+    { name: 'John Doe', age: 28, email: 'john@example.com' },
+    { name: 'Jane Smith', age: 34, email: 'jane@example.com' },
+    { name: 'Alice Johnson', age: 45, email: 'alice@example.com' }
+  ];
+
   return (
     <Box sx={{ padding: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        CRE Details
-      </Typography>
-
-      <Card variant="outlined" sx={{ marginBottom: 2 }}>
-        <CardContent>
-          <Typography variant="h6">General Information</Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body1"><strong>Name:</strong> {cre.name}</Typography>
+      <MaterialReactTable
+        columns={columns}
+        data={data}
+        enableGlobalFilter  // Enable the search bar
+        enablePagination  // Ensure pagination is enabled
+        positionPagination="top"  // Pagination at the top
+        renderTopToolbarCustomActions={({ table }) => (
+          <Grid container justifyContent="space-between" alignItems="center">
+            <Grid item>
+              <TextField
+                value={table.getState().globalFilter ?? ''}
+                onChange={(event) => table.setGlobalFilter(event.target.value)}
+                placeholder="Search..."
+                sx={{ width: '300px' }}
+              />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body1"><strong>Code Boîte:</strong> {cre.codeBoite}</Typography>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="body1"><strong>Description:</strong> {cre.description}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body1"><strong>Date of Operation (Date OPC):</strong> {cre.dateopc}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body1"><strong>Type:</strong> {cre.type}</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body1"><strong>Frequency:</strong> {cre.frequency}</Typography>
+            <Grid item>
+              {/* Pagination Component here */}
+              {table.getPaginationRowModel().rows.length > 0 && (
+                <Box>{table.getTableProps().pagination}</Box>
+              )}
             </Grid>
           </Grid>
-        </CardContent>
-      </Card>
-
-      <Card variant="outlined" sx={{ marginBottom: 2 }}>
-        <CardContent>
-          <Typography variant="h6">Versions</Typography>
-          <List>
-            {cre.versions.map((version, index) => (
-              <ListItem key={index}>
-                <ListItemText primary={`Version ${index + 1}`} secondary={`Modification Date: ${version.modifDate}`} />
-              </ListItem>
-            ))}
-          </List>
-        </CardContent>
-      </Card>
-
-      <Card variant="outlined" sx={{ marginBottom: 2 }}>
-        <CardContent>
-          <Typography variant="h6">Projects</Typography>
-          <List>
-            {cre.projects.map((project, index) => (
-              <ListItem key={index}>
-                <ListItemText
-                  primary={project.name}
-                  secondary={`Critique: ${project.isCritique ? 'Yes' : 'No'}`}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </CardContent>
-      </Card>
-
-      <Card variant="outlined" sx={{ marginBottom: 2 }}>
-        <CardContent>
-          <Typography variant="h6">Chantier</Typography>
-          <List>
-            {cre.chantier.map((chantier, index) => (
-              <ListItem key={index}>
-                <ListItemText primary={`Chantier ${index + 1}: ${chantier}`} />
-              </ListItem>
-            ))}
-          </List>
-        </CardContent>
-      </Card>
+        )}
+      />
     </Box>
   );
 };
 
-// Example usage with dummy data
-const creData = {
-  name: 'CRE 101',
-  description: 'This is a description of CRE 101.',
-  codeBoite: 'CB101',
-  dateopc: '2023-08-01',
-  type: 'External',
-  frequency: 'Monthly',
-  versions: [
-    { modifDate: '2023-01-01' },
-    { modifDate: '2023-06-15' },
-  ],
-  projects: [
-    { name: 'Project Alpha', isCritique: true },
-    { name: 'Project Beta', isCritique: false },
-  ],
-  chantier: ['Chantier 1', 'Chantier 2'],
-};
-
 const App = () => {
-  return <CREDetailView cre={creData} />;
+  return <ExampleTable />;
 };
 
 export default App;

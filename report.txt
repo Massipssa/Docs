@@ -1,6 +1,6 @@
 import React from 'react';
-import MaterialReactTable, { useMaterialTable } from 'material-react-table';
-import { Box, Grid, TextField, TablePagination, Typography, Select, MenuItem } from '@mui/material';
+import MaterialReactTable from 'material-react-table';
+import { Box, Grid, TextField, TablePagination, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 
 const ExampleTable = () => {
   const columns = [
@@ -39,16 +39,23 @@ const ExampleTable = () => {
         page={pagination.pageIndex}
         onPageChange={(event, newPage) => setPagination({ ...pagination, pageIndex: newPage })}
         onRowsPerPageChange={(event) => setPagination({ ...pagination, pageSize: parseInt(event.target.value, 10) })}
-        labelRowsPerPage="Rows per page:"  // Custom placeholder text
+        labelRowsPerPage="Rows per page:"  // Custom label for rows per page
         labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
         SelectComponent={(props) => (
-          <Select {...props} sx={{ maxWidth: 150 }}>
-            {props.options.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
+          <FormControl variant="outlined">
+            <InputLabel>Rows per page</InputLabel>
+            <Select
+              {...props}
+              label="Rows per page"
+              sx={{ maxWidth: 150 }}
+            >
+              {props.options.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         )}
       />
     );

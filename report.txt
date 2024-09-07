@@ -1,6 +1,6 @@
 import React from 'react';
-import MaterialReactTable from 'material-react-table';
-import { Box, Grid, TextField } from '@mui/material';
+import MaterialReactTable, { useMaterialTable } from 'material-react-table';
+import { Box, Grid, TextField, Typography } from '@mui/material';
 
 const ExampleTable = () => {
   const columns = [
@@ -15,29 +15,42 @@ const ExampleTable = () => {
     { name: 'Alice Johnson', age: 45, email: 'alice@example.com' }
   ];
 
+  // useMaterialTable hook to manage table state and functionality
+  const {
+    tableInstance, // get the table instance
+  } = useMaterialTable({
+    data,
+    columns,
+    enableGlobalFilter: true,  // Enable the search bar
+    enablePagination: true,    // Enable pagination
+  });
+
   return (
     <Box sx={{ padding: 3 }}>
       <MaterialReactTable
-        columns={columns}
-        data={data}
-        enableGlobalFilter  // Enable the search bar
-        enablePagination  // Ensure pagination is enabled
-        positionPagination="top"  // Pagination at the top
-        renderTopToolbarCustomActions={({ table }) => (
+        tableInstance={tableInstance}
+        positionPagination="top"
+        renderTopToolbarCustomActions={() => (
           <Grid container justifyContent="space-between" alignItems="center">
             <Grid item>
+              {/* Search bar aligned to the left */}
               <TextField
-                value={table.getState().globalFilter ?? ''}
-                onChange={(event) => table.setGlobalFilter(event.target.value)}
+                value={tableInstance.state.globalFilter ?? ''}
+                onChange={(event) => tableInstance.setGlobalFilter(event.target.value)}
                 placeholder="Search..."
                 sx={{ width: '300px' }}
               />
             </Grid>
             <Grid item>
-              {/* Pagination Component here */}
-              {table.getPaginationRowModel().rows.length > 0 && (
-                <Box>{table.getTableProps().pagination}</Box>
-              )}
+              {/* Pagination controls aligned to the right */}
+              <Box>
+                {tableInstance.getPaginationRowModel().rows.length > 0 && (
+                  <Typography>
+                    Page {tableInstance.getState().pagination.pageIndex + 1} of{' '}
+                    {tableInstance.getPaginationRowModel().rows.length}
+                  </Typography>
+                )}
+              </Box>
             </Grid>
           </Grid>
         )}

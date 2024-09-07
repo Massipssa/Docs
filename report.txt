@@ -1,6 +1,6 @@
 import React from 'react';
 import MaterialReactTable, { useMaterialTable } from 'material-react-table';
-import { Box, Grid, TextField, Typography } from '@mui/material';
+import { Box, Grid, TextField, TablePagination, Typography, Select, MenuItem } from '@mui/material';
 
 const ExampleTable = () => {
   const columns = [
@@ -15,7 +15,6 @@ const ExampleTable = () => {
     { name: 'Alice Johnson', age: 45, email: 'alice@example.com' }
   ];
 
-  // useMaterialTable hook to manage table state and functionality
   const {
     tableInstance, // get the table instance
   } = useMaterialTable({
@@ -25,32 +24,55 @@ const ExampleTable = () => {
     enablePagination: true,    // Enable pagination
   });
 
+  const CustomPagination = ({ tableInstance }) => {
+    const {
+      state: { pagination },
+      setPagination,
+    } = tableInstance;
+
+    return (
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={tableInstance.getPaginationRowModel().rows.length}
+        rowsPerPage={pagination.pageSize}
+        page={pagination.pageIndex}
+        onPageChange={(event, newPage) => setPagination({ ...pagination, pageIndex: newPage })}
+        onRowsPerPageChange={(event) => setPagination({ ...pagination, pageSize: parseInt(event.target.value, 10) })}
+        labelRowsPerPage="Rows per page:"  // Custom placeholder text
+        labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+        SelectComponent={(props) => (
+          <Select {...props} sx={{ maxWidth: 150 }}>
+            {props.options.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        )}
+      />
+    );
+  };
+
   return (
     <Box sx={{ padding: 3 }}>
       <MaterialReactTable
         tableInstance={tableInstance}
         positionPagination="top"
         renderTopToolbarCustomActions={() => (
-          <Grid container justifyContent="space-between" alignItems="center">
-            <Grid item>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs>
               {/* Search bar aligned to the left */}
               <TextField
                 value={tableInstance.state.globalFilter ?? ''}
                 onChange={(event) => tableInstance.setGlobalFilter(event.target.value)}
                 placeholder="Search..."
-                sx={{ width: '300px' }}
+                sx={{ width: '100%' }}
               />
             </Grid>
             <Grid item>
-              {/* Pagination controls aligned to the right */}
-              <Box>
-                {tableInstance.getPaginationRowModel().rows.length > 0 && (
-                  <Typography>
-                    Page {tableInstance.getState().pagination.pageIndex + 1} of{' '}
-                    {tableInstance.getPaginationRowModel().rows.length}
-                  </Typography>
-                )}
-              </Box>
+              {/* Custom pagination component aligned to the right */}
+              <CustomPagination tableInstance={tableInstance} />
             </Grid>
           </Grid>
         )}

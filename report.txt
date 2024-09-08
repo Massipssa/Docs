@@ -1,15 +1,16 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, List, ListItem, ListItemButton, ListItemText, Divider } from '@mui/material';
+import { Card, CardContent, Typography, Box, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
 import { PieChart, PieSeries } from '@mui/x-charts';
 
-const data = {
-  total: 100,
-  warning: 20,
-  failed: 30,
-  passed: 50,
-};
+// Sample data for the pies
+const dataSets = [
+  { id: 1, total: 100, warning: 20, failed: 30, passed: 50 },
+  { id: 2, total: 150, warning: 40, failed: 30, passed: 80 },
+  { id: 3, total: 200, warning: 50, failed: 60, passed: 90 },
+  { id: 4, total: 250, warning: 70, failed: 80, passed: 100 },
+];
 
-const ExamplePieChart = () => {
+const PieCard = ({ data }) => {
   const totalChecks = data.total;
   const pieData = [
     { id: 'Warning', value: data.warning, color: '#FFCC00' },
@@ -22,7 +23,7 @@ const ExamplePieChart = () => {
   };
 
   return (
-    <Card sx={{ maxWidth: 400, margin: 'auto' }}>
+    <Card sx={{ width: 300, margin: '0 10px' }}>
       <CardContent>
         <Typography variant="h6" align="center" gutterBottom>
           Check Results
@@ -91,8 +92,18 @@ const ExamplePieChart = () => {
 
 const App = () => {
   return (
-    <Box sx={{ padding: 4 }}>
-      <ExamplePieChart />
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center', // Center the cards horizontally
+        alignItems: 'center',
+        padding: 2,
+        flexWrap: 'nowrap', // Ensure cards stay in one row without wrapping
+      }}
+    >
+      {dataSets.map((data) => (
+        <PieCard key={data.id} data={data} />
+      ))}
     </Box>
   );
 };

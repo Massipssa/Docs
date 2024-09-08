@@ -1,95 +1,90 @@
 import React from 'react';
-import MaterialReactTable from 'material-react-table';
-import { Box, Grid, TextField, TablePagination, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
+import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Chart } from 'mui-chart';
 
-const ExampleTable = () => {
-  const columns = [
-    { accessorKey: 'name', header: 'Name' },
-    { accessorKey: 'age', header: 'Age' },
-    { accessorKey: 'email', header: 'Email' }
-  ];
+// Sample data for checks
+const data = {
+  total: 100,
+  warning: 20,
+  failed: 30,
+  passed: 50,
+};
 
-  const data = [
-    { name: 'John Doe', age: 28, email: 'john@example.com' },
-    { name: 'Jane Smith', age: 34, email: 'jane@example.com' },
-    { name: 'Alice Johnson', age: 45, email: 'alice@example.com' }
-  ];
+const ExamplePieChart = () => {
+  const totalChecks = data.total;
+  const warningPercent = ((data.warning / totalChecks) * 100).toFixed(2);
+  const failedPercent = ((data.failed / totalChecks) * 100).toFixed(2);
+  const passedPercent = ((data.passed / totalChecks) * 100).toFixed(2);
 
-  const {
-    tableInstance, // get the table instance
-  } = useMaterialTable({
-    data,
-    columns,
-    enableGlobalFilter: true,  // Enable the search bar
-    enablePagination: true,    // Enable pagination
-  });
+  const chartData = {
+    labels: ['Warning', 'Failed', 'Passed'],
+    datasets: [
+      {
+        data: [data.warning, data.failed, data.passed],
+        backgroundColor: ['#FFCC00', '#FF5252', '#4CAF50'],
+        hoverOffset: 4,
+      },
+    ],
+  };
 
-  const CustomPagination = ({ tableInstance }) => {
-    const {
-      state: { pagination },
-      setPagination,
-    } = tableInstance;
+  const options = {
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (context) => `${context.label}: ${context.raw} (${((context.raw / totalChecks) * 100).toFixed(2)}%)`,
+        },
+      },
+      // Custom plugin to display total checks in the center of the pie chart
+      beforeDraw: (chart) => {
+        const { ctx, width, height } = chart;
+        ctx.restore();
+        const fontSize = (height / 160).toFixed(2);
+        ctx.font = `${fontSize}em sans-serif`;
+        ctx.textBaseline = 'middle';
 
-    return (
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={tableInstance.getPaginationRowModel().rows.length}
-        rowsPerPage={pagination.pageSize}
-        page={pagination.pageIndex}
-        onPageChange={(event, newPage) => setPagination({ ...pagination, pageIndex: newPage })}
-        onRowsPerPageChange={(event) => setPagination({ ...pagination, pageSize: parseInt(event.target.value, 10) })}
-        labelRowsPerPage="Rows per page:"  // Custom label for rows per page
-        labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
-        SelectComponent={(props) => (
-          <FormControl variant="outlined">
-            <InputLabel>Rows per page</InputLabel>
-            <Select
-              {...props}
-              label="Rows per page"
-              sx={{ maxWidth: 150 }}
-            >
-              {props.options.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
-      />
-    );
+        const text = `${totalChecks} Checks`;
+        const textX = Math.round((width - ctx.measureText(text).width) / 2);
+        const textY = height / 2;
+
+        ctx.fillText(text, textX, textY);
+        ctx.save();
+      },
+    },
+    responsive: true,
+    maintainAspectRatio: false,
   };
 
   return (
-    <Box sx={{ padding: 3 }}>
-      <MaterialReactTable
-        tableInstance={tableInstance}
-        positionPagination="top"
-        renderTopToolbarCustomActions={() => (
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs>
-              {/* Search bar aligned to the left */}
-              <TextField
-                value={tableInstance.state.globalFilter ?? ''}
-                onChange={(event) => tableInstance.setGlobalFilter(event.target.value)}
-                placeholder="Search..."
-                sx={{ width: '100%' }}
-              />
-            </Grid>
-            <Grid item>
-              {/* Custom pagination component aligned to the right */}
-              <CustomPagination tableInstance={tableInstance} />
-            </Grid>
-          </Grid>
-        )}
-      />
-    </Box>
+    <Card sx={{ maxWidth: 400, margin: 'auto' }}>
+      <CardContent>
+        <Typography variant="h6" align="center" gutterBottom>
+          Check Results
+        </Typography>
+        <Box sx={{ position: 'relative', height: '300px' }}>
+          <Chart type="pie" data={chartData} options={options} />
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+          <Typography variant="body2" color="warning.main">
+            Warning: {warningPercent}%
+          </Typography>
+          <Typography variant="body2" color="error.main">
+            Failed: {failedPercent}%
+          </Typography>
+          <Typography variant="body2" color="success.main">
+            Passed: {passedPercent}%
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 
 const App = () => {
-  return <ExampleTable />;
+  return (
+    <Box sx={{ padding: 4 }}>
+      <ExamplePieChart />
+    </Box>
+  );
 };
 
 export default App;

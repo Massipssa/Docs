@@ -15,7 +15,7 @@ const dataSets = [
 // Colors for pie chart slices
 const pieColors = ['#FFCC00', '#FF5252', '#4CAF50'];
 
-const PieCard = ({ data }) => {
+const PieCard = ({ data, onPercentageClick }) => {
   const pieData = [
     { id: 'Warning', value: data.warning, color: pieColors[0] },
     { id: 'Failed', value: data.failed, color: pieColors[1] },
@@ -63,11 +63,15 @@ const PieCard = ({ data }) => {
           </Typography>
         </Box>
 
-        {/* Legend centered */}
+        {/* Legend with clickable percentages */}
         <List sx={{ display: 'flex', justifyContent: 'center', paddingTop: 2 }}>
           {pieData.map((item) => (
             <ListItem key={item.id} disablePadding>
-              <ListItemText primary={`${item.id}: ${(item.value / data.total * 100).toFixed(2)}%`} />
+              <ListItemText
+                primary={`${item.id}: ${(item.value / data.total * 100).toFixed(2)}%`}
+                onClick={() => onPercentageClick(item.id, item.value)}
+                sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} // Add hover effect
+              />
             </ListItem>
           ))}
         </List>
@@ -90,6 +94,12 @@ const App = () => {
     setFilteredData(filtered);
   };
 
+  const handlePercentageClick = (checkType, value) => {
+    // Example action: Log the clicked percentage type and value
+    console.log(`Clicked on ${checkType}: ${value} checks`);
+    // You can replace this with other actions, like filtering the data further or navigating to another page
+  };
+
   return (
     <Box>
       {/* Date Range Filter */}
@@ -107,14 +117,16 @@ const App = () => {
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'center', // Center the cards horizontally
+          justifyContent: 'center',
           alignItems: 'center',
           padding: 2,
-          flexWrap: 'nowrap', // Ensure cards stay in one row without wrapping
+          flexWrap: 'nowrap',
         }}
       >
         {filteredData.length > 0 ? (
-          filteredData.map((data) => <PieCard key={data.id} data={data} />)
+          filteredData.map((data) => (
+            <PieCard key={data.id} data={data} onPercentageClick={handlePercentageClick} />
+          ))
         ) : (
           <Typography>No data available for the selected date range.</Typography>
         )}

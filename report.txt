@@ -23,12 +23,13 @@ const PieCard = ({ data }) => {
   };
 
   return (
-    <Card sx={{ width: 300, margin: '0 10px' }}>
+    <Card sx={{ width: 300, margin: '0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <CardContent>
         <Typography variant="h6" align="center" gutterBottom>
           Check Results
         </Typography>
-        <Box sx={{ position: 'relative', height: '250px' }}>
+        {/* Center the Pie Chart */}
+        <Box sx={{ position: 'relative', height: '250px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <PieChart
             series={[
               {
@@ -64,8 +65,8 @@ const PieCard = ({ data }) => {
           </Typography>
         </Box>
 
-        {/* Legend */}
-        <List sx={{ display: 'flex', justifyContent: 'space-between', paddingTop: 2 }}>
+        {/* Legend centered */}
+        <List sx={{ display: 'flex', justifyContent: 'center', paddingTop: 2 }}>
           {pieData.map((item) => (
             <ListItem key={item.id} disablePadding>
               <ListItemButton

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box } from '@mui/material';
-import { PieChart, PieSeries } from '@mui/x-charts';
+import { Chart } from 'mui-chart';
 
 // Sample data for checks
 const data = {
@@ -16,11 +16,43 @@ const ExamplePieChart = () => {
   const failedPercent = ((data.failed / totalChecks) * 100).toFixed(2);
   const passedPercent = ((data.passed / totalChecks) * 100).toFixed(2);
 
-  const pieData = [
-    { id: 'Warning', value: data.warning, color: '#FFCC00' },
-    { id: 'Failed', value: data.failed, color: '#FF5252' },
-    { id: 'Passed', value: data.passed, color: '#4CAF50' },
-  ];
+  const chartData = {
+    labels: ['Warning', 'Failed', 'Passed'],
+    datasets: [
+      {
+        data: [data.warning, data.failed, data.passed],
+        backgroundColor: ['#FFCC00', '#FF5252', '#4CAF50'],
+        hoverOffset: 4,
+      },
+    ],
+  };
+
+  const options = {
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (context) => `${context.label}: ${context.raw} (${((context.raw / totalChecks) * 100).toFixed(2)}%)`,
+        },
+      },
+      // Custom plugin to display total checks in the center of the pie chart
+      beforeDraw: (chart) => {
+        const { ctx, width, height } = chart;
+        ctx.restore();
+        const fontSize = (height / 160).toFixed(2);
+        ctx.font = `${fontSize}em sans-serif`;
+        ctx.textBaseline = 'middle';
+
+        const text = `${totalChecks} Checks`;
+        const textX = Math.round((width - ctx.measureText(text).width) / 2);
+        const textY = height / 2;
+
+        ctx.fillText(text, textX, textY);
+        ctx.save();
+      },
+    },
+    responsive: true,
+    maintainAspectRatio: false,
+  };
 
   return (
     <Card sx={{ maxWidth: 400, margin: 'auto' }}>
@@ -29,32 +61,30 @@ const ExamplePieChart = () => {
           Check Results
         </Typography>
         <Box sx={{ position: 'relative', height: '300px' }}>
-          {/* PieChart from @mui/x-charts */}
-          <PieChart
-            series={[
-              {
-                innerRadius: 40, // Makes it a donut chart
-                outerRadius: 100,
-                data: pieData,
-                valueKey: 'value',
-                idKey: 'id',
-                colorKey: 'color',
-              },
-            ]}
-            width={300}
-            height={300}
-            sx={{ display: 'flex', justifyContent: 'center' }}
-          />
-          {/* Display the total number of checks in the center */}
-          <Typography
-            variant="h6"
-            align="center"
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            {totalChecks} Checks
-          </Typog
+          <Chart type="pie" data={chartData} options={options} />
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+          <Typography variant="body2" color="warning.main">
+            Warning: {warningPercent}%
+          </Typography>
+          <Typography variant="body2" color="error.main">
+            Failed: {failedPercent}%
+          </Typography>
+          <Typography variant="body2" color="success.main">
+            Passed: {passedPercent}%
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+};
+
+const App = () => {
+  return (
+    <Box sx={{ padding: 4 }}>
+      <ExamplePieChart />
+    </Box>
+  );
+};
+
+export default App;

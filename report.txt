@@ -1,8 +1,7 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Card, CardContent, Typography, Box, List, ListItem, ListItemButton, ListItemText, Divider } from '@mui/material';
 import { PieChart, PieSeries } from '@mui/x-charts';
 
-// Sample data for checks
 const data = {
   total: 100,
   warning: 20,
@@ -12,15 +11,15 @@ const data = {
 
 const ExamplePieChart = () => {
   const totalChecks = data.total;
-  const warningPercent = ((data.warning / totalChecks) * 100).toFixed(2);
-  const failedPercent = ((data.failed / totalChecks) * 100).toFixed(2);
-  const passedPercent = ((data.passed / totalChecks) * 100).toFixed(2);
-
   const pieData = [
     { id: 'Warning', value: data.warning, color: '#FFCC00' },
     { id: 'Failed', value: data.failed, color: '#FF5252' },
     { id: 'Passed', value: data.passed, color: '#4CAF50' },
   ];
+
+  const handleClick = (id) => {
+    alert(`Clicked on ${id} checks`);
+  };
 
   return (
     <Card sx={{ maxWidth: 400, margin: 'auto' }}>
@@ -28,22 +27,25 @@ const ExamplePieChart = () => {
         <Typography variant="h6" align="center" gutterBottom>
           Check Results
         </Typography>
-        <Box sx={{ position: 'relative', height: '300px' }}>
-          {/* PieChart from @mui/x-charts */}
+        <Box sx={{ position: 'relative', height: '250px' }}>
           <PieChart
             series={[
               {
-                innerRadius: 40, // Makes it a donut chart
-                outerRadius: 100,
+                innerRadius: 50, // Adjust the size of the donut hole
+                outerRadius: 80, // Reduce the overall pie size
                 data: pieData,
                 valueKey: 'value',
                 idKey: 'id',
                 colorKey: 'color',
               },
             ]}
-            width={300}
-            height={300}
+            width={250} // Reduce the overall size of the chart
+            height={250}
             sx={{ display: 'flex', justifyContent: 'center' }}
+            onClick={(event) => {
+              const clickedId = event.target.__data__.id;
+              handleClick(clickedId);
+            }}
           />
           {/* Display the total number of checks in the center */}
           <Typography
@@ -54,22 +56,34 @@ const ExamplePieChart = () => {
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none', // Prevent clicking on the text in the middle
             }}
           >
             {totalChecks} Checks
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-          <Typography variant="body2" color="warning.main">
-            Warning: {warningPercent}%
-          </Typography>
-          <Typography variant="body2" color="error.main">
-            Failed: {failedPercent}%
-          </Typography>
-          <Typography variant="body2" color="success.main">
-            Passed: {passedPercent}%
-          </Typography>
-        </Box>
+
+        {/* Legend */}
+        <List sx={{ display: 'flex', justifyContent: 'space-between', paddingTop: 2 }}>
+          {pieData.map((item) => (
+            <ListItem key={item.id} disablePadding>
+              <ListItemButton
+                onClick={() => handleClick(item.id)} // Make legend item clickable
+              >
+                <Box
+                  sx={{
+                    width: 16,
+                    height: 16,
+                    backgroundColor: item.color,
+                    marginRight: 1,
+                    borderRadius: '50%',
+                  }}
+                />
+                <ListItemText primary={`${item.id}: ${(item.value / totalChecks * 100).toFixed(2)}%`} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
       </CardContent>
     </Card>
   );

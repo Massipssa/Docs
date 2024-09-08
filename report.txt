@@ -1,26 +1,26 @@
-import React from 'react';
-import { Card, CardContent, Typography, Box, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import React, { useState } from 'react';
+import { Card, CardContent, Typography, Box, List, ListItem, ListItemText } from '@mui/material';
 import { PieChart, PieSeries } from '@mui/x-charts';
+import { DateRangePicker } from '@mui/x-date-pickers-pro';
+import dayjs from 'dayjs';
 
 // Sample data for the pies
 const dataSets = [
-  { id: 1, total: 100, warning: 20, failed: 30, passed: 50 },
-  { id: 2, total: 150, warning: 40, failed: 30, passed: 80 },
-  { id: 3, total: 200, warning: 50, failed: 60, passed: 90 },
-  { id: 4, total: 250, warning: 70, failed: 80, passed: 100 },
+  { id: 1, total: 100, warning: 20, failed: 30, passed: 50, date: '2023-09-01' },
+  { id: 2, total: 150, warning: 40, failed: 30, passed: 80, date: '2023-09-05' },
+  { id: 3, total: 200, warning: 50, failed: 60, passed: 90, date: '2023-09-10' },
+  { id: 4, total: 250, warning: 70, failed: 80, passed: 100, date: '2023-09-12' },
 ];
 
-const PieCard = ({ data }) => {
-  const totalChecks = data.total;
-  const pieData = [
-    { id: 'Warning', value: data.warning, color: '#FFCC00' },
-    { id: 'Failed', value: data.failed, color: '#FF5252' },
-    { id: 'Passed', value: data.passed, color: '#4CAF50' },
-  ];
+// Colors for pie chart slices
+const pieColors = ['#FFCC00', '#FF5252', '#4CAF50'];
 
-  const handleClick = (id) => {
-    alert(`Clicked on ${id} checks`);
-  };
+const PieCard = ({ data }) => {
+  const pieData = [
+    { id: 'Warning', value: data.warning, color: pieColors[0] },
+    { id: 'Failed', value: data.failed, color: pieColors[1] },
+    { id: 'Passed', value: data.passed, color: pieColors[2] },
+  ];
 
   return (
     <Card sx={{ width: 300, margin: '0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -28,28 +28,26 @@ const PieCard = ({ data }) => {
         <Typography variant="h6" align="center" gutterBottom>
           Check Results
         </Typography>
+
         {/* Center the Pie Chart */}
         <Box sx={{ position: 'relative', height: '250px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <PieChart
             series={[
               {
-                innerRadius: 50, // Adjust the size of the donut hole
-                outerRadius: 80, // Reduce the overall pie size
+                innerRadius: 40,
+                outerRadius: 80,
                 data: pieData,
                 valueKey: 'value',
                 idKey: 'id',
                 colorKey: 'color',
               },
             ]}
-            width={250} // Reduce the overall size of the chart
-            height={250}
+            width={200}
+            height={200}
             sx={{ display: 'flex', justifyContent: 'center' }}
-            onClick={(event) => {
-              const clickedId = event.target.__data__.id;
-              handleClick(clickedId);
-            }}
           />
-          {/* Display the total number of checks in the center */}
+
+          {/* Display total checks in the center */}
           <Typography
             variant="h6"
             align="center"
@@ -58,10 +56,10 @@ const PieCard = ({ data }) => {
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              pointerEvents: 'none', // Prevent clicking on the text in the middle
+              pointerEvents: 'none',
             }}
           >
-            {totalChecks} Checks
+            {data.total} Checks
           </Typography>
         </Box>
 
@@ -69,20 +67,7 @@ const PieCard = ({ data }) => {
         <List sx={{ display: 'flex', justifyContent: 'center', paddingTop: 2 }}>
           {pieData.map((item) => (
             <ListItem key={item.id} disablePadding>
-              <ListItemButton
-                onClick={() => handleClick(item.id)} // Make legend item clickable
-              >
-                <Box
-                  sx={{
-                    width: 16,
-                    height: 16,
-                    backgroundColor: item.color,
-                    marginRight: 1,
-                    borderRadius: '50%',
-                  }}
-                />
-                <ListItemText primary={`${item.id}: ${(item.value / totalChecks * 100).toFixed(2)}%`} />
-              </ListItemButton>
+              <ListItemText primary={`${item.id}: ${(item.value / data.total * 100).toFixed(2)}%`} />
             </ListItem>
           ))}
         </List>
@@ -92,19 +77,48 @@ const PieCard = ({ data }) => {
 };
 
 const App = () => {
+  const [dateRange, setDateRange] = useState([dayjs().subtract(7, 'days'), dayjs()]);
+  const [filteredData, setFilteredData] = useState(dataSets);
+
+  const handleDateRangeChange = (newValue) => {
+    setDateRange(newValue);
+    const [start, end] = newValue;
+    const filtered = dataSets.filter((data) => {
+      const date = dayjs(data.date);
+      return date.isAfter(start) && date.isBefore(end);
+    });
+    setFilteredData(filtered);
+  };
+
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center', // Center the cards horizontally
-        alignItems: 'center',
-        padding: 2,
-        flexWrap: 'nowrap', // Ensure cards stay in one row without wrapping
-      }}
-    >
-      {dataSets.map((data) => (
-        <PieCard key={data.id} data={data} />
-      ))}
+    <Box>
+      {/* Date Range Filter */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: 3 }}>
+        <DateRangePicker
+          startText="Start Date"
+          endText="End Date"
+          value={dateRange}
+          onChange={handleDateRangeChange}
+          sx={{ width: '400px' }}
+        />
+      </Box>
+
+      {/* Display Pie Cards */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center', // Center the cards horizontally
+          alignItems: 'center',
+          padding: 2,
+          flexWrap: 'nowrap', // Ensure cards stay in one row without wrapping
+        }}
+      >
+        {filteredData.length > 0 ? (
+          filteredData.map((data) => <PieCard key={data.id} data={data} />)
+        ) : (
+          <Typography>No data available for the selected date range.</Typography>
+        )}
+      </Box>
     </Box>
   );
 };

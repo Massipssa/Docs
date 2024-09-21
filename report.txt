@@ -1,133 +1,50 @@
-1. Introduction
-Ce document présente les différents types de tests de performance réalisés pour évaluer la robustesse, la scalabilité et la stabilité d'une application. Les tests décrits ci-dessous sont réalisés en utilisant l'outil de test de charge K6 et couvrent quatre types principaux de tests : Load (Charge), Stress, Spike (Pointe), et Soak (Endurance).
+import React from 'react';
+import { Grid, Card, CardContent, Typography, IconButton, Tooltip } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
+import ErrorIcon from '@mui/icons-material/Error';
 
-L'objectif de ces tests est de simuler divers scénarios de charge afin de garantir que l'application fonctionne comme prévu dans des conditions normales, extrêmes, et prolongées.
+const projectData = [
+  { id: 1, name: "PRJ.M5/M6 Pilo/Gesco", status: "critical" },
+  { id: 2, name: "PRJ.M26 - IRB Portability", status: "integrated" },
+  { id: 3, name: "PRJ.M9 Telephony", status: "non-critical" },
+  // Add more projects as needed
+];
 
-2. Objectifs des Tests
-Test de Charge (Load Testing) : Vérifier la performance de l'application sous une charge attendue (utilisation normale).
-Test de Stress (Stress Testing) : Identifier le point de rupture de l'application en soumettant celle-ci à une charge croissante jusqu'à l'échec.
-Test de Pointe (Spike Testing) : Évaluer la réaction de l'application lors d'un pic soudain de trafic.
-Test d'Endurance (Soak Testing) : Observer la stabilité et la consommation de ressources de l'application sur une longue période avec une charge continue.
-3. Définition des Scénarios de Tests
-3.1. Scénario de Test de Charge (Load Testing)
-Objectif :
-Le test de charge vise à simuler le comportement de l'application sous une charge attendue (par exemple, le nombre normal d'utilisateurs actifs) afin de vérifier les performances, les temps de réponse et la stabilité.
-
-Plan de Test :
-Durée : 9 minutes
-Nombre d'utilisateurs virtuels : 100 utilisateurs maximum
-Étapes :
-Monter progressivement la charge jusqu'à 100 utilisateurs en 2 minutes.
-Maintenir la charge de 100 utilisateurs pendant 5 minutes.
-Redescendre progressivement à 0 utilisateurs en 2 minutes.
-Exemple de script K6 :
-javascript
-Copier le code
-import http from 'k6/http';
-import { sleep } from 'k6';
-
-export let options = {
-  stages: [
-    { duration: '2m', target: 100 }, // Monter à 100 utilisateurs
-    { duration: '5m', target: 100 }, // Maintenir à 100 utilisateurs
-    { duration: '2m', target: 0 },   // Redescendre à 0 utilisateurs
-  ],
+const getStatusIcon = (status) => {
+  switch (status) {
+    case "integrated":
+      return <CheckCircleIcon style={{ color: "green" }} />;
+    case "non-critical":
+      return <WarningIcon style={{ color: "yellow" }} />;
+    case "critical":
+      return <ErrorIcon style={{ color: "red" }} />;
+    default:
+      return null;
+  }
 };
 
-export default function () {
-  http.get('https://votre-api.com/endpoint');
-  sleep(1);
-}
-3.2. Scénario de Test de Stress (Stress Testing)
-Objectif :
-Le test de stress consiste à augmenter progressivement la charge au-delà de la capacité normale de l'application afin de déterminer son point de rupture, c'est-à-dire le moment où l'application échoue ou devient instable.
-
-Plan de Test :
-Durée : 16 minutes
-Nombre d'utilisateurs virtuels : Jusqu'à 800 utilisateurs
-Étapes :
-Monter progressivement la charge de 100 à 800 utilisateurs.
-Observez la dégradation des performances et identifiez à quel moment l'application échoue.
-Exemple de script K6 :
-javascript
-Copier le code
-import http from 'k6/http';
-import { sleep } from 'k6';
-
-export let options = {
-  stages: [
-    { duration: '2m', target: 100 },  // 100 utilisateurs
-    { duration: '3m', target: 200 },  // Monter à 200 utilisateurs
-    { duration: '3m', target: 400 },  // Monter à 400 utilisateurs
-    { duration: '3m', target: 800 },  // Monter à 800 utilisateurs
-    { duration: '5m', target: 0 },    // Redescendre à 0 utilisateurs
-  ],
+const ProjectsSection = () => {
+  return (
+    <Grid container spacing={3}>
+      {projectData.map((project) => (
+        <Grid item xs={12} sm={6} md={4} key={project.id}>
+          <Card>
+            <CardContent>
+              <Grid container alignItems="center">
+                <Grid item xs={10}>
+                  <Typography variant="h6" noWrap>{project.name}</Typography>
+                </Grid>
+                <Grid item xs={2}>
+                  {getStatusIcon(project.status)}
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  );
 };
 
-export default function () {
-  http.get('https://votre-api.com/endpoint');
-  sleep(1);
-}
-3.3. Scénario de Test de Pointe (Spike Testing)
-Objectif :
-Le test de pointe est utilisé pour évaluer la capacité de l'application à gérer des augmentations soudaines et extrêmes de trafic en simulant un pic brutal d'utilisateurs.
-
-Plan de Test :
-Durée : 6 minutes
-Nombre d'utilisateurs virtuels : 1000 utilisateurs au maximum
-Étapes :
-Augmenter soudainement la charge à 1000 utilisateurs en 10 secondes.
-Maintenir cette charge pendant 3 minutes, puis redescendre à 50 utilisateurs.
-Exemple de script K6 :
-javascript
-Copier le code
-import http from 'k6/http';
-import { sleep } from 'k6';
-
-export let options = {
-  stages: [
-    { duration: '1m', target: 50 },    // Charge normale
-    { duration: '10s', target: 1000 }, // Pic à 1000 utilisateurs
-    { duration: '3m', target: 1000 },  // Maintenir à 1000 utilisateurs
-    { duration: '10s', target: 50 },   // Retour à 50 utilisateurs
-    { duration: '2m', target: 50 },    // Charge normale
-  ],
-};
-
-export default function () {
-  http.get('https://votre-api.com/endpoint');
-  sleep(1);
-}
-3.4. Scénario de Test d'Endurance (Soak Testing)
-Objectif :
-Le test d'endurance permet d'évaluer la stabilité de l'application sous une charge continue pendant une longue période, afin de détecter des problèmes tels que des fuites de mémoire ou une dégradation progressive des performances.
-
-Plan de Test :
-Durée : 3 heures et 20 minutes
-Nombre d'utilisateurs virtuels : 100 utilisateurs constants
-Étapes :
-Augmenter la charge à 100 utilisateurs en 10 minutes.
-Maintenir la charge de 100 utilisateurs pendant 3 heures.
-Réduire la charge progressivement à 0 utilisateurs.
-Exemple de script K6 :
-javascript
-Copier le code
-import http from 'k6/http';
-import { sleep } from 'k6';
-
-export let options = {
-  stages: [
-    { duration: '10m', target: 100 }, // Monter à 100 utilisateurs
-    { duration: '3h', target: 100 },  // Maintenir à 100 utilisateurs
-    { duration: '10m', target: 0 },   // Redescendre à 0 utilisateurs
-  ],
-};
-
-export default function () {
-  http.get('https://votre-api.com/endpoint');
-  sleep(1);
-}
-4. Conclusion
-Ce document décrit les scénarios de test qui seront mis en œuvre pour vérifier la performance et la stabilité de l'application sous différents types de charges. Chaque test permet de répondre à des objectifs spécifiques liés à la capacité de l'application à gérer des charges normales, extrêmes ou prolongées.
-
-Ces tests fourniront des informations cruciales pour optimiser les performances et garantir la résilience de l'application avant une mise en production à grande échelle.
+export default ProjectsSection;

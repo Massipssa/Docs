@@ -1,37 +1,28 @@
-import React from 'react';
-import { useQuery } from 'react-query';
-import { format } from 'date-fns'; // Assuming you're using this for date formatting
-
-const fetchVacations = async ({ queryKey }) => {
-  const [, { formattedStart, formattedEnd }] = queryKey;
-  const apiUrl = `http://localhost:8080/api/vacation/getAllVacations?start_opcdate=${formattedStart}&end_opcdate=${formattedEnd}`;
-  
-  const response = await fetch(apiUrl);
-  if (!response.ok) {
-    throw new Error(`Error fetching data: ${response.statusText}`);
-  }
-  return response.json();
-};
-
-const Vacations = ({ values }) => {
-  const { activityStartDate, activityEndDate } = values;
-  const formattedStart = format(activityStartDate, 'yyyyMMdd');
-  const formattedEnd = format(activityEndDate, 'yyyyMMdd');
-
-  const { data, error, isLoading } = useQuery(
-    ['vacations', { formattedStart, formattedEnd }],
-    fetchVacations
-  );
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-
-  return (
-    <div>
-      {/* Render your data here */}
-      <pre>{JSON.stringify(data, null, 2)}</pre>
-    </div>
-  );
-};
-
-export default Vacations;
+return integrations.stream()
+    // Group by opcDate and vacation
+    .collect(Collectors.groupingBy(
+        ReportingIntegration::getOpcDate,
+        Collectors.groupingBy(ReportingIntegration::getVacation)
+    ))
+    .entrySet().stream()
+    .flatMap(opcEntry -> {
+        String opcDate = opcEntry.getKey();
+        
+        return opcEntry.getValue().entrySet().stream().map(vacationEntry -> {
+            Integer vacation = vacationEntry.getKey(); // Assuming vacation is Integer
+            
+            List<ReportingIntegration> group = vacationEntry.getValue();
+            ReportingIntegration lastIntegration = getLastIntegration(group);
+            
+            // Return a new VacationDto object
+            return new VacationDto(
+                opcDate,
+                vacation,
+                group.size(), // Count of objects in the group
+                lastIntegration.getStatus(),
+                lastIntegration.getTimestamp(),
+                lastIntegration.getTimestampOfReception()
+            );
+        });
+    })
+    .collect(Collectors.toList());

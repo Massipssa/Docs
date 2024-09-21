@@ -1,50 +1,109 @@
 import React from 'react';
-import { Grid, Card, CardContent, Typography, IconButton, Tooltip } from '@mui/material';
+import { Grid, Card, CardContent, Typography, Chip, Avatar } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
 
-const projectData = [
-  { id: 1, name: "PRJ.M5/M6 Pilo/Gesco", status: "critical" },
-  { id: 2, name: "PRJ.M26 - IRB Portability", status: "integrated" },
-  { id: 3, name: "PRJ.M9 Telephony", status: "non-critical" },
-  // Add more projects as needed
-];
-
-const getStatusIcon = (status) => {
-  switch (status) {
-    case "integrated":
-      return <CheckCircleIcon style={{ color: "green" }} />;
-    case "non-critical":
-      return <WarningIcon style={{ color: "yellow" }} />;
-    case "critical":
-      return <ErrorIcon style={{ color: "red" }} />;
-    default:
-      return null;
-  }
-};
-
-const ProjectsSection = () => {
+const CREStatutSection = () => {
   return (
     <Grid container spacing={3}>
-      {projectData.map((project) => (
-        <Grid item xs={12} sm={6} md={4} key={project.id}>
-          <Card>
-            <CardContent>
-              <Grid container alignItems="center">
-                <Grid item xs={10}>
-                  <Typography variant="h6" noWrap>{project.name}</Typography>
-                </Grid>
-                <Grid item xs={2}>
-                  {getStatusIcon(project.status)}
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-      ))}
+
+      {/* Reçus */}
+      <Grid item xs={12} sm={6} md={3}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" align="center">
+              Reçus
+            </Typography>
+            <Typography variant="h4" align="center" style={{ color: 'green' }}>
+              0
+            </Typography>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      {/* Non critiques non reçus */}
+      <Grid item xs={12} sm={6} md={3}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" align="center">
+              Non critiques non reçus
+            </Typography>
+            <Typography variant="h4" align="center" style={{ color: 'orange' }}>
+              83
+            </Typography>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      {/* Critiques non reçus */}
+      <Grid item xs={12} sm={6} md={3}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" align="center">
+              Critiques non reçus
+            </Typography>
+            <Typography variant="h4" align="center" style={{ color: 'red' }}>
+              79
+            </Typography>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      {/* Non attendus reçus */}
+      <Grid item xs={12} sm={6} md={3}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" align="center">
+              Non attendus reçus
+            </Typography>
+            <Typography variant="h4" align="center" style={{ color: 'blue' }}>
+              0
+            </Typography>
+          </CardContent>
+        </Card>
+      </Grid>
     </Grid>
   );
 };
 
-export default ProjectsSection;
+const VacationSection = () => {
+  return (
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <Typography variant="h6" align="center">
+          Vacation
+        </Typography>
+        <Grid container justifyContent="center" spacing={1}>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((day) => (
+            <Chip
+              key={day}
+              avatar={<Avatar>{day}</Avatar>}
+              label={`Vacation ${day}`}
+              style={{
+                backgroundColor:
+                  day === 1 || day === 2
+                    ? 'green'
+                    : day === 3 || day === 4
+                    ? 'orange'
+                    : 'gray',
+                color: 'white',
+              }}
+            />
+          ))}
+        </Grid>
+      </Grid>
+    </Grid>
+  );
+};
+
+const Dashboard = () => {
+  return (
+    <div>
+      <CREStatutSection />
+      <VacationSection />
+    </div>
+  );
+};
+
+export default Dashboard;

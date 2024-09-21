@@ -1,3 +1,32 @@
+import React from 'react';
+import { useQuery } from 'react-query';
+import { Box, CircularProgress, Paper, Typography, Chip } from '@mui/material';
+import { format, eachDayOfInterval } from 'date-fns';
+
+// Utility function to set cell color based on status
+function setCellColor(cellStatus) {
+  switch (cellStatus) {
+    case 'error':
+      return 'red';
+    case 'success':
+      return 'green';
+    default:
+      return 'transparent';
+  }
+}
+
+// API call function for fetching CRE data
+const fetchCreData = async ({ queryKey }) => {
+  const [_, { formattedStart, formattedEnd }] = queryKey;
+  const apiUrl = `http://localhost:8080/api/vacation/getAllVacations?start_opcdate=${formattedStart}&end_opcdate=${formattedEnd}`;
+
+  const response = await fetch(apiUrl);
+  if (!response.ok) {
+    throw new Error(`Error fetching data: ${response.statusText}`);
+  }
+  return response.json();
+};
+
 const DynamicTable = ({ values }) => {
   const { activityStartDate, activityEndDate } = values || {};
 
@@ -32,75 +61,67 @@ const DynamicTable = ({ values }) => {
     );
   }
 
-  // Define columns and data mapping
-  const columns = useMemo(() => {
-    if (!activityStartDate || !activityEndDate) return [];
+  // Directly compute the columns without useMemo
+  const dates = activityStartDate && activityEndDate
+    ? eachDayOfInterval({
+        start: activityStartDate,
+        end: activityEndDate,
+      })
+    : [];
 
-    const dates = eachDayOfInterval({
-      start: activityStartDate,
-      end: activityEndDate,
-    });
+  const columns = [
+    {
+      accessorKey: 'objectName',
+      header: 'CRE',
+    },
+    ...dates.map((date) => ({
+      accessorKey: format(date, 'dd/MM/yyyy'),
+      header: format(date, 'dd/MM/yyyy'),
+      Cell: ({ row }) => {
+        const dateStr = format(date, 'yyyyMMdd');
+        const rowData = row.original;
+        const opcDate = rowData ? rowData.opcDate : '';
+        const vacation = rowData ? rowData.vacation : '';
+        const cellValue = `${vacation}:${opcDate}`;
+        const cellStatus = rowData ? rowData.status : '';
 
-    return [
-      {
-        accessorKey: 'objectName',
-        header: 'CRE',
+        // Click handler for the cell
+        const handleClick = () => {
+          alert(`Clicked on ${dateStr}: ${rowData.objectName} - ${cellStatus}`);
+        };
+
+        // Determine cell background color based on status
+        const cellBackgroundColor = setCellColor(cellStatus);
+
+        return (
+          <Typography>
+            <Chip
+              label={cellValue}
+              onClick={handleClick}
+              sx={{
+                backgroundColor: cellBackgroundColor,
+                color: 'black',
+                cursor: 'pointer',
+              }}
+            />
+          </Typography>
+        );
       },
-      ...dates.map((date) => ({
-        accessorKey: format(date, 'dd/MM/yyyy'),
-        header: format(date, 'dd/MM/yyyy'),
-        Cell: ({ row }) => {
-          const dateStr = format(date, 'yyyyMMdd');
-          const rowData = row.original;
-          const opcDate = rowData ? rowData.opcDate : '';
-          const vacation = rowData ? rowData.vacation : '';
-          const cellValue = `${vacation}:${opcDate}`;
-          const cellStatus = rowData ? rowData.status : '';
+    })),
+  ];
 
-          // Click handler for the cell
-          const handleClick = () => {
-            alert(`Clicked on ${dateStr}: ${rowData.objectName} - ${cellStatus}`);
-          };
-
-          // Determine cell background color based on status
-          const cellBackgroundColor = setCellColor(cellStatus);
-
-          return (
-            <Typography>
-              <Chip
-                label={cellValue}
-                onClick={handleClick}
-                sx={{
-                  backgroundColor: cellBackgroundColor,
-                  color: 'black',
-                  cursor: 'pointer',
-                }}
-              />
-            </Typography>
-          );
-        },
-      })),
-    ];
-  }, [activityStartDate, activityEndDate]);
-
-  const tableData = useMemo(() => {
-    if (!activityStartDate || !activityEndDate || !data) return [];
-
-    const dates = eachDayOfInterval({
-      start: activityStartDate,
-      end: activityEndDate,
-    });
-
-    return data.map((item) => {
-      return dates.reduce((acc, date) => {
-        const formattedDate = format(date, 'dd/MM/yyyy');
-        acc[formattedDate] =
-          item.date === format(date, 'yyyyMMdd') ? item.vacation : '-';
-        acc['objectName'] = item.objectName;
-        return acc;
-      }, {});
-    });
-  }, [activityStartDate, activityEndDate, data]);
+  // Directly compute the tableData without useMemo
+  const tableData = data
+    ? data.map((item) => {
+        return dates.reduce((acc, date) => {
+          const formattedDate = format(date, 'dd/MM/yyyy');
+          acc[formattedDate] =
+            item.date === format(date, 'yyyyMMdd') ? item.vacation : '-';
+          acc['objectName'] = item.objectName;
+          return acc;
+        }, {});
+      })
+    : [];
 
   return (
     <ObjectTable
@@ -112,3 +133,5 @@ const DynamicTable = ({ values }) => {
     />
   );
 };
+
+export default DynamicTable;

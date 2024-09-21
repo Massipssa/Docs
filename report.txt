@@ -1,45 +1,132 @@
-import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Box, Typography } from '@mui/material';
+import React, { useMemo } from 'react';
+import { useQuery } from 'react-query';
+import { Box, CircularProgress, Paper, Typography, Chip } from '@mui/material';
+import { format, eachDayOfInterval } from 'date-fns';
 
-const data = [
-  { vacation: 8, volume: 53 },
-  { vacation: 7, volume: 51 },
-  { vacation: 6, volume: 53 },
-  { vacation: 5, volume: 51 },
-  { vacation: 4, volume: 52 },
-  { vacation: 3, volume: 51 },
-  { vacation: 2, volume: 53 },
-  { vacation: 1, volume: 52 },
-];
+// Utility function to set cell color based on status
+function setCellColor(cellStatus) {
+  switch (cellStatus) {
+    case 'error':
+      return 'red';
+    case 'success':
+      return 'green';
+    default:
+      return 'transparent';
+  }
+}
 
-const VacationBarChart = () => {
+// API call function for fetching CRE data
+const fetchCreData = async ({ queryKey }) => {
+  const [_, { formattedStart, formattedEnd }] = queryKey;
+  const apiUrl = `http://localhost:8080/api/vacation/getAllVacations?start_opcdate=${formattedStart}&end_opcdate=${formattedEnd}`;
+
+  const response = await fetch(apiUrl);
+  if (!response.ok) {
+    throw new Error(`Error fetching data: ${response.statusText}`);
+  }
+  return response.json();
+};
+
+const DynamicTable = ({ values }) => {
+  const { activityStartDate, activityEndDate } = values || {};
+
+  const formattedStart = format(activityStartDate, 'yyyyMMdd').toString();
+  const formattedEnd = format(activityEndDate, 'yyyyMMdd').toString();
+
+  // Fetch data using useQuery
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['creData', { formattedStart, formattedEnd }],
+    queryFn: fetchCreData,
+  });
+
+  if (isLoading) {
+    return (
+      <Paper>
+        <CircularProgress />
+      </Paper>
+    );
+  }
+
+  if (error) {
+    return (
+      <Paper>
+        <Typography>Error Fetching Data: {error.message}</Typography>
+      </Paper>
+    );
+  }
+
+  // Define columns and data mapping
+  const columns = useMemo(() => {
+    if (!activityStartDate || !activityEndDate) return [];
+
+    const dates = eachDayOfInterval({ start: activityStartDate, end: activityEndDate });
+    
+    return [
+      {
+        accessorKey: 'objectName',
+        header: 'CRE',
+      },
+      ...dates.map((date) => ({
+        accessorKey: format(date, 'dd/MM/yyyy'),
+        header: format(date, 'dd/MM/yyyy'),
+        Cell: ({ row }) => {
+          const dateStr = format(date, 'yyyyMMdd');
+          const rowData = row.original;
+          const opcDate = rowData ? rowData.opcDate : '';
+          const vacation = rowData ? rowData.vacation : '';
+          const cellValue = `${vacation}:${opcDate}`;
+          const cellStatus = rowData ? rowData.status : '';
+          
+          // Click handler for the cell
+          const handleClick = () => {
+            alert(`Clicked on ${dateStr}: ${rowData.objectName} - ${cellStatus}`);
+          };
+
+          // Determine cell background color based on status
+          const cellBackgroundColor = setCellColor(cellStatus);
+
+          return (
+            <Typography>
+              <Chip
+                label={cellValue}
+                onClick={handleClick}
+                sx={{
+                  backgroundColor: cellBackgroundColor,
+                  color: 'black',
+                  cursor: 'pointer',
+                }}
+              />
+            </Typography>
+          );
+        },
+      })),
+    ];
+  }, [activityStartDate, activityEndDate]);
+
+  const tableData = useMemo(() => {
+    if (!activityStartDate || !activityEndDate || !data) return [];
+
+    const dates = eachDayOfInterval({ start: activityStartDate, end: activityEndDate });
+
+    return data.map((item) => {
+      return dates.reduce((acc, date) => {
+        const formattedDate = format(date, 'dd/MM/yyyy');
+        acc[formattedDate] = item.date === format(date, 'yyyyMMdd') ? item.vacation : '-';
+        acc['objectName'] = item.objectName;
+        return acc;
+      }, {});
+    });
+  }, [activityStartDate, activityEndDate, data]);
+
   return (
-    <Box sx={{ padding: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Volume total d'intégration par vacation
-      </Typography>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{
-            top: 20,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" />
-          <YAxis type="category" dataKey="vacation" />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="volume" fill="#8884d8" />
-        </BarChart>
-      </ResponsiveContainer>
-    </Box>
+    <ObjectTable
+      objectColumns={columns}
+      data={tableData}
+      pageSize={5}
+      showActions={false}
+      enableExpandAll={false}
+    />
   );
 };
 
-export default VacationBarChart;
+export default DynamicTable;

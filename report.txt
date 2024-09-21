@@ -1,42 +1,19 @@
-import React, { useMemo } from 'react';
-import { useQuery } from 'react-query';
-import { Box, CircularProgress, Paper, Typography, Chip } from '@mui/material';
-import { format, eachDayOfInterval } from 'date-fns';
-
-// Utility function to set cell color based on status
-function setCellColor(cellStatus) {
-  switch (cellStatus) {
-    case 'error':
-      return 'red';
-    case 'success':
-      return 'green';
-    default:
-      return 'transparent';
-  }
-}
-
-// API call function for fetching CRE data
-const fetchCreData = async ({ queryKey }) => {
-  const [_, { formattedStart, formattedEnd }] = queryKey;
-  const apiUrl = `http://localhost:8080/api/vacation/getAllVacations?start_opcdate=${formattedStart}&end_opcdate=${formattedEnd}`;
-
-  const response = await fetch(apiUrl);
-  if (!response.ok) {
-    throw new Error(`Error fetching data: ${response.statusText}`);
-  }
-  return response.json();
-};
-
 const DynamicTable = ({ values }) => {
   const { activityStartDate, activityEndDate } = values || {};
 
-  const formattedStart = format(activityStartDate, 'yyyyMMdd').toString();
-  const formattedEnd = format(activityEndDate, 'yyyyMMdd').toString();
+  // Ensure formattedStart and formattedEnd are defined regardless of condition
+  const formattedStart = activityStartDate
+    ? format(activityStartDate, 'yyyyMMdd').toString()
+    : '';
+  const formattedEnd = activityEndDate
+    ? format(activityEndDate, 'yyyyMMdd').toString()
+    : '';
 
   // Fetch data using useQuery
   const { data, error, isLoading } = useQuery({
     queryKey: ['creData', { formattedStart, formattedEnd }],
     queryFn: fetchCreData,
+    enabled: !!formattedStart && !!formattedEnd, // Only fetch when both dates are available
   });
 
   if (isLoading) {
@@ -59,8 +36,11 @@ const DynamicTable = ({ values }) => {
   const columns = useMemo(() => {
     if (!activityStartDate || !activityEndDate) return [];
 
-    const dates = eachDayOfInterval({ start: activityStartDate, end: activityEndDate });
-    
+    const dates = eachDayOfInterval({
+      start: activityStartDate,
+      end: activityEndDate,
+    });
+
     return [
       {
         accessorKey: 'objectName',
@@ -76,7 +56,7 @@ const DynamicTable = ({ values }) => {
           const vacation = rowData ? rowData.vacation : '';
           const cellValue = `${vacation}:${opcDate}`;
           const cellStatus = rowData ? rowData.status : '';
-          
+
           // Click handler for the cell
           const handleClick = () => {
             alert(`Clicked on ${dateStr}: ${rowData.objectName} - ${cellStatus}`);
@@ -106,12 +86,16 @@ const DynamicTable = ({ values }) => {
   const tableData = useMemo(() => {
     if (!activityStartDate || !activityEndDate || !data) return [];
 
-    const dates = eachDayOfInterval({ start: activityStartDate, end: activityEndDate });
+    const dates = eachDayOfInterval({
+      start: activityStartDate,
+      end: activityEndDate,
+    });
 
     return data.map((item) => {
       return dates.reduce((acc, date) => {
         const formattedDate = format(date, 'dd/MM/yyyy');
-        acc[formattedDate] = item.date === format(date, 'yyyyMMdd') ? item.vacation : '-';
+        acc[formattedDate] =
+          item.date === format(date, 'yyyyMMdd') ? item.vacation : '-';
         acc['objectName'] = item.objectName;
         return acc;
       }, {});
@@ -128,5 +112,3 @@ const DynamicTable = ({ values }) => {
     />
   );
 };
-
-export default DynamicTable;

@@ -1,109 +1,37 @@
 import React from 'react';
-import { Grid, Card, CardContent, Typography, Chip, Avatar } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
-import ErrorIcon from '@mui/icons-material/Error';
+import { useQuery } from 'react-query';
+import { format } from 'date-fns'; // Assuming you're using this for date formatting
 
-const CREStatutSection = () => {
-  return (
-    <Grid container spacing={3}>
-
-      {/* Reçus */}
-      <Grid item xs={12} sm={6} md={3}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" align="center">
-              Reçus
-            </Typography>
-            <Typography variant="h4" align="center" style={{ color: 'green' }}>
-              0
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-
-      {/* Non critiques non reçus */}
-      <Grid item xs={12} sm={6} md={3}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" align="center">
-              Non critiques non reçus
-            </Typography>
-            <Typography variant="h4" align="center" style={{ color: 'orange' }}>
-              83
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-
-      {/* Critiques non reçus */}
-      <Grid item xs={12} sm={6} md={3}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" align="center">
-              Critiques non reçus
-            </Typography>
-            <Typography variant="h4" align="center" style={{ color: 'red' }}>
-              79
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-
-      {/* Non attendus reçus */}
-      <Grid item xs={12} sm={6} md={3}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" align="center">
-              Non attendus reçus
-            </Typography>
-            <Typography variant="h4" align="center" style={{ color: 'blue' }}>
-              0
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-    </Grid>
-  );
+const fetchVacations = async ({ queryKey }) => {
+  const [, { formattedStart, formattedEnd }] = queryKey;
+  const apiUrl = `http://localhost:8080/api/vacation/getAllVacations?start_opcdate=${formattedStart}&end_opcdate=${formattedEnd}`;
+  
+  const response = await fetch(apiUrl);
+  if (!response.ok) {
+    throw new Error(`Error fetching data: ${response.statusText}`);
+  }
+  return response.json();
 };
 
-const VacationSection = () => {
-  return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Typography variant="h6" align="center">
-          Vacation
-        </Typography>
-        <Grid container justifyContent="center" spacing={1}>
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((day) => (
-            <Chip
-              key={day}
-              avatar={<Avatar>{day}</Avatar>}
-              label={`Vacation ${day}`}
-              style={{
-                backgroundColor:
-                  day === 1 || day === 2
-                    ? 'green'
-                    : day === 3 || day === 4
-                    ? 'orange'
-                    : 'gray',
-                color: 'white',
-              }}
-            />
-          ))}
-        </Grid>
-      </Grid>
-    </Grid>
-  );
-};
+const Vacations = ({ values }) => {
+  const { activityStartDate, activityEndDate } = values;
+  const formattedStart = format(activityStartDate, 'yyyyMMdd');
+  const formattedEnd = format(activityEndDate, 'yyyyMMdd');
 
-const Dashboard = () => {
+  const { data, error, isLoading } = useQuery(
+    ['vacations', { formattedStart, formattedEnd }],
+    fetchVacations
+  );
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
   return (
     <div>
-      <CREStatutSection />
-      <VacationSection />
+      {/* Render your data here */}
+      <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
   );
 };
 
-export default Dashboard;
+export default Vacations;

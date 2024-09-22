@@ -1,110 +1,49 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
+import React, { useContext } from 'react';
+import StatCard from './StatCard'; // Import the reusable card component
+import { CreContext } from './CreContext'; // Adjust the path as needed
 
-// Create the context
-export const CreContext = createContext();
+function CreReceptionStatusCard() {
+  const { 
+    filterCritiqueProjects, critiqueSize, 
+    filterNonCritiqueProjects, nonCritiqueSize,
+    receivedSize, notExpectedSize,
+    isLoading, error 
+  } = useContext(CreContext);
 
-// Fetch API data for CRE status
-const fetchCreData = async (submittedValues) => {
-  const { integrationDate, activityDate, frequency, project } = submittedValues;
-  const response = await fetch(
-    `your-api-url?integrationDate=${integrationDate}&activityDate=${activityDate}&frequency=${frequency}&project=${project}`
-  ); 
-  if (!response.ok) {
-    throw new Error('Error fetching data');
-  }
-  return response.json();
-};
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error loading data</p>;
 
-// Fetch Project data based on CRE
-const fetchProjectData = async () => {
-  const response = await fetch('your-project-api-url'); // URL to fetch the project data
-  if (!response.ok) {
-    throw new Error('Error fetching project data');
-  }
-  return response.json();
-};
-
-// Provider component
-export const CreProvider = ({ children }) => {
-  const defaultSubmittedValues = {
-    integrationDate: new Date().toISOString().split('T')[0],
-    activityDate: new Date().toISOString().split('T')[0],
-    frequency: 'daily',
-    project: 'default-project',
-  };
-
-  const [submittedValues, setSubmittedValues] = useState(defaultSubmittedValues);
-
-  const [nonCritiqueSize, setNonCritiqueSize] = useState(0);
-  const [critiqueSize, setCritiqueSize] = useState(0);
-  const [receivedSize, setReceivedSize] = useState(0);
-  const [notExpectedSize, setNotExpectedSize] = useState(0);
-
-  const [projects, setProjects] = useState([]); // Store all projects
-  const [filteredProjects, setFilteredProjects] = useState([]); // Store filtered projects
-
-  const { data, error, isLoading } = useQuery(
-    ['creData', submittedValues],
-    () => fetchCreData(submittedValues),
-    { enabled: !!submittedValues }
-  );
-
-  const { data: projectData, error: projectError, isLoading: projectLoading } = useQuery(
-    'projectData',
-    fetchProjectData // Fetch the project data from the API
-  );
-
-  useEffect(() => {
-    if (data) {
-      const nonCritiques = data.expectedNotCriticalNotReceived || [];
-      const critiques = data.expectedCriticalNoReceived || [];
-      const received = data.expectedReceive || [];
-      const notExpected = data.expectedNotExpected || [];
-
-      setNonCritiqueSize(nonCritiques.length);
-      setCritiqueSize(critiques.length);
-      setReceivedSize(received.length);
-      setNotExpectedSize(notExpected.length);
-    }
-
-    if (projectData) {
-      setProjects(projectData); // Store the project data from API
-    }
-  }, [data, projectData]);
-
-  // Filter projects based on Critique CREs
-  const filterCritiqueProjects = () => {
-    if (projects) {
-      const filtered = projects.filter((project) => project.critical.length > 0);
-      setFilteredProjects(filtered);
-    }
-  };
-
-  // Filter projects based on Non-Critique CREs
-  const filterNonCritiqueProjects = () => {
-    if (projects) {
-      const filtered = projects.filter((project) => project.notCritical.length > 0);
-      setFilteredProjects(filtered);
-    }
-  };
+  const critiqueBgColor = critiqueSize === 0 ? 'green' : 'red';
+  const nonCritiqueBgColor = nonCritiqueSize === 0 ? 'green' : 'yellow';
+  const receivedBgColor = receivedSize > 0 ? 'green' : 'red';
+  const notExpectedBgColor = notExpectedSize === 0 ? 'green' : 'gray';
 
   return (
-    <CreContext.Provider value={{
-      filteredProjects,
-      filterCritiqueProjects,
-      filterNonCritiqueProjects,
-      critiqueSize,
-      nonCritiqueSize,
-      receivedSize,
-      notExpectedSize,
-      setSubmittedValues,
-      isLoading,
-      error,
-      projectLoading,
-      projectError
-    }}>
-      {children}
-    </CreContext.Provider>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+      <StatCard 
+        title="Critique non reçus" 
+        size={critiqueSize} 
+        onClick={filterCritiqueProjects} // Filter projects with Critique CRE
+        backgroundColor={critiqueBgColor} 
+      />
+      <StatCard 
+        title="Non Critique non reçus" 
+        size={nonCritiqueSize} 
+        onClick={filterNonCritiqueProjects} // Filter projects with Non-Critique CRE
+        backgroundColor={nonCritiqueBgColor} 
+      />
+      <StatCard 
+        title="Reçus" 
+        size={receivedSize} 
+        backgroundColor={receivedBgColor} 
+      />
+      <StatCard 
+        title="Non attendus reçus" 
+        size={notExpectedSize} 
+        backgroundColor={notExpectedBgColor} 
+      />
+    </div>
   );
-};
+}
+
+export default CreReceptionStatusCard;

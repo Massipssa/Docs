@@ -18,7 +18,15 @@ const fetchCreData = async (submittedValues) => {
 
 // Provider component
 export const CreProvider = ({ children }) => {
-  const [submittedValues, setSubmittedValues] = useState(null);
+  // Set default values for the submittedValues
+  const defaultSubmittedValues = {
+    integrationDate: new Date().toISOString().split('T')[0], // Default to today’s date
+    activityDate: new Date().toISOString().split('T')[0],     // Default to today’s date
+    frequency: 'daily', // Adjust the default frequency
+    project: 'default-project', // Set a default project
+  };
+
+  const [submittedValues, setSubmittedValues] = useState(defaultSubmittedValues); // Initialize with default values
 
   // Use React Query to fetch data when submittedValues changes
   const { data, error, isLoading } = useQuery(

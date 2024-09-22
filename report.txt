@@ -1,24 +1,43 @@
-import React from 'react';
-import { Card, CardContent, Typography } from '@mui/material';
-import { useContext } from 'react';
+import React, { useContext } from 'react';
+import StatCard from './StatCard'; // Import the reusable card component
 import { CreContext } from './CreContext'; // Adjust the path as needed
 
-// Reusable StatCard component
-const StatCard = ({ title, size, onClick }) => {
-  const borderColor = size === 0 ? 'green' : 'gray'; // Dynamic border color
+function CreReceptionStatusCard() {
+  const { 
+    filterCritiqueData, critiqueSize, 
+    filterNonCritiqueData, nonCritiqueSize,
+    filterReceivedData, receivedSize,
+    filterNotExpectedData, notExpectedSize,
+    isLoading, error 
+  } = useContext(CreContext);
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error loading data</p>;
 
   return (
-    <Card 
-      sx={{ minWidth: 275, border: `2px solid ${borderColor}`, cursor: 'pointer' }}
-      onClick={onClick}
-    >
-      <CardContent>
-        <Typography variant="h6">
-          {title} ({size})
-        </Typography>
-      </CardContent>
-    </Card>
+    <div style={{ display: 'flex', gap: '16px' }}>
+      <StatCard 
+        title="Critique non reçus" 
+        size={critiqueSize} 
+        onClick={filterCritiqueData} 
+      />
+      <StatCard 
+        title="Non Critique non reçus" 
+        size={nonCritiqueSize} 
+        onClick={filterNonCritiqueData} 
+      />
+      <StatCard 
+        title="Reçus" 
+        size={receivedSize} 
+        onClick={filterReceivedData} 
+      />
+      <StatCard 
+        title="Non attendus reçus" 
+        size={notExpectedSize} 
+        onClick={filterNotExpectedData} 
+      />
+    </div>
   );
-};
+}
 
-export default StatCard;
+export default CreReceptionStatusCard;

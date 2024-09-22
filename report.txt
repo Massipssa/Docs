@@ -1,137 +1,62 @@
-import React from 'react';
+import React, { createContext, useState } from 'react';
 import { useQuery } from 'react-query';
-import { Box, CircularProgress, Paper, Typography, Chip } from '@mui/material';
-import { format, eachDayOfInterval } from 'date-fns';
 
-// Utility function to set cell color based on status
-function setCellColor(cellStatus) {
-  switch (cellStatus) {
-    case 'error':
-      return 'red';
-    case 'success':
-      return 'green';
-    default:
-      return 'transparent';
-  }
-}
+// Create the context
+export const CreContext = createContext();
 
-// API call function for fetching CRE data
-const fetchCreData = async ({ queryKey }) => {
-  const [_, { formattedStart, formattedEnd }] = queryKey;
-  const apiUrl = `http://localhost:8080/api/vacation/getAllVacations?start_opcdate=${formattedStart}&end_opcdate=${formattedEnd}`;
-
-  const response = await fetch(apiUrl);
+// Fetch API data based on the selected date
+const fetchCreData = async (date) => {
+  const response = await fetch(`your-api-url?date=${date}`); // Use the selected date in the API call
   if (!response.ok) {
-    throw new Error(`Error fetching data: ${response.statusText}`);
+    throw new Error('Error fetching data');
   }
   return response.json();
 };
 
-const DynamicTable = ({ values }) => {
-  const { activityStartDate, activityEndDate } = values || {};
+// Provider component
+export const CreProvider = ({ children }) => {
+  // State to hold the selected date
+  const [selectedDate, setSelectedDate] = useState(null);
 
-  // Ensure formattedStart and formattedEnd are defined regardless of condition
-  const formattedStart = activityStartDate
-    ? format(activityStartDate, 'yyyyMMdd').toString()
-    : '';
-  const formattedEnd = activityEndDate
-    ? format(activityEndDate, 'yyyyMMdd').toString()
-    : '';
-
-  // Fetch data using useQuery
-  const { data, error, isLoading } = useQuery({
-    queryKey: ['creData', { formattedStart, formattedEnd }],
-    queryFn: fetchCreData,
-    enabled: !!formattedStart && !!formattedEnd, // Only fetch when both dates are available
-  });
-
-  if (isLoading) {
-    return (
-      <Paper>
-        <CircularProgress />
-      </Paper>
-    );
-  }
-
-  if (error) {
-    return (
-      <Paper>
-        <Typography>Error Fetching Data: {error.message}</Typography>
-      </Paper>
-    );
-  }
-
-  // Directly compute the columns without useMemo
-  const dates = activityStartDate && activityEndDate
-    ? eachDayOfInterval({
-        start: activityStartDate,
-        end: activityEndDate,
-      })
-    : [];
-
-  const columns = [
+  // Use React Query to fetch data when the date changes
+  const { data, error, isLoading } = useQuery(
+    ['creData', selectedDate],
+    () => fetchCreData(selectedDate),
     {
-      accessorKey: 'objectName',
-      header: 'CRE',
-    },
-    ...dates.map((date) => ({
-      accessorKey: format(date, 'dd/MM/yyyy'),
-      header: format(date, 'dd/MM/yyyy'),
-      Cell: ({ row }) => {
-        const dateStr = format(date, 'yyyyMMdd');
-        const rowData = row.original;
-        const opcDate = rowData ? rowData.opcDate : '';
-        const vacation = rowData ? rowData.vacation : '';
-        const cellValue = `${vacation}:${opcDate}`;
-        const cellStatus = rowData ? rowData.status : '';
+      enabled: !!selectedDate, // Only fetch when a date is selected
+    }
+  );
 
-        // Click handler for the cell
-        const handleClick = () => {
-          alert(`Clicked on ${dateStr}: ${rowData.objectName} - ${cellStatus}`);
-        };
+  // State to hold filtered data
+  const [filteredCreData, setFilteredCreData] = useState([]);
 
-        // Determine cell background color based on status
-        const cellBackgroundColor = setCellColor(cellStatus);
+  // Function to filter non-critiques
+  const filterNonCritiqueData = () => {
+    if (data && data.expectedNotCriticalNotReceived) {
+      setFilteredCreData(data.expectedNotCriticalNotReceived);
+    }
+  };
 
-        return (
-          <Typography>
-            <Chip
-              label={cellValue}
-              onClick={handleClick}
-              sx={{
-                backgroundColor: cellBackgroundColor,
-                color: 'black',
-                cursor: 'pointer',
-              }}
-            />
-          </Typography>
-        );
-      },
-    })),
-  ];
-
-  // Directly compute the tableData without useMemo
-  const tableData = data
-    ? data.map((item) => {
-        return dates.reduce((acc, date) => {
-          const formattedDate = format(date, 'dd/MM/yyyy');
-          acc[formattedDate] =
-            item.date === format(date, 'yyyyMMdd') ? item.vacation : '-';
-          acc['objectName'] = item.objectName;
-          return acc;
-        }, {});
-      })
-    : [];
+  // Function to filter critiques
+  const filterCritiqueData = () => {
+    if (data && data.expectedCriticalNoReceived) {
+      setFilteredCreData(data.expectedCriticalNoReceived);
+    }
+  };
 
   return (
-    <ObjectTable
-      objectColumns={columns}
-      data={tableData}
-      pageSize={5}
-      showActions={false}
-      enableExpandAll={false}
-    />
+    <CreContext.Provider value={{
+      filteredCreData,
+      filterNonCritiqueData,
+      filterCritiqueData,
+      setSelectedDate,
+      isLoading,
+      error
+    }}>
+      {children}
+    </CreContext.Provider>
   );
 };
 
-export default DynamicTable;
+
+

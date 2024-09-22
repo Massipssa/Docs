@@ -14,27 +14,37 @@ function CreReceptionStatusCard() {
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error loading data</p>;
 
+  // Dynamic background colors
+  const critiqueBgColor = critiqueSize === 0 ? 'green' : 'red';
+  const nonCritiqueBgColor = nonCritiqueSize === 0 ? 'green' : 'yellow';
+  const receivedBgColor = receivedSize > 0 ? 'green' : 'red';
+  const notExpectedBgColor = notExpectedSize === 0 ? 'green' : 'gray';
+
   return (
-    <div style={{ display: 'flex', gap: '16px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
       <StatCard 
         title="Critique non reçus" 
         size={critiqueSize} 
-        onClick={filterCritiqueData} 
+        onClick={filterCritiqueData}
+        backgroundColor={critiqueBgColor} 
       />
       <StatCard 
         title="Non Critique non reçus" 
         size={nonCritiqueSize} 
         onClick={filterNonCritiqueData} 
+        backgroundColor={nonCritiqueBgColor} 
       />
       <StatCard 
         title="Reçus" 
         size={receivedSize} 
         onClick={filterReceivedData} 
+        backgroundColor={receivedBgColor} 
       />
       <StatCard 
         title="Non attendus reçus" 
         size={notExpectedSize} 
         onClick={filterNotExpectedData} 
+        backgroundColor={notExpectedBgColor} 
       />
     </div>
   );

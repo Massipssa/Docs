@@ -1,100 +1,24 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
+import React from 'react';
+import { Card, CardContent, Typography } from '@mui/material';
+import { useContext } from 'react';
+import { CreContext } from './CreContext'; // Adjust the path as needed
 
-// Create the context
-export const CreContext = createContext();
-
-// Fetch API data based on submitted values (integrationDate, activityDate, etc.)
-const fetchCreData = async (submittedValues) => {
-  const { integrationDate, activityDate, frequency, project } = submittedValues;
-  const response = await fetch(
-    `your-api-url?integrationDate=${integrationDate}&activityDate=${activityDate}&frequency=${frequency}&project=${project}`
-  ); // Modify URL as needed
-  if (!response.ok) {
-    throw new Error('Error fetching data');
-  }
-  return response.json();
-};
-
-// Provider component
-export const CreProvider = ({ children }) => {
-  // Set default values for the submittedValues
-  const defaultSubmittedValues = {
-    integrationDate: new Date().toISOString().split('T')[0], // Default to today’s date
-    activityDate: new Date().toISOString().split('T')[0],     // Default to today’s date
-    frequency: 'daily', // Adjust the default frequency
-    project: 'default-project', // Set a default project
-  };
-
-  const [submittedValues, setSubmittedValues] = useState(defaultSubmittedValues); // Initialize with default values
-
-  // State to store the title of the table
-  const [tableTitle, setTableTitle] = useState('CRE Non reçus - Both Critiques and Non-Critiques');
-
-  // State to store the sizes of "Non critiques" and "Critiques"
-  const [nonCritiqueSize, setNonCritiqueSize] = useState(0);
-  const [critiqueSize, setCritiqueSize] = useState(0);
-
-  // Use React Query to fetch data when submittedValues changes
-  const { data, error, isLoading } = useQuery(
-    ['creData', submittedValues],
-    () => fetchCreData(submittedValues),
-    {
-      enabled: !!submittedValues, // Only fetch when values are submitted
-    }
-  );
-
-  // State to hold both critiques and non-critiques by default
-  const [combinedCreData, setCombinedCreData] = useState([]);
-
-  // State to hold filtered data
-  const [filteredCreData, setFilteredCreData] = useState([]);
-
-  // Populate both critiques and non-critiques data when fetched
-  useEffect(() => {
-    if (data) {
-      const nonCritiques = data.expectedNotCriticalNotReceived || [];
-      const critiques = data.expectedCriticalNoReceived || [];
-
-      setNonCritiqueSize(nonCritiques.length); // Set size of "Non critiques"
-      setCritiqueSize(critiques.length);       // Set size of "Critiques"
-
-      const combined = [...nonCritiques, ...critiques];
-      setCombinedCreData(combined); // Set combined data by default
-      setFilteredCreData(combined); // Show combined by default in the table
-    }
-  }, [data]);
-
-  // Function to filter non-critiques
-  const filterNonCritiqueData = () => {
-    if (data && data.expectedNotCriticalNotReceived) {
-      setFilteredCreData(data.expectedNotCriticalNotReceived);
-      setTableTitle('CRE Non reçus - Non-Critiques');
-    }
-  };
-
-  // Function to filter critiques
-  const filterCritiqueData = () => {
-    if (data && data.expectedCriticalNoReceived) {
-      setFilteredCreData(data.expectedCriticalNoReceived);
-      setTableTitle('CRE Non reçus - Critiques');
-    }
-  };
+// Reusable StatCard component
+const StatCard = ({ title, size, onClick }) => {
+  const borderColor = size === 0 ? 'green' : 'gray'; // Dynamic border color
 
   return (
-    <CreContext.Provider value={{
-      filteredCreData,
-      combinedCreData,
-      filterNonCritiqueData,
-      filterCritiqueData,
-      setSubmittedValues,
-      tableTitle, // Pass the title to children components
-      nonCritiqueSize, // Pass the size of non-critiques
-      critiqueSize,    // Pass the size of critiques
-      isLoading,
-      error
-    }}>
-      {children}
-    </CreContext.Provider>
+    <Card 
+      sx={{ minWidth: 275, border: `2px solid ${borderColor}`, cursor: 'pointer' }}
+      onClick={onClick}
+    >
+      <CardContent>
+        <Typography variant="h6">
+          {title} ({size})
+        </Typography>
+      </CardContent>
+    </Card>
   );
 };
+
+export default StatCard;

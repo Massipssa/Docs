@@ -1,53 +1,25 @@
-import React, { useContext } from 'react';
-import StatCard from './StatCard'; // Import the reusable card component
-import { CreContext } from './CreContext'; // Adjust the path as needed
+import React from 'react';
+import { Card, CardContent, Typography } from '@mui/material';
 
-function CreReceptionStatusCard() {
-  const { 
-    filterCritiqueData, critiqueSize, 
-    filterNonCritiqueData, nonCritiqueSize,
-    filterReceivedData, receivedSize,
-    filterNotExpectedData, notExpectedSize,
-    isLoading, error 
-  } = useContext(CreContext);
-
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error loading data</p>;
-
-  // Dynamic background colors
-  const critiqueBgColor = critiqueSize === 0 ? 'green' : 'red';
-  const nonCritiqueBgColor = nonCritiqueSize === 0 ? 'green' : 'yellow';
-  const receivedBgColor = receivedSize > 0 ? 'green' : 'red';
-  const notExpectedBgColor = notExpectedSize === 0 ? 'green' : 'gray';
-
+// Reusable StatCard component
+const StatCard = ({ title, size, onClick, backgroundColor }) => {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
-      <StatCard 
-        title="Critique non reçus" 
-        size={critiqueSize} 
-        onClick={filterCritiqueData}
-        backgroundColor={critiqueBgColor} 
-      />
-      <StatCard 
-        title="Non Critique non reçus" 
-        size={nonCritiqueSize} 
-        onClick={filterNonCritiqueData} 
-        backgroundColor={nonCritiqueBgColor} 
-      />
-      <StatCard 
-        title="Reçus" 
-        size={receivedSize} 
-        onClick={filterReceivedData} 
-        backgroundColor={receivedBgColor} 
-      />
-      <StatCard 
-        title="Non attendus reçus" 
-        size={notExpectedSize} 
-        onClick={filterNotExpectedData} 
-        backgroundColor={notExpectedBgColor} 
-      />
-    </div>
+    <Card 
+      sx={{ 
+        minWidth: 275, 
+        border: '1px solid gray', 
+        cursor: 'pointer',
+        backgroundColor: backgroundColor // Dynamic background color
+      }}
+      onClick={onClick}
+    >
+      <CardContent>
+        <Typography variant="h6">
+          {title} ({size})
+        </Typography>
+      </CardContent>
+    </Card>
   );
-}
+};
 
-export default CreReceptionStatusCard;
+export default StatCard;

@@ -116,3 +116,35 @@ export const CreProvider = ({ children }) => {
     </CreContext.Provider>
   );
 };
+
+import React, { useContext } from 'react';
+import { CreContext } from './CreContext';
+
+const ProjectList = () => {
+  const { filteredProjects, projectLoading, projectError } = useContext(CreContext);
+
+  if (projectLoading) return <p>Loading Projects...</p>;
+  if (projectError) return <p>Error loading projects</p>;
+
+  return (
+    <div>
+      <h3>Projects</h3>
+      {filteredProjects.length > 0 ? (
+        <ul>
+          {filteredProjects.map((project, index) => (
+            <li key={index}>
+              <strong>{project.name}</strong> 
+              {project.critical.length > 0 && <span> - Critiques: {project.critical.join(', ')}</span>}
+              {project.notCritical.length > 0 && <span> - Non-Critiques: {project.notCritical.join(', ')}</span>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No Projects found.</p>
+      )}
+    </div>
+  );
+};
+
+export default ProjectList;
+

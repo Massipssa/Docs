@@ -1,41 +1,77 @@
-import React, { useContext, useState } from 'react';
-import { CreContext } from './CreContext';
+import React, { createContext, useState, useEffect } from 'react';
+import { useQuery } from 'react-query';
 
-const SyntheseFilter = () => {
-  const { setSubmittedValues } = useContext(CreContext); // Use context to set submitted values
-  const [submittedValues, setLocalSubmittedValues] = useState({
-    integrationDate: new Date(),
-    activityDate: setYesterday(),
-    frequency: '',
-    project: '',
-  });
+// Create the context
+export const CreContext = createContext();
 
-  const handleDrawerSubmit = (values) => {
-    const finalValues = {
-      integrationDate: values.integrationDate,
-      activityDate: values.activityDate,
-      frequency: values.frequency,
-      project: values.project,
-    };
-    setLocalSubmittedValues(finalValues); // Local state for UI
-    setSubmittedValues(finalValues); // Update context state for API call
+// Fetch API data based on submitted values (integrationDate, activityDate, etc.)
+const fetchCreData = async (submittedValues) => {
+  const { integrationDate, activityDate, frequency, project } = submittedValues;
+  const response = await fetch(
+    `your-api-url?integrationDate=${integrationDate}&activityDate=${activityDate}&frequency=${frequency}&project=${project}`
+  ); // Modify URL as needed
+  if (!response.ok) {
+    throw new Error('Error fetching data');
+  }
+  return response.json();
+};
+
+// Provider component
+export const CreProvider = ({ children }) => {
+  const [submittedValues, setSubmittedValues] = useState(null);
+
+  // Use React Query to fetch data when submittedValues changes
+  const { data, error, isLoading } = useQuery(
+    ['creData', submittedValues],
+    () => fetchCreData(submittedValues),
+    {
+      enabled: !!submittedValues, // Only fetch when values are submitted
+    }
+  );
+
+  // State to hold both critiques and non-critiques by default
+  const [combinedCreData, setCombinedCreData] = useState([]);
+
+  // State to hold filtered data
+  const [filteredCreData, setFilteredCreData] = useState([]);
+
+  // Populate both critiques and non-critiques data when fetched
+  useEffect(() => {
+    if (data) {
+      const combined = [
+        ...(data.expectedNotCriticalNotReceived || []),
+        ...(data.expectedCriticalNoReceived || [])
+      ];
+      setCombinedCreData(combined); // Set combined data by default
+      setFilteredCreData(combined); // Show combined by default in the table
+    }
+  }, [data]);
+
+  // Function to filter non-critiques
+  const filterNonCritiqueData = () => {
+    if (data && data.expectedNotCriticalNotReceived) {
+      setFilteredCreData(data.expectedNotCriticalNotReceived);
+    }
+  };
+
+  // Function to filter critiques
+  const filterCritiqueData = () => {
+    if (data && data.expectedCriticalNoReceived) {
+      setFilteredCreData(data.expectedCriticalNoReceived);
+    }
   };
 
   return (
-    <div>
-      <SyntheseDrawer onSubmit={handleDrawerSubmit} />
-      {submittedValues && (
-        <Box sx={{ flexGrow: 1, p: 3 }}>
-          <CssBaseline />
-          <Grid container spacing={3}>
-            <DateCards values={submittedValues} />
-            <CreAndVacationStatusCards values={submittedValues} />
-            <CreAndProjectsCards values={submittedValues} />
-          </Grid>
-        </Box>
-      )}
-    </div>
+    <CreContext.Provider value={{
+      filteredCreData,
+      combinedCreData,
+      filterNonCritiqueData,
+      filterCritiqueData,
+      setSubmittedValues,
+      isLoading,
+      error
+    }}>
+      {children}
+    </CreContext.Provider>
   );
 };
-
-export default SyntheseFilter;

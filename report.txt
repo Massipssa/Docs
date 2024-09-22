@@ -28,6 +28,13 @@ export const CreProvider = ({ children }) => {
 
   const [submittedValues, setSubmittedValues] = useState(defaultSubmittedValues); // Initialize with default values
 
+  // State to store the title of the table
+  const [tableTitle, setTableTitle] = useState('CRE Non reçus - Both Critiques and Non-Critiques');
+
+  // State to store the sizes of "Non critiques" and "Critiques"
+  const [nonCritiqueSize, setNonCritiqueSize] = useState(0);
+  const [critiqueSize, setCritiqueSize] = useState(0);
+
   // Use React Query to fetch data when submittedValues changes
   const { data, error, isLoading } = useQuery(
     ['creData', submittedValues],
@@ -46,10 +53,13 @@ export const CreProvider = ({ children }) => {
   // Populate both critiques and non-critiques data when fetched
   useEffect(() => {
     if (data) {
-      const combined = [
-        ...(data.expectedNotCriticalNotReceived || []),
-        ...(data.expectedCriticalNoReceived || [])
-      ];
+      const nonCritiques = data.expectedNotCriticalNotReceived || [];
+      const critiques = data.expectedCriticalNoReceived || [];
+
+      setNonCritiqueSize(nonCritiques.length); // Set size of "Non critiques"
+      setCritiqueSize(critiques.length);       // Set size of "Critiques"
+
+      const combined = [...nonCritiques, ...critiques];
       setCombinedCreData(combined); // Set combined data by default
       setFilteredCreData(combined); // Show combined by default in the table
     }
@@ -59,6 +69,7 @@ export const CreProvider = ({ children }) => {
   const filterNonCritiqueData = () => {
     if (data && data.expectedNotCriticalNotReceived) {
       setFilteredCreData(data.expectedNotCriticalNotReceived);
+      setTableTitle('CRE Non reçus - Non-Critiques');
     }
   };
 
@@ -66,6 +77,7 @@ export const CreProvider = ({ children }) => {
   const filterCritiqueData = () => {
     if (data && data.expectedCriticalNoReceived) {
       setFilteredCreData(data.expectedCriticalNoReceived);
+      setTableTitle('CRE Non reçus - Critiques');
     }
   };
 
@@ -76,6 +88,9 @@ export const CreProvider = ({ children }) => {
       filterNonCritiqueData,
       filterCritiqueData,
       setSubmittedValues,
+      tableTitle, // Pass the title to children components
+      nonCritiqueSize, // Pass the size of non-critiques
+      critiqueSize,    // Pass the size of critiques
       isLoading,
       error
     }}>

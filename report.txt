@@ -4,9 +4,12 @@ import { useQuery } from 'react-query';
 // Create the context
 export const CreContext = createContext();
 
-// Fetch API data based on the selected date
-const fetchCreData = async (date) => {
-  const response = await fetch(`your-api-url?date=${date}`); // Use the selected date in the API call
+// Fetch API data based on the submitted values from the Drawer
+const fetchCreData = async (submittedValues) => {
+  const { integrationDate, activityDate, frequency, project } = submittedValues;
+  const response = await fetch(
+    `your-api-url?integrationDate=${integrationDate}&activityDate=${activityDate}&frequency=${frequency}&project=${project}`
+  ); // Use submitted values to form the API call
   if (!response.ok) {
     throw new Error('Error fetching data');
   }
@@ -15,15 +18,14 @@ const fetchCreData = async (date) => {
 
 // Provider component
 export const CreProvider = ({ children }) => {
-  // State to hold the selected date
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [submittedValues, setSubmittedValues] = useState(null);
 
-  // Use React Query to fetch data when the date changes
+  // Use React Query to fetch data when submittedValues changes
   const { data, error, isLoading } = useQuery(
-    ['creData', selectedDate],
-    () => fetchCreData(selectedDate),
+    ['creData', submittedValues],
+    () => fetchCreData(submittedValues),
     {
-      enabled: !!selectedDate, // Only fetch when a date is selected
+      enabled: !!submittedValues, // Only fetch when values are submitted
     }
   );
 
@@ -49,7 +51,7 @@ export const CreProvider = ({ children }) => {
       filteredCreData,
       filterNonCritiqueData,
       filterCritiqueData,
-      setSelectedDate,
+      setSubmittedValues,
       isLoading,
       error
     }}>
@@ -57,6 +59,3 @@ export const CreProvider = ({ children }) => {
     </CreContext.Provider>
   );
 };
-
-
-

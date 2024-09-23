@@ -1,73 +1,27 @@
-import React from 'react';
-import { Grid, Card, CardContent, Typography, Box } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import WarningIcon from '@mui/icons-material/Warning';
+Gravitee est une plateforme de gestion des API qui permet aux utilisateurs de gérer et sécuriser leurs API, surveiller leur performance et faciliter leur utilisation. Voici un résumé des fonctionnalités clés qu'un utilisateur peut effectuer sur Gravitee :
 
-const StatCard = ({ title, count, icon, iconColor }) => {
-  return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Box 
-          display="flex" 
-          flexDirection="column" 
-          alignItems="center" 
-          justifyContent="space-between" 
-          sx={{ height: '100%' }}
-        >
-          {/* Title */}
-          <Typography variant="h6" align="center">
-            {title}
-          </Typography>
+Gestion des API :
 
-          {/* Number and Icon on separate lines */}
-          <Typography variant="h4" align="center">
-            {count}
-          </Typography>
-          <Box sx={{ color: iconColor }}>{icon}</Box>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
+Créer, documenter, et publier des API.
+Définir des règles de routage, des plans de sécurité et des limites d'utilisation (quotas).
+Gérer les versions des API et leurs cycles de vie (versionning).
+Sécurisation des API :
 
-const Dashboard = () => {
-  return (
-    <Grid container spacing={2}>
-      <Grid item xs={3}>
-        <StatCard 
-          title="Reçus" 
-          count="0" 
-          icon={<ErrorIcon fontSize="large" />} 
-          iconColor="red" 
-        />
-      </Grid>
-      <Grid item xs={3}>
-        <StatCard 
-          title="Critique non reçus" 
-          count="71" 
-          icon={<ErrorIcon fontSize="large" />} 
-          iconColor="red" 
-        />
-      </Grid>
-      <Grid item xs={3}>
-        <StatCard 
-          title="Non Critique non reçus" 
-          count="76" 
-          icon={<WarningIcon fontSize="large" />} 
-          iconColor="orange" 
-        />
-      </Grid>
-      <Grid item xs={3}>
-        <StatCard 
-          title="Non attendus reçus" 
-          count="0" 
-          icon={<CheckCircleIcon fontSize="large" />} 
-          iconColor="green" 
-        />
-      </Grid>
-    </Grid>
-  );
-};
+Configurer divers mécanismes d'authentification (OAuth2, JWT, etc.).
+Appliquer des politiques de sécurité comme les restrictions IP, la validation des paramètres et le filtrage des données.
+Gérer les accès utilisateurs avec des rôles et des autorisations.
+Surveillance et analytics :
 
-export default Dashboard;
+Suivre les performances des API en temps réel (latence, taux d'erreur, etc.).
+Générer des rapports et des statistiques d’utilisation des API.
+Identifier les problèmes de performance ou de sécurité à partir des logs.
+Portail développeur :
+
+Offrir un portail aux développeurs pour découvrir et s’abonner aux API disponibles.
+Accéder à la documentation interactive (avec Swagger ou OpenAPI).
+Tester les API directement à partir du portail.
+Extensions et personnalisation :
+
+Utiliser des plugins pour étendre les fonctionnalités de la plateforme.
+Personnaliser l'expérience en intégrant des solutions tierces (IAM, bases de données, etc.).
+En résumé, Gravitee permet aux utilisateurs de créer, protéger et surveiller leurs API de manière centralisée tout en facilitant l'interaction des développeurs avec celles-ci via un portail dédié.

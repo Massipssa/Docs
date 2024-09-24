@@ -1,27 +1,4 @@
-Gravitee est une plateforme de gestion des API qui permet aux utilisateurs de gérer et sécuriser leurs API, surveiller leur performance et faciliter leur utilisation. Voici un résumé des fonctionnalités clés qu'un utilisateur peut effectuer sur Gravitee :
+Observations :
+Performance générale : Les temps de réponse sont globalement très bons, avec une moyenne de 21 ms, ce qui montre que l'API est capable de répondre rapidement à la majorité des requêtes. Le pic à 2 015 ms pourrait indiquer un moment où le serveur était plus chargé ou avait des ressources limitées, mais cela semble être un événement isolé.
 
-Gestion des API :
-
-Créer, documenter, et publier des API.
-Définir des règles de routage, des plans de sécurité et des limites d'utilisation (quotas).
-Gérer les versions des API et leurs cycles de vie (versionning).
-Sécurisation des API :
-
-Configurer divers mécanismes d'authentification (OAuth2, JWT, etc.).
-Appliquer des politiques de sécurité comme les restrictions IP, la validation des paramètres et le filtrage des données.
-Gérer les accès utilisateurs avec des rôles et des autorisations.
-Surveillance et analytics :
-
-Suivre les performances des API en temps réel (latence, taux d'erreur, etc.).
-Générer des rapports et des statistiques d’utilisation des API.
-Identifier les problèmes de performance ou de sécurité à partir des logs.
-Portail développeur :
-
-Offrir un portail aux développeurs pour découvrir et s’abonner aux API disponibles.
-Accéder à la documentation interactive (avec Swagger ou OpenAPI).
-Tester les API directement à partir du portail.
-Extensions et personnalisation :
-
-Utiliser des plugins pour étendre les fonctionnalités de la plateforme.
-Personnaliser l'expérience en intégrant des solutions tierces (IAM, bases de données, etc.).
-En résumé, Gravitee permet aux utilisateurs de créer, protéger et surveiller leurs API de manière centralisée tout en facilitant l'interaction des développeurs avec celles-ci via un portail dédié.
+Fiabilité : Le taux de succès de 100 % montre une stabilité et une fiabilité élevées de l'API pendant le test.

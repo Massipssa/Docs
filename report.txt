@@ -1,4 +1,78 @@
-Observations :
-Performance générale : Les temps de réponse sont globalement très bons, avec une moyenne de 21 ms, ce qui montre que l'API est capable de répondre rapidement à la majorité des requêtes. Le pic à 2 015 ms pourrait indiquer un moment où le serveur était plus chargé ou avait des ressources limitées, mais cela semble être un événement isolé.
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-Fiabilité : Le taux de succès de 100 % montre une stabilité et une fiabilité élevées de l'API pendant le test.
+class Project {
+    String name;
+    List<String> critical;
+    List<String> notCritical;
+
+    public Project(String name, List<String> critical, List<String> notCritical) {
+        this.name = name;
+        this.critical = critical;
+        this.notCritical = notCritical;
+    }
+
+    // Getters and setters (optional if needed)
+}
+
+public class CreMissingProjects {
+    
+    public static void main(String[] args) {
+        // Mocked project data from the first image
+        List<Project> projects = List.of(
+            new Project("PRJ.M5/M6 Pilo/Gesco", List.of("1R001", "05MON"), List.of("63052", "66POA", "63054", "80PLF")),
+            new Project("PRJ.M26 - IRB Portability", List.of(), List.of()),
+            new Project("PRJ.M25 - IFRS 9 Integration", List.of(), List.of("7GOPS", "7VLE", "7GOCT")),
+            new Project("PRJ.M15 - Banking & no banking accounting", List.of(), List.of())
+        );
+
+        // Mocked expected data from the second image (missing CREs)
+        Map<String, Set<String>> expectedCriticalNoReceived = Map.of(
+            "PRJ.M5/M6 Pilo/Gesco", Set.of("1R001"),
+            "PRJ.M25 - IFRS 9 Integration", Set.of("7GOPS")
+        );
+
+        Map<String, Set<String>> expectedNotCriticalNotReceived = Map.of(
+            "PRJ.M5/M6 Pilo/Gesco", Set.of("63052", "63054"),
+            "PRJ.M25 - IFRS 9 Integration", Set.of("7VLE", "7GOCT")
+        );
+
+        // Call the method to find missing CREs
+        List<Project> missingCreProjects = findMissingCre(projects, expectedCriticalNoReceived, expectedNotCriticalNotReceived);
+
+        // Print the result
+        missingCreProjects.forEach(project -> {
+            System.out.println("Project: " + project.name);
+            System.out.println("Missing Critical CREs: " + project.critical);
+            System.out.println("Missing Not Critical CREs: " + project.notCritical);
+            System.out.println();
+        });
+    }
+
+    public static List<Project> findMissingCre(List<Project> projects, 
+                                               Map<String, Set<String>> expectedCriticalNoReceived, 
+                                               Map<String, Set<String>> expectedNotCriticalNotReceived) {
+        List<Project> missingProjects = new ArrayList<>();
+
+        for (Project project : projects) {
+            List<String> missingCritical = expectedCriticalNoReceived.getOrDefault(project.name, Set.of())
+                                            .stream()
+                                            .filter(criticalCre -> !project.critical.contains(criticalCre))
+                                            .collect(Collectors.toList());
+
+            List<String> missingNotCritical = expectedNotCriticalNotReceived.getOrDefault(project.name, Set.of())
+                                                .stream()
+                                                .filter(notCriticalCre -> !project.notCritical.contains(notCriticalCre))
+                                                .collect(Collectors.toList());
+
+            if (!missingCritical.isEmpty() || !missingNotCritical.isEmpty()) {
+                missingProjects.add(new Project(project.name, missingCritical, missingNotCritical));
+            }
+        }
+
+        return missingProjects;
+    }
+}

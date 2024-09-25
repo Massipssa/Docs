@@ -1,78 +1,53 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import { useLocation } from 'react-router-dom';
+import { Box, Typography, Tabs, Tab, TextField } from '@mui/material';
+import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
+import { useState } from 'react';
+import dayjs from 'dayjs';
 
-class Project {
-    String name;
-    List<String> critical;
-    List<String> notCritical;
+const ProjectDetails = () => {
+  const location = useLocation();
+  const { project } = location.state; // Retrieve the passed project data
+  const [selectedDate, setSelectedDate] = useState(dayjs(project.lastUpdate, 'DD/MM/YYYY')); // Set the default date
 
-    public Project(String name, List<String> critical, List<String> notCritical) {
-        this.name = name;
-        this.critical = critical;
-        this.notCritical = notCritical;
-    }
+  // Placeholder CRE data based on date
+  const creData = {
+    "14/08/2024": { critical: 2, nonCritical: 1 },
+    "01/09/2024": { critical: 3, nonCritical: 0 }
+    // Add more data as needed
+  };
 
-    // Getters and setters (optional if needed)
-}
+  // Get the CRE data based on the selected date
+  const creForDate = creData[selectedDate.format('DD/MM/YYYY')] || { critical: 0, nonCritical: 0 };
 
-public class CreMissingProjects {
-    
-    public static void main(String[] args) {
-        // Mocked project data from the first image
-        List<Project> projects = List.of(
-            new Project("PRJ.M5/M6 Pilo/Gesco", List.of("1R001", "05MON"), List.of("63052", "66POA", "63054", "80PLF")),
-            new Project("PRJ.M26 - IRB Portability", List.of(), List.of()),
-            new Project("PRJ.M25 - IFRS 9 Integration", List.of(), List.of("7GOPS", "7VLE", "7GOCT")),
-            new Project("PRJ.M15 - Banking & no banking accounting", List.of(), List.of())
-        );
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate); // Update the date when the user selects a new one
+  };
 
-        // Mocked expected data from the second image (missing CREs)
-        Map<String, Set<String>> expectedCriticalNoReceived = Map.of(
-            "PRJ.M5/M6 Pilo/Gesco", Set.of("1R001"),
-            "PRJ.M25 - IFRS 9 Integration", Set.of("7GOPS")
-        );
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        {project.name}
+      </Typography>
 
-        Map<String, Set<String>> expectedNotCriticalNotReceived = Map.of(
-            "PRJ.M5/M6 Pilo/Gesco", Set.of("63052", "63054"),
-            "PRJ.M25 - IFRS 9 Integration", Set.of("7VLE", "7GOCT")
-        );
+      {/* Date Picker to Filter CRE Based on Date */}
+      <DesktopDatePicker
+        label="Filter by Date"
+        inputFormat="DD/MM/YYYY"
+        value={selectedDate}
+        onChange={handleDateChange}
+        renderInput={(params) => <TextField {...params} fullWidth />}
+      />
 
-        // Call the method to find missing CREs
-        List<Project> missingCreProjects = findMissingCre(projects, expectedCriticalNoReceived, expectedNotCriticalNotReceived);
+      <Typography variant="body1" sx={{ mt: 2 }}>
+        Nombre de CRE Critiques: {creForDate.critical}
+      </Typography>
+      <Typography variant="body1">
+        Nombre de CRE Non Critiques: {creForDate.nonCritical}
+      </Typography>
 
-        // Print the result
-        missingCreProjects.forEach(project -> {
-            System.out.println("Project: " + project.name);
-            System.out.println("Missing Critical CREs: " + project.critical);
-            System.out.println("Missing Not Critical CREs: " + project.notCritical);
-            System.out.println();
-        });
-    }
+      {/* Add more details or Tabs as required */}
+    </Box>
+  );
+};
 
-    public static List<Project> findMissingCre(List<Project> projects, 
-                                               Map<String, Set<String>> expectedCriticalNoReceived, 
-                                               Map<String, Set<String>> expectedNotCriticalNotReceived) {
-        List<Project> missingProjects = new ArrayList<>();
-
-        for (Project project : projects) {
-            List<String> missingCritical = expectedCriticalNoReceived.getOrDefault(project.name, Set.of())
-                                            .stream()
-                                            .filter(criticalCre -> !project.critical.contains(criticalCre))
-                                            .collect(Collectors.toList());
-
-            List<String> missingNotCritical = expectedNotCriticalNotReceived.getOrDefault(project.name, Set.of())
-                                                .stream()
-                                                .filter(notCriticalCre -> !project.notCritical.contains(notCriticalCre))
-                                                .collect(Collectors.toList());
-
-            if (!missingCritical.isEmpty() || !missingNotCritical.isEmpty()) {
-                missingProjects.add(new Project(project.name, missingCritical, missingNotCritical));
-            }
-        }
-
-        return missingProjects;
-    }
-}
+export default ProjectDetails;

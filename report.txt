@@ -1,67 +1,75 @@
 import React from 'react';
-import { Grid, Typography, Box } from '@mui/material';
+import { Grid, Typography, Box, Card, CardContent, Divider } from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CachedIcon from '@mui/icons-material/Cached';
+import StorageIcon from '@mui/icons-material/Storage';
 
-const CompactBankingAccountingWidget = () => {
+const EnhancedBankingAccountingWidget = () => {
   return (
-    <Box 
-      sx={{ 
-        border: '1px solid #ccc', 
-        padding: 1, 
-        borderRadius: 2, 
-        backgroundColor: '#f5f5f5', 
-        width: '200px' 
-      }}
-    >
-      {/* Title */}
-      <Box sx={{ backgroundColor: 'green', padding: '4px' }}>
-        <Typography variant="subtitle2" color="white">
+    <Card sx={{ maxWidth: 250, margin: '0 auto', borderRadius: 2, boxShadow: 3 }}>
+      {/* Header */}
+      <Box sx={{ backgroundColor: 'green', padding: '8px', textAlign: 'center', borderRadius: '4px 4px 0 0' }}>
+        <Typography variant="subtitle1" color="white">
           PRJ.M15 - Banking & no banking accounting
         </Typography>
       </Box>
 
-      {/* Daily section */}
-      <Grid container spacing={1} sx={{ marginTop: 1 }}>
-        <Grid item xs={12}>
-          <Typography variant="body2">DAILY</Typography>
+      <CardContent>
+        {/* Daily Section */}
+        <Typography variant="body1" align="center" gutterBottom>
+          DAILY
+        </Typography>
+        <Divider />
+        <Grid container spacing={1} sx={{ marginTop: 1 }}>
+          <Grid item xs={6} sx={{ textAlign: 'center' }}>
+            <CheckCircleOutlineIcon color="success" />
+            <Typography variant="h6" sx={{ color: 'green' }}>0</Typography>
+            <Typography variant="caption">received</Typography>
+            <CachedIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">0 flux</Typography>
+            <StorageIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">0 stock</Typography>
+          </Grid>
+          <Grid item xs={6} sx={{ textAlign: 'center' }}>
+            <ErrorOutlineIcon color="error" />
+            <Typography variant="h6" sx={{ color: 'red' }}>0</Typography>
+            <Typography variant="caption">not received</Typography>
+            <CachedIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">0 flux</Typography>
+            <StorageIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">0 stock</Typography>
+          </Grid>
         </Grid>
 
-        <Grid item xs={6}>
-          <Typography variant="h6" align="center">0</Typography>
-          <Typography variant="caption" align="center" display="block">received</Typography>
-          <Typography variant="caption" align="center" display="block">0 flux</Typography>
-          <Typography variant="caption" align="center" display="block">0 stock</Typography>
+        {/* Monthly Section */}
+        <Typography variant="body1" align="center" sx={{ marginTop: 2 }} gutterBottom>
+          MONTHLY
+        </Typography>
+        <Divider />
+        <Grid container spacing={1} sx={{ marginTop: 1 }}>
+          <Grid item xs={6} sx={{ textAlign: 'center' }}>
+            <CheckCircleOutlineIcon color="success" />
+            <Typography variant="h6" sx={{ color: 'green' }}>0</Typography>
+            <Typography variant="caption">received</Typography>
+            <CachedIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">0 flux</Typography>
+            <StorageIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">0 stock</Typography>
+          </Grid>
+          <Grid item xs={6} sx={{ textAlign: 'center' }}>
+            <ErrorOutlineIcon color="error" />
+            <Typography variant="h6" sx={{ color: 'red' }}>0</Typography>
+            <Typography variant="caption">not received</Typography>
+            <CachedIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">0 flux</Typography>
+            <StorageIcon sx={{ fontSize: 16 }} />
+            <Typography variant="caption">0 stock</Typography>
+          </Grid>
         </Grid>
-
-        <Grid item xs={6}>
-          <Typography variant="h6" align="center">0</Typography>
-          <Typography variant="caption" align="center" display="block">not received</Typography>
-          <Typography variant="caption" align="center" display="block">0 flux</Typography>
-          <Typography variant="caption" align="center" display="block">0 stock</Typography>
-        </Grid>
-      </Grid>
-
-      {/* Monthly section */}
-      <Grid container spacing={1} sx={{ marginTop: 1 }}>
-        <Grid item xs={12}>
-          <Typography variant="body2">MONTHLY</Typography>
-        </Grid>
-
-        <Grid item xs={6}>
-          <Typography variant="h6" align="center">0</Typography>
-          <Typography variant="caption" align="center" display="block">received</Typography>
-          <Typography variant="caption" align="center" display="block">0 flux</Typography>
-          <Typography variant="caption" align="center" display="block">0 stock</Typography>
-        </Grid>
-
-        <Grid item xs={6}>
-          <Typography variant="h6" align="center">0</Typography>
-          <Typography variant="caption" align="center" display="block">not received</Typography>
-          <Typography variant="caption" align="center" display="block">0 flux</Typography>
-          <Typography variant="caption" align="center" display="block">0 stock</Typography>
-        </Grid>
-      </Grid>
-    </Box>
+      </CardContent>
+    </Card>
   );
 };
 
-export default CompactBankingAccountingWidget;
+export default EnhancedBankingAccountingWidget;

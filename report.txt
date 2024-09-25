@@ -1,50 +1,69 @@
-import { useLocation } from 'react-router-dom';
-import { Box, Typography, Tabs, Tab } from '@mui/material';
-import { useState } from 'react';
+import React from 'react';
+import { Grid, Typography, Box } from '@mui/material';
 
-const ProjectDetails = () => {
-  const location = useLocation();
-  const { project } = location.state; // Retrieve the passed project data
-
-  const [activeTab, setActiveTab] = useState(0);
-
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
+const BankingAccountingWidget = () => {
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        {project.name}
-      </Typography>
-      
-      <Tabs value={activeTab} onChange={handleTabChange} aria-label="project details tabs">
-        <Tab label="Aperçu" />
-        <Tab label="CRE" />
-      </Tabs>
+    <Box sx={{ border: '1px solid #ccc', padding: 2, borderRadius: 2, backgroundColor: '#f5f5f5', width: '300px' }}>
+      {/* Title */}
+      <Box sx={{ backgroundColor: 'green', padding: 1 }}>
+        <Typography variant="h6" color="white">
+          PRJ.M15 - Banking & no banking accounting
+        </Typography>
+      </Box>
 
-      {activeTab === 0 && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="body1">
-            Dernière mise à jour: {project.lastUpdate}
-          </Typography>
-          <Typography variant="body1">
-            Nombre de CRE Critiques: {project.creCritical}
-          </Typography>
-          <Typography variant="body1">
-            Nombre de CRE Non Critiques: {project.creNonCritical}
-          </Typography>
-        </Box>
-      )}
+      {/* Daily section */}
+      <Grid container spacing={2} sx={{ marginTop: 2 }}>
+        <Grid item xs={12}>
+          <Typography variant="h6">DAILY</Typography>
+        </Grid>
 
-      {activeTab === 1 && (
-        <Box sx={{ mt: 2 }}>
-          {/* CRE details can be added here */}
-          <Typography variant="body1">Display CRE related information here.</Typography>
-        </Box>
-      )}
+        <Grid item xs={6}>
+          <Typography variant="h4" align="center">0</Typography>
+          <Typography align="center">received</Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography variant="h4" align="center">0</Typography>
+          <Typography align="center">not received</Typography>
+        </Grid>
+
+        <Grid item xs={6}>
+          <Typography align="center">0 critical</Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography align="center">0 stock</Typography>
+        </Grid>
+
+        <Grid item xs={6}>
+          <Typography align="center">0 critical</Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography align="center">0 stock</Typography>
+        </Grid>
+      </Grid>
+
+      {/* Monthly section */}
+      <Grid container spacing={2} sx={{ marginTop: 2 }}>
+        <Grid item xs={12}>
+          <Typography variant="h6">MONTHLY</Typography>
+        </Grid>
+
+        <Grid item xs={6}>
+          <Typography variant="h4" align="center">0</Typography>
+          <Typography align="center">received</Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography variant="h4" align="center">0</Typography>
+          <Typography align="center">not received</Typography>
+        </Grid>
+      </Grid>
+
+      {/* Missing & Processing section */}
+      <Box sx={{ marginTop: 2 }}>
+        <Typography>Missing: n/a</Typography>
+        <Typography>Processing:</Typography>
+      </Box>
     </Box>
   );
 };
 
-export default ProjectDetails;
+export default BankingAccountingWidget;

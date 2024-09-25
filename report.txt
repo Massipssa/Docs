@@ -1,46 +1,50 @@
-try {
-    // Fetch all project CREs
-    List<ProjectCre> projectCres = projectCreRepository.findAll();
+import { useLocation } from 'react-router-dom';
+import { Box, Typography, Tabs, Tab } from '@mui/material';
+import { useState } from 'react';
 
-    // Fetch the lists of not received critical and non-critical CREs
-    ReceptionCreDto receptionCreDto = receptionService.getNotReceivedCre(opcDate, fileType);
-    List<CreDto> notReceivedCritical = receptionCreDto.expectedCriticalNotReceived();
-    List<CreDto> notReceivedNotCritical = receptionCreDto.expectedNotCriticalNotReceived();
+const ProjectDetails = () => {
+  const location = useLocation();
+  const { project } = location.state; // Retrieve the passed project data
 
-    // Stream through the project list and map each project with its CRE info
-    return projectCres.stream().collect(Collectors.groupingBy(pc -> pc.getProject().getName())) // Group by project name
-        .entrySet().stream()
-        .map(entry -> {
-            String projectName = entry.getKey();
-            List<ProjectCre> projectCreList = entry.getValue();
+  const [activeTab, setActiveTab] = useState(0);
 
-            // Separate critical and non-critical CREs for this project
-            List<CreDto> criticalCres = projectCreList.stream()
-                .filter(pc -> "C".equals(pc.getCritical())) // Assuming 'C' represents critical
-                .map(ProjectCre::getCre) // Get CRE details
-                .collect(Collectors.toList());
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
 
-            List<CreDto> nonCriticalCres = projectCreList.stream()
-                .filter(pc -> !"C".equals(pc.getCritical())) // Not critical if it's not 'C'
-                .map(ProjectCre::getCre) // Get CRE details
-                .collect(Collectors.toList());
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        {project.name}
+      </Typography>
+      
+      <Tabs value={activeTab} onChange={handleTabChange} aria-label="project details tabs">
+        <Tab label="Aperçu" />
+        <Tab label="CRE" />
+      </Tabs>
 
-            // Check if critical CREs are present in the notReceivedCritical list
-            List<CreDto> criticalNotReceived = criticalCres.stream()
-                .filter(cre -> notReceivedCritical.stream()
-                    .anyMatch(notReceived -> notReceived.getCre().equals(cre)))
-                .collect(Collectors.toList());
+      {activeTab === 0 && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body1">
+            Dernière mise à jour: {project.lastUpdate}
+          </Typography>
+          <Typography variant="body1">
+            Nombre de CRE Critiques: {project.creCritical}
+          </Typography>
+          <Typography variant="body1">
+            Nombre de CRE Non Critiques: {project.creNonCritical}
+          </Typography>
+        </Box>
+      )}
 
-            // Check if non-critical CREs are present in the notReceivedNotCritical list
-            List<CreDto> nonCriticalNotReceived = nonCriticalCres.stream()
-                .filter(cre -> notReceivedNotCritical.stream()
-                    .anyMatch(notReceived -> notReceived.getCre().equals(cre)))
-                .collect(Collectors.toList());
+      {activeTab === 1 && (
+        <Box sx={{ mt: 2 }}>
+          {/* CRE details can be added here */}
+          <Typography variant="body1">Display CRE related information here.</Typography>
+        </Box>
+      )}
+    </Box>
+  );
+};
 
-            // Return a new DTO for this project with filtered CREs
-            return new ProjectDto(projectName, criticalNotReceived, nonCriticalNotReceived);
-        }).collect(Collectors.toList());
-
-} catch (Exception e) {
-    throw e;
-}
+export default ProjectDetails;

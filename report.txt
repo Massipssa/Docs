@@ -1,53 +1,46 @@
-import { useLocation } from 'react-router-dom';
-import { Box, Typography, Tabs, Tab, TextField } from '@mui/material';
-import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
-import { useState } from 'react';
-import dayjs from 'dayjs';
+try {
+    // Fetch all project CREs
+    List<ProjectCre> projectCres = projectCreRepository.findAll();
 
-const ProjectDetails = () => {
-  const location = useLocation();
-  const { project } = location.state; // Retrieve the passed project data
-  const [selectedDate, setSelectedDate] = useState(dayjs(project.lastUpdate, 'DD/MM/YYYY')); // Set the default date
+    // Fetch the lists of not received critical and non-critical CREs
+    ReceptionCreDto receptionCreDto = receptionService.getNotReceivedCre(opcDate, fileType);
+    List<CreDto> notReceivedCritical = receptionCreDto.expectedCriticalNotReceived();
+    List<CreDto> notReceivedNotCritical = receptionCreDto.expectedNotCriticalNotReceived();
 
-  // Placeholder CRE data based on date
-  const creData = {
-    "14/08/2024": { critical: 2, nonCritical: 1 },
-    "01/09/2024": { critical: 3, nonCritical: 0 }
-    // Add more data as needed
-  };
+    // Stream through the project list and map each project with its CRE info
+    return projectCres.stream().collect(Collectors.groupingBy(pc -> pc.getProject().getName())) // Group by project name
+        .entrySet().stream()
+        .map(entry -> {
+            String projectName = entry.getKey();
+            List<ProjectCre> projectCreList = entry.getValue();
 
-  // Get the CRE data based on the selected date
-  const creForDate = creData[selectedDate.format('DD/MM/YYYY')] || { critical: 0, nonCritical: 0 };
+            // Separate critical and non-critical CREs for this project
+            List<CreDto> criticalCres = projectCreList.stream()
+                .filter(pc -> "C".equals(pc.getCritical())) // Assuming 'C' represents critical
+                .map(ProjectCre::getCre) // Get CRE details
+                .collect(Collectors.toList());
 
-  const handleDateChange = (newDate) => {
-    setSelectedDate(newDate); // Update the date when the user selects a new one
-  };
+            List<CreDto> nonCriticalCres = projectCreList.stream()
+                .filter(pc -> !"C".equals(pc.getCritical())) // Not critical if it's not 'C'
+                .map(ProjectCre::getCre) // Get CRE details
+                .collect(Collectors.toList());
 
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        {project.name}
-      </Typography>
+            // Check if critical CREs are present in the notReceivedCritical list
+            List<CreDto> criticalNotReceived = criticalCres.stream()
+                .filter(cre -> notReceivedCritical.stream()
+                    .anyMatch(notReceived -> notReceived.getCre().equals(cre)))
+                .collect(Collectors.toList());
 
-      {/* Date Picker to Filter CRE Based on Date */}
-      <DesktopDatePicker
-        label="Filter by Date"
-        inputFormat="DD/MM/YYYY"
-        value={selectedDate}
-        onChange={handleDateChange}
-        renderInput={(params) => <TextField {...params} fullWidth />}
-      />
+            // Check if non-critical CREs are present in the notReceivedNotCritical list
+            List<CreDto> nonCriticalNotReceived = nonCriticalCres.stream()
+                .filter(cre -> notReceivedNotCritical.stream()
+                    .anyMatch(notReceived -> notReceived.getCre().equals(cre)))
+                .collect(Collectors.toList());
 
-      <Typography variant="body1" sx={{ mt: 2 }}>
-        Nombre de CRE Critiques: {creForDate.critical}
-      </Typography>
-      <Typography variant="body1">
-        Nombre de CRE Non Critiques: {creForDate.nonCritical}
-      </Typography>
+            // Return a new DTO for this project with filtered CREs
+            return new ProjectDto(projectName, criticalNotReceived, nonCriticalNotReceived);
+        }).collect(Collectors.toList());
 
-      {/* Add more details or Tabs as required */}
-    </Box>
-  );
-};
-
-export default ProjectDetails;
+} catch (Exception e) {
+    throw e;
+}

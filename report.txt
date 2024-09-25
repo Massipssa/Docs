@@ -1,69 +1,67 @@
 import React from 'react';
 import { Grid, Typography, Box } from '@mui/material';
 
-const BankingAccountingWidget = () => {
+const CompactBankingAccountingWidget = () => {
   return (
-    <Box sx={{ border: '1px solid #ccc', padding: 2, borderRadius: 2, backgroundColor: '#f5f5f5', width: '300px' }}>
+    <Box 
+      sx={{ 
+        border: '1px solid #ccc', 
+        padding: 1, 
+        borderRadius: 2, 
+        backgroundColor: '#f5f5f5', 
+        width: '200px' 
+      }}
+    >
       {/* Title */}
-      <Box sx={{ backgroundColor: 'green', padding: 1 }}>
-        <Typography variant="h6" color="white">
+      <Box sx={{ backgroundColor: 'green', padding: '4px' }}>
+        <Typography variant="subtitle2" color="white">
           PRJ.M15 - Banking & no banking accounting
         </Typography>
       </Box>
 
       {/* Daily section */}
-      <Grid container spacing={2} sx={{ marginTop: 2 }}>
+      <Grid container spacing={1} sx={{ marginTop: 1 }}>
         <Grid item xs={12}>
-          <Typography variant="h6">DAILY</Typography>
+          <Typography variant="body2">DAILY</Typography>
         </Grid>
 
         <Grid item xs={6}>
-          <Typography variant="h4" align="center">0</Typography>
-          <Typography align="center">received</Typography>
-        </Grid>
-        <Grid item xs={6}>
-          <Typography variant="h4" align="center">0</Typography>
-          <Typography align="center">not received</Typography>
+          <Typography variant="h6" align="center">0</Typography>
+          <Typography variant="caption" align="center" display="block">received</Typography>
+          <Typography variant="caption" align="center" display="block">0 flux</Typography>
+          <Typography variant="caption" align="center" display="block">0 stock</Typography>
         </Grid>
 
         <Grid item xs={6}>
-          <Typography align="center">0 critical</Typography>
-        </Grid>
-        <Grid item xs={6}>
-          <Typography align="center">0 stock</Typography>
-        </Grid>
-
-        <Grid item xs={6}>
-          <Typography align="center">0 critical</Typography>
-        </Grid>
-        <Grid item xs={6}>
-          <Typography align="center">0 stock</Typography>
+          <Typography variant="h6" align="center">0</Typography>
+          <Typography variant="caption" align="center" display="block">not received</Typography>
+          <Typography variant="caption" align="center" display="block">0 flux</Typography>
+          <Typography variant="caption" align="center" display="block">0 stock</Typography>
         </Grid>
       </Grid>
 
       {/* Monthly section */}
-      <Grid container spacing={2} sx={{ marginTop: 2 }}>
+      <Grid container spacing={1} sx={{ marginTop: 1 }}>
         <Grid item xs={12}>
-          <Typography variant="h6">MONTHLY</Typography>
+          <Typography variant="body2">MONTHLY</Typography>
         </Grid>
 
         <Grid item xs={6}>
-          <Typography variant="h4" align="center">0</Typography>
-          <Typography align="center">received</Typography>
+          <Typography variant="h6" align="center">0</Typography>
+          <Typography variant="caption" align="center" display="block">received</Typography>
+          <Typography variant="caption" align="center" display="block">0 flux</Typography>
+          <Typography variant="caption" align="center" display="block">0 stock</Typography>
         </Grid>
+
         <Grid item xs={6}>
-          <Typography variant="h4" align="center">0</Typography>
-          <Typography align="center">not received</Typography>
+          <Typography variant="h6" align="center">0</Typography>
+          <Typography variant="caption" align="center" display="block">not received</Typography>
+          <Typography variant="caption" align="center" display="block">0 flux</Typography>
+          <Typography variant="caption" align="center" display="block">0 stock</Typography>
         </Grid>
       </Grid>
-
-      {/* Missing & Processing section */}
-      <Box sx={{ marginTop: 2 }}>
-        <Typography>Missing: n/a</Typography>
-        <Typography>Processing:</Typography>
-      </Box>
     </Box>
   );
 };
 
-export default BankingAccountingWidget;
+export default CompactBankingAccountingWidget;

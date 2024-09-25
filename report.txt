@@ -38,13 +38,15 @@ const EnhancedBankingAccountingWidget = () => {
               0
             </Button>
             <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>received</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '6px' }}>
-              <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-              <Typography variant="caption">0 flux</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
-              <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-              <Typography variant="caption">0 stock</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '6px' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+                <Typography variant="caption">0 flux</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
+                <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+                <Typography variant="caption">0 stock</Typography>
+              </Box>
             </Box>
           </Grid>
           <Grid item xs={6} sx={{ textAlign: 'center' }}>
@@ -57,13 +59,15 @@ const EnhancedBankingAccountingWidget = () => {
               0
             </Button>
             <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>not received</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '6px' }}>
-              <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-              <Typography variant="caption">0 flux</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
-              <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-              <Typography variant="caption">0 stock</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '6px' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+                <Typography variant="caption">0 flux</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
+                <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+                <Typography variant="caption">0 stock</Typography>
+              </Box>
             </Box>
           </Grid>
         </Grid>
@@ -84,13 +88,15 @@ const EnhancedBankingAccountingWidget = () => {
               0
             </Button>
             <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>received</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '6px' }}>
-              <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-              <Typography variant="caption">0 flux</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
-              <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-              <Typography variant="caption">0 stock</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '6px' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+                <Typography variant="caption">0 flux</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
+                <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+                <Typography variant="caption">0 stock</Typography>
+              </Box>
             </Box>
           </Grid>
           <Grid item xs={6} sx={{ textAlign: 'center' }}>
@@ -103,13 +109,15 @@ const EnhancedBankingAccountingWidget = () => {
               0
             </Button>
             <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>not received</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '6px' }}>
-              <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-              <Typography variant="caption">0 flux</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
-              <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-              <Typography variant="caption">0 stock</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '6px' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+                <Typography variant="caption">0 flux</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
+                <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+                <Typography variant="caption">0 stock</Typography>
+              </Box>
             </Box>
           </Grid>
         </Grid>

@@ -15,56 +15,72 @@ const EnhancedBankingAccountingWidget = () => {
         </Typography>
       </Box>
 
-      <CardContent>
+      <CardContent sx={{ padding: '16px' }}>
         {/* Daily Section */}
-        <Typography variant="body1" align="center" gutterBottom>
+        <Typography variant="body1" align="center" gutterBottom sx={{ marginBottom: '12px' }}>
           DAILY
         </Typography>
-        <Divider />
-        <Grid container spacing={1} sx={{ marginTop: 1 }}>
+        <Divider sx={{ marginBottom: '12px' }} />
+        <Grid container spacing={2} sx={{ marginBottom: '20px' }}>
           <Grid item xs={6} sx={{ textAlign: 'center' }}>
-            <CheckCircleOutlineIcon color="success" />
-            <Typography variant="h6" sx={{ color: 'green' }}>0</Typography>
-            <Typography variant="caption">received</Typography>
-            <CachedIcon sx={{ fontSize: 16 }} />
-            <Typography variant="caption">0 flux</Typography>
-            <StorageIcon sx={{ fontSize: 16 }} />
-            <Typography variant="caption">0 stock</Typography>
+            <CheckCircleOutlineIcon color="success" fontSize="large" />
+            <Typography variant="h6" sx={{ color: 'green', marginTop: '4px' }}>0</Typography>
+            <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>received</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '6px' }}>
+              <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+              <Typography variant="caption">0 flux</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
+              <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+              <Typography variant="caption">0 stock</Typography>
+            </Box>
           </Grid>
           <Grid item xs={6} sx={{ textAlign: 'center' }}>
-            <ErrorOutlineIcon color="error" />
-            <Typography variant="h6" sx={{ color: 'red' }}>0</Typography>
-            <Typography variant="caption">not received</Typography>
-            <CachedIcon sx={{ fontSize: 16 }} />
-            <Typography variant="caption">0 flux</Typography>
-            <StorageIcon sx={{ fontSize: 16 }} />
-            <Typography variant="caption">0 stock</Typography>
+            <ErrorOutlineIcon color="error" fontSize="large" />
+            <Typography variant="h6" sx={{ color: 'red', marginTop: '4px' }}>0</Typography>
+            <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>not received</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '6px' }}>
+              <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+              <Typography variant="caption">0 flux</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
+              <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+              <Typography variant="caption">0 stock</Typography>
+            </Box>
           </Grid>
         </Grid>
 
         {/* Monthly Section */}
-        <Typography variant="body1" align="center" sx={{ marginTop: 2 }} gutterBottom>
+        <Typography variant="body1" align="center" sx={{ marginBottom: '12px' }}>
           MONTHLY
         </Typography>
-        <Divider />
-        <Grid container spacing={1} sx={{ marginTop: 1 }}>
+        <Divider sx={{ marginBottom: '12px' }} />
+        <Grid container spacing={2}>
           <Grid item xs={6} sx={{ textAlign: 'center' }}>
-            <CheckCircleOutlineIcon color="success" />
-            <Typography variant="h6" sx={{ color: 'green' }}>0</Typography>
-            <Typography variant="caption">received</Typography>
-            <CachedIcon sx={{ fontSize: 16 }} />
-            <Typography variant="caption">0 flux</Typography>
-            <StorageIcon sx={{ fontSize: 16 }} />
-            <Typography variant="caption">0 stock</Typography>
+            <CheckCircleOutlineIcon color="success" fontSize="large" />
+            <Typography variant="h6" sx={{ color: 'green', marginTop: '4px' }}>0</Typography>
+            <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>received</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '6px' }}>
+              <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+              <Typography variant="caption">0 flux</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
+              <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+              <Typography variant="caption">0 stock</Typography>
+            </Box>
           </Grid>
           <Grid item xs={6} sx={{ textAlign: 'center' }}>
-            <ErrorOutlineIcon color="error" />
-            <Typography variant="h6" sx={{ color: 'red' }}>0</Typography>
-            <Typography variant="caption">not received</Typography>
-            <CachedIcon sx={{ fontSize: 16 }} />
-            <Typography variant="caption">0 flux</Typography>
-            <StorageIcon sx={{ fontSize: 16 }} />
-            <Typography variant="caption">0 stock</Typography>
+            <ErrorOutlineIcon color="error" fontSize="large" />
+            <Typography variant="h6" sx={{ color: 'red', marginTop: '4px' }}>0</Typography>
+            <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>not received</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '6px' }}>
+              <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+              <Typography variant="caption">0 flux</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '4px' }}>
+              <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
+              <Typography variant="caption">0 stock</Typography>
+            </Box>
           </Grid>
         </Grid>
       </CardContent>

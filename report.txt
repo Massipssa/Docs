@@ -1,47 +1,114 @@
-#!/bin/bash
+export const CreProvider = ({ children }) => {
+  
+  // Helper function to set the title and icon
+  const setTitleWithIcon = (title, IconComponent, iconColor) => (
+    <Title
+      icon={<IconComponent style={{ color: iconColor }} sx={{ mr: 1 }} />}
+      title={title}
+    />
+  );
 
-# Define paths
-SRC_PATH="secret/path1"
-DEST_PATH="secret/path2"
+  // Filter function to filter based on condition and set states
+  const filterData = (condition, setTitleFn, setCriticalFn, setCreDataFn, title, IconComponent, iconColor, criticalMark) => {
+    if (data && condition) {
+      const filteredProjects = projects.filter(condition);
+      setFilteredProjects(filteredProjects);
+      setFilteredCreData(filteredCreDataFn);
+      setCritical(criticalMark);
+      setTitleFn(setTitleWithIcon(title, IconComponent, iconColor));
+    }
+  };
 
-# Function to check Vault KV version for a given path
-get_kv_version() {
-  vault secrets list -format=json | jq -r 'to_entries[] | select(.key == ("'"$1"'")) | .value.options.version'
-}
+  // Filter received CREs
+  const filterReceivedData = () => {
+    filterData(
+      project => project.received.length > 0 && project.critical.length === 0 && project.notCritical.length === 0,
+      setTableTitle,
+      setCritical,
+      data.expectedReceived,
+      'CRE recus',
+      CheckCircleIcon,
+      'green',
+      'R'
+    );
+  };
 
-# Check if the source path exists and the vault is reachable
-if ! vault kv get $SRC_PATH &> /dev/null; then
-  echo "Error: Source path $SRC_PATH does not exist or Vault is unreachable."
-  exit 1
-fi
+  // Filter unexpected CREs
+  const filterNotExpectedData = () => {
+    filterData(
+      project => project.notExpectedReceived.length > 0,
+      setTableTitle,
+      setCritical,
+      data.notExpectedReceived,
+      'CRE recus non attendus',
+      BlockIcon,
+      'black',
+      'B'
+    );
+  };
 
-# Detect whether the secret engine is KV Version 1 or Version 2
-MOUNT_PATH=$(echo "$SRC_PATH" | cut -d '/' -f 1)
-KV_VERSION=$(get_kv_version "$MOUNT_PATH")
+  // Filter non-critical CREs
+  const filterNonCritique = () => {
+    filterData(
+      project => project.notCritical.length > 0,
+      setTableTitle,
+      setCritical,
+      data.expectedNotCriticalNotReceived,
+      'CRE non recus non critiques',
+      WarningIcon,
+      'yellow',
+      'X'
+    );
+  };
 
-if [ "$KV_VERSION" == "2" ]; then
-  # If KV Version 2 is detected
-  echo "Detected KV Version 2"
+  // Filter critical CREs
+  const filterCritique = () => {
+    filterData(
+      project => project.critical.length > 0,
+      setTableTitle,
+      setCritical,
+      data.expectedCriticalNotReceived,
+      'CRE non recus critiques',
+      ErrorIcon,
+      'red',
+      'C'
+    );
+  };
 
-  # Read the secret from path1
-  SECRET=$(vault kv get -format=json $SRC_PATH | jq -r '.data.data')
+  useEffect(() => {
+    if (data) {
+      setNonCritiqueSize(data.expectedNotCriticalNotReceived.length);
+      setCritiqueSize(data.expectedCriticalNotReceived.length);
+      setReceivedSize(data.expectedReceived.length);
+      setNotExpectedSize(data.notExpectedReceived.length);
+      setCreData(data);
+    }
+  }, [data]);
 
-  # Write the secret to path2
-  vault kv put $DEST_PATH $(echo $SECRET | jq -r 'to_entries | map("\(.key)=\(.value|tostring)") | .[]')
-
-elif [ "$KV_VERSION" == "1" ]; then
-  # If KV Version 1 is detected
-  echo "Detected KV Version 1"
-
-  # Read the secret from path1
-  SECRET=$(vault read -format=json $SRC_PATH | jq -r '.data')
-
-  # Write the secret to path2
-  vault write $DEST_PATH $(echo $SECRET | jq -r 'to_entries | map("\(.key)=\(.value|tostring)") | .[]')
-
-else
-  echo "Error: Unsupported KV version or path."
-  exit 1
-fi
-
-echo "Secret copied from $SRC_PATH to $DEST_PATH successfully!"
+  return (
+    <CreContext.Provider
+      value={{
+        filteredCreData,
+        filteredProjects,
+        filterReceivedData,
+        filterNotExpectedData,
+        filterNonCritique,
+        filterCritique,
+        critiqueSize,
+        nonCritiqueSize,
+        receivedSize,
+        notExpectedSize,
+        setSubmittedValues,
+        tableTitle,
+        projectTitle,
+        isLoading,
+        error,
+        projectLoading,
+        projectError,
+        critical,
+      }}
+    >
+      {children}
+    </CreContext.Provider>
+  );
+};

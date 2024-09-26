@@ -1,129 +1,47 @@
-import React from 'react';
-import { Grid, Typography, Box, Card, CardContent, Divider, Button } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import CachedIcon from '@mui/icons-material/Cached';
-import StorageIcon from '@mui/icons-material/Storage';
+#!/bin/bash
 
-const EnhancedBankingAccountingWidget = () => {
+# Define paths
+SRC_PATH="secret/path1"
+DEST_PATH="secret/path2"
 
-  const handleStatClick = (statType) => {
-    alert(`You clicked on: ${statType}`);
-    // Add your onClick functionality here
-  };
+# Function to check Vault KV version for a given path
+get_kv_version() {
+  vault secrets list -format=json | jq -r 'to_entries[] | select(.key == ("'"$1"'")) | .value.options.version'
+}
 
-  return (
-    <Card sx={{ maxWidth: 250, margin: '0 auto', borderRadius: 2, boxShadow: 3 }}>
-      {/* Header */}
-      <Box sx={{ backgroundColor: 'green', padding: '8px', textAlign: 'center', borderRadius: '4px 4px 0 0' }}>
-        <Typography variant="subtitle1" color="white">
-          PRJ.M15 - Banking & no banking accounting
-        </Typography>
-      </Box>
+# Check if the source path exists and the vault is reachable
+if ! vault kv get $SRC_PATH &> /dev/null; then
+  echo "Error: Source path $SRC_PATH does not exist or Vault is unreachable."
+  exit 1
+fi
 
-      <CardContent sx={{ padding: '16px' }}>
-        {/* Daily Section */}
-        <Typography variant="body1" align="center" gutterBottom sx={{ marginBottom: '12px' }}>
-          DAILY
-        </Typography>
-        <Divider sx={{ marginBottom: '12px' }} />
-        <Grid container spacing={2} sx={{ marginBottom: '20px' }}>
-          <Grid item xs={6} sx={{ textAlign: 'center' }}>
-            <CheckCircleOutlineIcon color="success" fontSize="large" />
-            <Button 
-              variant="text" 
-              sx={{ fontSize: '24px', fontWeight: 'bold', color: 'green', marginTop: '4px' }}
-              onClick={() => handleStatClick('daily received')}
-            >
-              0
-            </Button>
-            <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>received</Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '6px' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-                <Typography variant="caption">0 flux</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
-                <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-                <Typography variant="caption">0 stock</Typography>
-              </Box>
-            </Box>
-          </Grid>
-          <Grid item xs={6} sx={{ textAlign: 'center' }}>
-            <ErrorOutlineIcon color="error" fontSize="large" />
-            <Button 
-              variant="text" 
-              sx={{ fontSize: '24px', fontWeight: 'bold', color: 'red', marginTop: '4px' }}
-              onClick={() => handleStatClick('daily not received')}
-            >
-              0
-            </Button>
-            <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>not received</Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '6px' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-                <Typography variant="caption">0 flux</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
-                <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-                <Typography variant="caption">0 stock</Typography>
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
+# Detect whether the secret engine is KV Version 1 or Version 2
+MOUNT_PATH=$(echo "$SRC_PATH" | cut -d '/' -f 1)
+KV_VERSION=$(get_kv_version "$MOUNT_PATH")
 
-        {/* Monthly Section */}
-        <Typography variant="body1" align="center" sx={{ marginBottom: '12px' }}>
-          MONTHLY
-        </Typography>
-        <Divider sx={{ marginBottom: '12px' }} />
-        <Grid container spacing={2}>
-          <Grid item xs={6} sx={{ textAlign: 'center' }}>
-            <CheckCircleOutlineIcon color="success" fontSize="large" />
-            <Button 
-              variant="text" 
-              sx={{ fontSize: '24px', fontWeight: 'bold', color: 'green', marginTop: '4px' }}
-              onClick={() => handleStatClick('monthly received')}
-            >
-              0
-            </Button>
-            <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>received</Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '6px' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-                <Typography variant="caption">0 flux</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
-                <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-                <Typography variant="caption">0 stock</Typography>
-              </Box>
-            </Box>
-          </Grid>
-          <Grid item xs={6} sx={{ textAlign: 'center' }}>
-            <ErrorOutlineIcon color="error" fontSize="large" />
-            <Button 
-              variant="text" 
-              sx={{ fontSize: '24px', fontWeight: 'bold', color: 'red', marginTop: '4px' }}
-              onClick={() => handleStatClick('monthly not received')}
-            >
-              0
-            </Button>
-            <Typography variant="caption" display="block" sx={{ marginTop: '4px' }}>not received</Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '6px' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CachedIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-                <Typography variant="caption">0 flux</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', marginTop: '4px' }}>
-                <StorageIcon sx={{ fontSize: 16, marginRight: '4px' }} />
-                <Typography variant="caption">0 stock</Typography>
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
-  );
-};
+if [ "$KV_VERSION" == "2" ]; then
+  # If KV Version 2 is detected
+  echo "Detected KV Version 2"
 
-export default EnhancedBankingAccountingWidget;
+  # Read the secret from path1
+  SECRET=$(vault kv get -format=json $SRC_PATH | jq -r '.data.data')
+
+  # Write the secret to path2
+  vault kv put $DEST_PATH $(echo $SECRET | jq -r 'to_entries | map("\(.key)=\(.value|tostring)") | .[]')
+
+elif [ "$KV_VERSION" == "1" ]; then
+  # If KV Version 1 is detected
+  echo "Detected KV Version 1"
+
+  # Read the secret from path1
+  SECRET=$(vault read -format=json $SRC_PATH | jq -r '.data')
+
+  # Write the secret to path2
+  vault write $DEST_PATH $(echo $SECRET | jq -r 'to_entries | map("\(.key)=\(.value|tostring)") | .[]')
+
+else
+  echo "Error: Unsupported KV version or path."
+  exit 1
+fi
+
+echo "Secret copied from $SRC_PATH to $DEST_PATH successfully!"

@@ -1,8 +1,76 @@
- const handleCreClick = (creName) => {
-    const filtered = projectData.filter(project =>
-      ['critical', 'received', 'notCritical', 'notExpectedReceived'].some(field =>
-        project[field]?.some(cre => cre.name === creName)
-      )
-    );
-    setFilteredProjects(filtered);
-  };
+import React from 'react';
+import { Box, Grid, Typography, Tooltip } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import BlockIcon from '@mui/icons-material/Block';
+
+const vacationsData = [
+  { id: 1, status: 'Partially Integrated' },
+  { id: 2, status: 'Partially Integrated' },
+  { id: 3, status: 'Partially Integrated' },
+  { id: 4, status: 'Integrated' },
+  { id: 5, status: 'Integrated' },
+  { id: 6, status: 'Not Integrated' },
+  { id: 7, status: 'Not Integrated' },
+  { id: 8, status: 'Not Integrated' },
+];
+
+// Define colors for statuses
+const statusColors = {
+  "Integrated": "#4caf50", // Green
+  "Partially Integrated": "#ffeb3b", // Yellow
+  "Not Integrated": "#f44336", // Red
+};
+
+const statusIcons = {
+  "Integrated": <CheckCircleIcon style={{ color: '#4caf50' }} />,
+  "Partially Integrated": <WarningAmberIcon style={{ color: '#ffeb3b' }} />,
+  "Not Integrated": <BlockIcon style={{ color: '#f44336' }} />,
+};
+
+const VacationStatus = () => {
+  return (
+    <Box sx={{ padding: 2 }}>
+      <Typography variant="h6" gutterBottom>
+        Vacations
+      </Typography>
+      <Grid container spacing={2}>
+        {vacationsData.map((vacation) => (
+          <Grid item xs={3} key={vacation.id}>
+            <Tooltip title={vacation.status}>
+              <Box
+                sx={{
+                  backgroundColor: statusColors[vacation.status],
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 2,
+                  height: '80px',
+                  cursor: 'pointer',
+                  transition: 'transform 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Typography variant="h4">{vacation.id}</Typography>
+                  {statusIcons[vacation.status]}
+                </Box>
+              </Box>
+            </Tooltip>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
+};
+
+export default VacationStatus;

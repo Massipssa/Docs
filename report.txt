@@ -1,51 +1,110 @@
-import React, { useState } from 'react';
-import { Card, CardContent, Typography, Grid } from '@mui/material';
+import React, { useState, useContext } from 'react';
+import { Grid } from '@mui/material';
+import { CreContext } from '@/context/CreContext';
+import StatCard from './StatCard';
+import { GREEN_COLOR, RED_COLOR, YELLOW_COLOR, GRAY_COLOR } from '@constants';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
+import ErrorIcon from '@mui/icons-material/Error';
+import BlockIcon from '@mui/icons-material/Block';
+import CircularLoading from '@/components/Common/Loading/CircularLoading';
+import ErrorFetching from '@/components/Common/Loading/ErrorFetching';
 
-const CRECards = () => {
+const cardDetails = [
+  {
+    key: 'received',
+    title: 'Reçus',
+    iconColor: GREEN_COLOR,
+    errorIcon: RED_COLOR,
+    bgColorCondition: size => size > 0,
+    filterMethod: 'filterReceivedData',
+    sizeMethod: 'receivedSize',
+  },
+  {
+    key: 'critique',
+    title: 'Critique non reçus',
+    iconColor: GREEN_COLOR,
+    errorIcon: RED_COLOR,
+    bgColorCondition: size => size === 0,
+    filterMethod: 'filterCritique',
+    sizeMethod: 'critiqueSize',
+  },
+  {
+    key: 'nonCritique',
+    title: 'Non Critique non reçus',
+    iconColor: GREEN_COLOR,
+    errorIcon: YELLOW_COLOR,
+    bgColorCondition: size => size === 0,
+    filterMethod: 'filterNonCritique',
+    sizeMethod: 'nonCritiqueSize',
+  },
+  {
+    key: 'notExpected',
+    title: 'Non attendus reçus',
+    iconColor: GREEN_COLOR,
+    errorIcon: GRAY_COLOR,
+    bgColorCondition: size => size > 0,
+    filterMethod: 'filterNotExpectedData',
+    sizeMethod: 'notExpectedSize',
+  },
+];
+
+function CreReceptionStatusCard() {
+  const { filterCritique, filterNonCritique, filterReceivedData, filterNotExpectedData, receivedSize, critiqueSize, nonCritiqueSize, notExpectedSize, isLoading, error } = useContext(CreContext);
+
   const [disabledCard, setDisabledCard] = useState(null);
 
-  const handleCardClick = (cardIndex) => {
-    setDisabledCard(cardIndex);
+  const sizeMapping = {
+    received: receivedSize,
+    critique: critiqueSize,
+    nonCritique: nonCritiqueSize,
+    notExpected: notExpectedSize,
   };
 
-  const cards = [
-    { id: 1, label: "Reçus", value: 154, color: "success" },
-    { id: 2, label: "Critique non reçus", value: 9, color: "error" },
-    { id: 3, label: "Non Critique non reçus", value: 17, color: "warning" },
-    { id: 4, label: "Non attendus reçus", value: 1, color: "default" },
-  ];
+  const filterMapping = {
+    received: filterReceivedData,
+    critique: filterCritique,
+    nonCritique: filterNonCritique,
+    notExpected: filterNotExpectedData,
+  };
+
+  const getIcon = (size, card) => {
+    return size > 0 ? (
+      <CheckCircleIcon style={{ color: card.iconColor }} />
+    ) : (
+      <ErrorIcon style={{ color: card.errorIcon }} />
+    );
+  };
+
+  const getBackgroundColor = (size, card) => {
+    return card.bgColorCondition(size) ? card.iconColor : card.errorIcon;
+  };
+
+  const handleClick = cardKey => {
+    setDisabledCard(cardKey);
+    filterMapping[cardKey](); // Call the appropriate filter method
+  };
+
+  if (isLoading) return <CircularLoading />;
+  if (error) return <ErrorFetching error={error} />;
 
   return (
-    <Grid container spacing={2}>
-      {cards.map((card, index) => (
-        <Grid item xs={3} key={card.id}>
-          <Card
-            onClick={() => handleCardClick(card.id)}
-            style={{
-              borderColor:
-                disabledCard === card.id
-                  ? "gray"
-                  : card.color === "success"
-                  ? "green"
-                  : card.color === "error"
-                  ? "red"
-                  : card.color === "warning"
-                  ? "yellow"
-                  : "black",
-              pointerEvents: disabledCard === card.id ? "none" : "auto",
-              opacity: disabledCard === card.id ? 0.5 : 1,
-            }}
-            variant="outlined"
-          >
-            <CardContent>
-              <Typography variant="h6">{card.label}</Typography>
-              <Typography variant="h4">{card.value}</Typography>
-            </CardContent>
-          </Card>
+    <Grid container spacing={2} sx={{ minHeight: 160, p: 2 }}>
+      {cardDetails.map(card => (
+        <Grid key={card.key} item xs={12} sm={3}>
+          <StatCard
+            title={card.title}
+            size={sizeMapping[card.key]}
+            onClick={() => handleClick(card.key)}
+            backgroundColor={getBackgroundColor(sizeMapping[card.key], card)}
+            icon={getIcon(sizeMapping[card.key], card)}
+            breakLine
+            disabled={disabledCard && disabledCard !== card.key}
+          />
         </Grid>
       ))}
     </Grid>
   );
-};
+}
 
-export default CRECards;
+export default CreReceptionStatusCard;

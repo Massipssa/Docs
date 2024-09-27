@@ -1,56 +1,65 @@
 import React, { useState, useContext } from 'react';
-import { Grid } from '@mui/material';
-import { CreContext } from '@/context/CreContext';
-import StatCard from './StatCard';
-import { GREEN_COLOR, RED_COLOR, YELLOW_COLOR, GRAY_COLOR } from '@constants';
+import { Grid, Box, Typography, IconButton, Tooltip } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
 import BlockIcon from '@mui/icons-material/Block';
-import CircularLoading from '@/components/Common/Loading/CircularLoading';
-import ErrorFetching from '@/components/Common/Loading/ErrorFetching';
+import { CreContext } from '@/context/CreContext';
+import StatCard from './StatCard';
 
+// Card details with dynamic icon and color configurations
 const cardDetails = [
   {
     key: 'received',
     title: 'Reçus',
-    iconColor: GREEN_COLOR,
-    errorIcon: RED_COLOR,
-    bgColorCondition: size => size > 0,
-    filterMethod: 'filterReceivedData',
-    sizeMethod: 'receivedSize',
+    successIcon: CheckCircleIcon,
+    errorIcon: ErrorIcon,
+    successColor: 'green',
+    errorColor: 'red',
+    condition: size => size > 0,
   },
   {
     key: 'critique',
     title: 'Critique non reçus',
-    iconColor: GREEN_COLOR,
-    errorIcon: RED_COLOR,
-    bgColorCondition: size => size === 0,
-    filterMethod: 'filterCritique',
-    sizeMethod: 'critiqueSize',
+    successIcon: CheckCircleIcon,
+    errorIcon: ErrorIcon,
+    successColor: 'green',
+    errorColor: 'red',
+    condition: size => size === 0,
   },
   {
     key: 'nonCritique',
     title: 'Non Critique non reçus',
-    iconColor: GREEN_COLOR,
-    errorIcon: YELLOW_COLOR,
-    bgColorCondition: size => size === 0,
-    filterMethod: 'filterNonCritique',
-    sizeMethod: 'nonCritiqueSize',
+    successIcon: CheckCircleIcon,
+    warningIcon: WarningAmberIcon,
+    successColor: 'green',
+    warningColor: 'yellow',
+    condition: size => size === 0,
   },
   {
     key: 'notExpected',
     title: 'Non attendus reçus',
-    iconColor: GREEN_COLOR,
-    errorIcon: GRAY_COLOR,
-    bgColorCondition: size => size > 0,
-    filterMethod: 'filterNotExpectedData',
-    sizeMethod: 'notExpectedSize',
+    successIcon: CheckCircleIcon,
+    blockIcon: BlockIcon,
+    successColor: 'green',
+    blockColor: 'gray',
+    condition: size => size > 0,
   },
 ];
 
 function CreReceptionStatusCard() {
-  const { filterCritique, filterNonCritique, filterReceivedData, filterNotExpectedData, receivedSize, critiqueSize, nonCritiqueSize, notExpectedSize, isLoading, error } = useContext(CreContext);
+  const {
+    filterCritique,
+    filterNonCritique,
+    filterReceivedData,
+    filterNotExpectedData,
+    receivedSize,
+    critiqueSize,
+    nonCritiqueSize,
+    notExpectedSize,
+    isLoading,
+    error,
+  } = useContext(CreContext);
 
   const [disabledCard, setDisabledCard] = useState(null);
 
@@ -68,42 +77,57 @@ function CreReceptionStatusCard() {
     notExpected: filterNotExpectedData,
   };
 
+  // Helper function to get the correct icon based on size and card settings
   const getIcon = (size, card) => {
+    if (card.key === 'nonCritique' && size > 0) {
+      return <card.warningIcon style={{ color: card.warningColor }} />;
+    }
     return size > 0 ? (
-      <CheckCircleIcon style={{ color: card.iconColor }} />
+      <card.successIcon style={{ color: card.successColor }} />
     ) : (
-      <ErrorIcon style={{ color: card.errorIcon }} />
+      card.errorIcon ? (
+        <card.errorIcon style={{ color: card.errorColor }} />
+      ) : (
+        <card.blockIcon style={{ color: card.blockColor }} />
+      )
     );
   };
 
+  // Helper function to get the background color based on size and card settings
   const getBackgroundColor = (size, card) => {
-    return card.bgColorCondition(size) ? card.iconColor : card.errorIcon;
+    return card.condition(size) ? card.successColor : card.errorColor || card.blockColor;
   };
 
-  const handleClick = cardKey => {
+  const handleClick = (cardKey) => {
     setDisabledCard(cardKey);
     filterMapping[cardKey](); // Call the appropriate filter method
   };
 
-  if (isLoading) return <CircularLoading />;
-  if (error) return <ErrorFetching error={error} />;
+  if (isLoading) return <div>Loading...</div>; // Replace with loading component
+  if (error) return <div>Error: {error}</div>; // Replace with error component
 
   return (
-    <Grid container spacing={2} sx={{ minHeight: 160, p: 2 }}>
-      {cardDetails.map(card => (
-        <Grid key={card.key} item xs={12} sm={3}>
-          <StatCard
-            title={card.title}
-            size={sizeMapping[card.key]}
-            onClick={() => handleClick(card.key)}
-            backgroundColor={getBackgroundColor(sizeMapping[card.key], card)}
-            icon={getIcon(sizeMapping[card.key], card)}
-            breakLine
-            disabled={disabledCard && disabledCard !== card.key}
-          />
-        </Grid>
-      ))}
-    </Grid>
+    <Box sx={{ padding: '20px' }}>
+      {/* Cards Section */}
+      <Typography variant="h5" gutterBottom>
+        CRE Status
+      </Typography>
+      <Grid container spacing={2}>
+        {cardDetails.map((card) => (
+          <Grid item key={card.key} xs={12} sm={3}>
+            <StatCard
+              title={card.title}
+              size={sizeMapping[card.key]}
+              onClick={() => handleClick(card.key)}
+              backgroundColor={getBackgroundColor(sizeMapping[card.key], card)}
+              icon={getIcon(sizeMapping[card.key], card)}
+              breakLine
+              disabled={disabledCard && disabledCard !== card.key}
+            />
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 }
 

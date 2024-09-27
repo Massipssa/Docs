@@ -1,71 +1,19 @@
-const [filteredProjects, setFilteredProjects] = useState([]); // State to store filtered projects based on CRE
-const creData = [/* Your CRE data array */];
-const projectData = [/* Your project data array */];
-
-// Function to handle row click
-const handleRowClick = (creId) => {
-  const filtered = projectData.filter(project => project.creIds.includes(creId));
-  setFilteredProjects(filtered); // Update the filtered projects
-};
-
-return (
-  <table>
-    <tbody>
-      {creData.map((cre) => (
-        <tr key={cre.id} onClick={() => handleRowClick(cre.id)}>
-          <td>{cre.id}</td>
-          <td>{cre.frequency}</td>
-          <td>{cre.type}</td>
-          {/* Other columns */}
-        </tr>
-      ))}
-    </tbody>
-  </table>
-
-  {/* Display filtered projects */}
-  <div className="projects-container">
-    {filteredProjects.map((project) => (
-      <div key={project.id} className="project-card">
-        {project.name}
-      </div>
-    ))}
-  </div>
-);
-
-
-const [filteredCREs, setFilteredCREs] = useState([]); // State to store filtered CREs based on project
-
-// Function to handle project card click
 const handleProjectClick = (projectId) => {
-  const selectedProject = projectData.find(project => project.id === projectId);
+  const selectedProject = filteredProjects.find(project => project.name === projectId);
+
+  console.log('selectedProject', selectedProject);
+  console.log('projectId', projectId);
+
   if (selectedProject) {
-    const filteredCRE = creData.filter(cre => selectedProject.creIds.includes(cre.id));
-    setFilteredCREs(filteredCRE); // Update the filtered CREs
+    // Ensure creData is an array and critical is a valid field
+    const filteredCRE = selectedProject.critical?.filter(cre => {
+      // Assuming 'name' exists in the critical array elements and you're filtering by CRE name
+      return creData.some(creItem => creItem.name === cre.name);
+    }) || [];
+
+    // Update the filtered CREs
+    setFilteredCreData(filteredCRE);
+  } else {
+    console.error('Selected project not found.');
   }
 };
-
-return (
-  <div className="projects-container">
-    {projectData.map((project) => (
-      <div key={project.id} onClick={() => handleProjectClick(project.id)} className="project-card">
-        {project.name}
-      </div>
-    ))}
-  </div>
-
-  {/* Display filtered CREs */}
-  <table>
-    <tbody>
-      {filteredCREs.map((cre) => (
-        <tr key={cre.id}>
-          <td>{cre.id}</td>
-          <td>{cre.frequency}</td>
-          <td>{cre.type}</td>
-          {/* Other columns */}
-        </tr>
-      ))}
-    </tbody>
-  </table>
-);
-
-

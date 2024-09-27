@@ -1,76 +1,51 @@
-import React from 'react';
-import { Box, Grid, Typography, Tooltip } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import BlockIcon from '@mui/icons-material/Block';
+import React, { useState } from 'react';
+import { Card, CardContent, Typography, Grid } from '@mui/material';
 
-const vacationsData = [
-  { id: 1, status: 'Partially Integrated' },
-  { id: 2, status: 'Partially Integrated' },
-  { id: 3, status: 'Partially Integrated' },
-  { id: 4, status: 'Integrated' },
-  { id: 5, status: 'Integrated' },
-  { id: 6, status: 'Not Integrated' },
-  { id: 7, status: 'Not Integrated' },
-  { id: 8, status: 'Not Integrated' },
-];
+const CRECards = () => {
+  const [disabledCard, setDisabledCard] = useState(null);
 
-// Define colors for statuses
-const statusColors = {
-  "Integrated": "#4caf50", // Green
-  "Partially Integrated": "#ffeb3b", // Yellow
-  "Not Integrated": "#f44336", // Red
-};
+  const handleCardClick = (cardIndex) => {
+    setDisabledCard(cardIndex);
+  };
 
-const statusIcons = {
-  "Integrated": <CheckCircleIcon style={{ color: '#4caf50' }} />,
-  "Partially Integrated": <WarningAmberIcon style={{ color: '#ffeb3b' }} />,
-  "Not Integrated": <BlockIcon style={{ color: '#f44336' }} />,
-};
+  const cards = [
+    { id: 1, label: "Reçus", value: 154, color: "success" },
+    { id: 2, label: "Critique non reçus", value: 9, color: "error" },
+    { id: 3, label: "Non Critique non reçus", value: 17, color: "warning" },
+    { id: 4, label: "Non attendus reçus", value: 1, color: "default" },
+  ];
 
-const VacationStatus = () => {
   return (
-    <Box sx={{ padding: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Vacations
-      </Typography>
-      <Grid container spacing={2}>
-        {vacationsData.map((vacation) => (
-          <Grid item xs={3} key={vacation.id}>
-            <Tooltip title={vacation.status}>
-              <Box
-                sx={{
-                  backgroundColor: statusColors[vacation.status],
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 2,
-                  height: '80px',
-                  cursor: 'pointer',
-                  transition: 'transform 0.3s ease',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                  },
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Typography variant="h4">{vacation.id}</Typography>
-                  {statusIcons[vacation.status]}
-                </Box>
-              </Box>
-            </Tooltip>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
+    <Grid container spacing={2}>
+      {cards.map((card, index) => (
+        <Grid item xs={3} key={card.id}>
+          <Card
+            onClick={() => handleCardClick(card.id)}
+            style={{
+              borderColor:
+                disabledCard === card.id
+                  ? "gray"
+                  : card.color === "success"
+                  ? "green"
+                  : card.color === "error"
+                  ? "red"
+                  : card.color === "warning"
+                  ? "yellow"
+                  : "black",
+              pointerEvents: disabledCard === card.id ? "none" : "auto",
+              opacity: disabledCard === card.id ? 0.5 : 1,
+            }}
+            variant="outlined"
+          >
+            <CardContent>
+              <Typography variant="h6">{card.label}</Typography>
+              <Typography variant="h4">{card.value}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
   );
 };
 
-export default VacationStatus;
+export default CRECards;

@@ -1,114 +1,71 @@
-export const CreProvider = ({ children }) => {
-  
-  // Helper function to set the title and icon
-  const setTitleWithIcon = (title, IconComponent, iconColor) => (
-    <Title
-      icon={<IconComponent style={{ color: iconColor }} sx={{ mr: 1 }} />}
-      title={title}
-    />
-  );
+const [filteredProjects, setFilteredProjects] = useState([]); // State to store filtered projects based on CRE
+const creData = [/* Your CRE data array */];
+const projectData = [/* Your project data array */];
 
-  // Filter function to filter based on condition and set states
-  const filterData = (condition, setTitleFn, setCriticalFn, setCreDataFn, title, IconComponent, iconColor, criticalMark) => {
-    if (data && condition) {
-      const filteredProjects = projects.filter(condition);
-      setFilteredProjects(filteredProjects);
-      setFilteredCreData(filteredCreDataFn);
-      setCritical(criticalMark);
-      setTitleFn(setTitleWithIcon(title, IconComponent, iconColor));
-    }
-  };
-
-  // Filter received CREs
-  const filterReceivedData = () => {
-    filterData(
-      project => project.received.length > 0 && project.critical.length === 0 && project.notCritical.length === 0,
-      setTableTitle,
-      setCritical,
-      data.expectedReceived,
-      'CRE recus',
-      CheckCircleIcon,
-      'green',
-      'R'
-    );
-  };
-
-  // Filter unexpected CREs
-  const filterNotExpectedData = () => {
-    filterData(
-      project => project.notExpectedReceived.length > 0,
-      setTableTitle,
-      setCritical,
-      data.notExpectedReceived,
-      'CRE recus non attendus',
-      BlockIcon,
-      'black',
-      'B'
-    );
-  };
-
-  // Filter non-critical CREs
-  const filterNonCritique = () => {
-    filterData(
-      project => project.notCritical.length > 0,
-      setTableTitle,
-      setCritical,
-      data.expectedNotCriticalNotReceived,
-      'CRE non recus non critiques',
-      WarningIcon,
-      'yellow',
-      'X'
-    );
-  };
-
-  // Filter critical CREs
-  const filterCritique = () => {
-    filterData(
-      project => project.critical.length > 0,
-      setTableTitle,
-      setCritical,
-      data.expectedCriticalNotReceived,
-      'CRE non recus critiques',
-      ErrorIcon,
-      'red',
-      'C'
-    );
-  };
-
-  useEffect(() => {
-    if (data) {
-      setNonCritiqueSize(data.expectedNotCriticalNotReceived.length);
-      setCritiqueSize(data.expectedCriticalNotReceived.length);
-      setReceivedSize(data.expectedReceived.length);
-      setNotExpectedSize(data.notExpectedReceived.length);
-      setCreData(data);
-    }
-  }, [data]);
-
-  return (
-    <CreContext.Provider
-      value={{
-        filteredCreData,
-        filteredProjects,
-        filterReceivedData,
-        filterNotExpectedData,
-        filterNonCritique,
-        filterCritique,
-        critiqueSize,
-        nonCritiqueSize,
-        receivedSize,
-        notExpectedSize,
-        setSubmittedValues,
-        tableTitle,
-        projectTitle,
-        isLoading,
-        error,
-        projectLoading,
-        projectError,
-        critical,
-      }}
-    >
-      {children}
-    </CreContext.Provider>
-  );
+// Function to handle row click
+const handleRowClick = (creId) => {
+  const filtered = projectData.filter(project => project.creIds.includes(creId));
+  setFilteredProjects(filtered); // Update the filtered projects
 };
+
+return (
+  <table>
+    <tbody>
+      {creData.map((cre) => (
+        <tr key={cre.id} onClick={() => handleRowClick(cre.id)}>
+          <td>{cre.id}</td>
+          <td>{cre.frequency}</td>
+          <td>{cre.type}</td>
+          {/* Other columns */}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  {/* Display filtered projects */}
+  <div className="projects-container">
+    {filteredProjects.map((project) => (
+      <div key={project.id} className="project-card">
+        {project.name}
+      </div>
+    ))}
+  </div>
+);
+
+
+const [filteredCREs, setFilteredCREs] = useState([]); // State to store filtered CREs based on project
+
+// Function to handle project card click
+const handleProjectClick = (projectId) => {
+  const selectedProject = projectData.find(project => project.id === projectId);
+  if (selectedProject) {
+    const filteredCRE = creData.filter(cre => selectedProject.creIds.includes(cre.id));
+    setFilteredCREs(filteredCRE); // Update the filtered CREs
+  }
+};
+
+return (
+  <div className="projects-container">
+    {projectData.map((project) => (
+      <div key={project.id} onClick={() => handleProjectClick(project.id)} className="project-card">
+        {project.name}
+      </div>
+    ))}
+  </div>
+
+  {/* Display filtered CREs */}
+  <table>
+    <tbody>
+      {filteredCREs.map((cre) => (
+        <tr key={cre.id}>
+          <td>{cre.id}</td>
+          <td>{cre.frequency}</td>
+          <td>{cre.type}</td>
+          {/* Other columns */}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
+
+

@@ -1,41 +1,8 @@
-const handleProjectClick = (projectId) => {
-  // Find the selected project
-  const selectedProject = filteredProjects.find(project => project.name === projectId);
-
-  if (!selectedProject) {
-    console.error('Selected project not found.');
-    return;
-  }
-
-  console.log('projectId:', projectId);
-
-  // Map critical values to respective project keys
-  const creMapping = {
-    C: 'critical',
-    X: 'notCritical',
-    R: 'received',
-    B: 'notExpectedReceived',
+ const handleCreClick = (creName) => {
+    const filtered = projectData.filter(project =>
+      ['critical', 'received', 'notCritical', 'notExpectedReceived'].some(field =>
+        project[field]?.some(cre => cre.name === creName)
+      )
+    );
+    setFilteredProjects(filtered);
   };
-
-  // Get the array key based on the critical value
-  const creKey = creMapping[critical];
-  
-  // Get the correct CRE array (defaulting to an empty array if undefined)
-  const cres = selectedProject[creKey] || [];
-
-  console.log('cres:', cres);
-
-  if (cres.length === 0) {
-    console.warn('No CREs found for the selected critical type.');
-  }
-
-  // Assuming `filteredCreData` is an array of objects with a `name` property
-  const filteredCRE = cres.filter(cre =>
-    filteredCreData.some(creItem => creItem.name === cre.name)
-  ) || [];
-
-  // Update the filtered CRE state
-  setFilteredCreData(filteredCRE);
-
-  console.log('filteredCRE:', filteredCRE);
-};

@@ -1,34 +1,101 @@
-<Grid container spacing={2}>
-  {data.map((item, index) => (
-    <Grid item xs={4} key={index}>
-      <Card
-        sx={{
-          height: 150, // Set consistent height for all cards
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          textAlign: 'center',
-          padding: 2, // Add padding for better text layout
-        }}
-      >
-        <CardContent sx={{ flexGrow: 1 }}>
-          <Typography
-            variant="h6"
+const [clickedCard, setClickedCard] = useState(null); // Track clicked project
+const [clickedRow, setClickedRow] = useState(null); // Track clicked row in table
+
+const handleProjectClick = (projectId) => {
+  // Find the selected project
+  const selectedProject = filteredProjects.find(project => project.name === projectId);
+  
+  if (!selectedProject) {
+    console.error('Selected project not found.');
+    return;
+  }
+
+  setClickedCard(projectId); // Set the clicked project ID
+  
+  // Other logic related to selected project
+  console.log('projectId:', projectId);
+
+  // Rest of your logic for critical, received, etc.
+  if (critical === 'C') {
+    setFilteredCreData(selectedProject.critical);
+  }
+  if (critical === 'X') {
+    setFilteredCreData(selectedProject.notCritical);
+  }
+  if (critical === 'R') {
+    setFilteredCreData(selectedProject.received);
+  }
+  if (critical === 'B') {
+    setFilteredCreData(selectedProject.notExpectedReceived);
+  }
+};
+
+const handleRowClick = (rowId) => {
+  setClickedRow(rowId); // Set clicked row ID
+};
+
+return (
+  <CreContext.Provider
+    value={{
+      filteredCreData,
+      filteredProjects,
+      filteredReceivedData,
+      filteredNotExpectedData,
+      filterCritique,
+      filterNonCritique,
+      CritiqueSize,
+      nonCritiqueSize,
+      receivedSize,
+      notExpectedSize,
+      setSubittedValues,
+      setTableTitle,
+      isLoading,
+      error,
+      projectLoading,
+      projectError,
+      critical,
+      projectTitle,
+      handleProjectClick,
+      handleRowClick,
+    }}
+  >
+    {/* Project Cards */}
+    <Box sx={{ display: 'flex', gap: 2 }}>
+      {filteredProjects.map((project) => (
+        <Card
+          key={project.id}
+          onClick={() => handleProjectClick(project.name)}
+          sx={{
+            width: '150px',
+            backgroundColor: clickedCard === project.name ? 'white' : 'lightgray', // Set color based on clicked project
+            cursor: 'pointer',
+          }}
+        >
+          <CardContent>
+            <Typography>{project.name}</Typography>
+          </CardContent>
+        </Card>
+      ))}
+    </Box>
+
+    {/* Table of Rows */}
+    <Table>
+      <TableBody>
+        {filteredCreData.map((cre, index) => (
+          <TableRow
+            key={index}
+            onClick={() => handleRowClick(cre.name)}
             sx={{
-              whiteSpace: 'normal', // Allow text to wrap
-              wordWrap: 'break-word', // Break long words
-              fontSize: '1rem',
-              lineHeight: '1.2',
-              overflow: 'hidden', // Handle overflow in case text exceeds card size
-              display: '-webkit-box',
-              WebkitLineClamp: 3, // Limit to 3 lines
-              WebkitBoxOrient: 'vertical',
+              backgroundColor: clickedRow === cre.name ? 'lightgray' : 'white', // Set row color based on click
+              cursor: 'pointer',
             }}
           >
-            {item.title}
-          </Typography>
-        </CardContent>
-      </Card>
-    </Grid>
-  ))}
-</Grid>
+            <TableCell>{cre.name}</TableCell>
+            <TableCell>{cre.detail}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+    
+  </CreContext.Provider>
+);

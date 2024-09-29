@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Paper, Typography } from "@mui/material";
-import { VacationContext } from "../context/VacationContext"; // Replace with your actual context path
+import { VacationContext } from "../context/VacationContext";
 import dayjs from "dayjs"; // To help with date formatting
 
 const VacationGraph = () => {
@@ -23,18 +23,27 @@ const VacationGraph = () => {
     return <Typography>No data available</Typography>;
   }
 
-  // Convert opcDate to a more readable format and structure data for each vacation
+  // Format opcDate and group data by vacation
   const formattedData = data.map(item => ({
-    opcDate: dayjs(item.opcDate, "YYYYMMDD").format("DD/MM/YYYY"), // Format the date
-    vacation1: item.vacation === 1 ? item.objectIntegratedNb : null,
-    vacation2: item.vacation === 2 ? item.objectIntegratedNb : null,
-    vacation3: item.vacation === 3 ? item.objectIntegratedNb : null,
-    vacation4: item.vacation === 4 ? item.objectIntegratedNb : null,
-    vacation5: item.vacation === 5 ? item.objectIntegratedNb : null,
-    vacation6: item.vacation === 6 ? item.objectIntegratedNb : null,
-    vacation7: item.vacation === 7 ? item.objectIntegratedNb : null,
-    vacation8: item.vacation === 8 ? item.objectIntegratedNb : null,
+    opcDate: dayjs(item.opcDate, "YYYYMMDD").format("DD/MM/YYYY"), // Convert opcDate to a readable format
+    [`vacation${item.vacation}`]: item.objectIntegratedNb, // Dynamically assign vacation number
   }));
+
+  // Group data by opcDate, combining vacations for the same date
+  const groupedData = Object.values(
+    formattedData.reduce((acc, item) => {
+      const dateKey = item.opcDate;
+      if (!acc[dateKey]) {
+        acc[dateKey] = { opcDate: dateKey };
+      }
+      Object.keys(item).forEach(key => {
+        if (key !== "opcDate") {
+          acc[dateKey][key] = item[key];
+        }
+      });
+      return acc;
+    }, {})
+  );
 
   return (
     <Paper sx={{ padding: 3 }}>
@@ -43,7 +52,7 @@ const VacationGraph = () => {
       </Typography>
       <ResponsiveContainer width="100%" height={300}>
         <ComposedChart
-          data={formattedData}
+          data={groupedData}
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />

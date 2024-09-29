@@ -5,36 +5,31 @@ import { format, parse, isValid } from "date-fns";
 // DynamicTable Component
 const DynamicTable = ({ values }) => {
   const title = "CRE Integration";
-  const { activityStartDate, activityEndDate } = values || {};
 
   // Sample data from your API
   const data = [
     {
-      vacation: 1,
-      opcDate: "20240922",
-      objectIntegratedNb: 218,
-      objectName: "CRE1",
-      status: "Ingested",
-    },
-    {
-      vacation: 2,
+      objectName: "GLRAX",
       opcDate: "20240923",
-      objectIntegratedNb: 179,
-      objectName: "CRE1",
+      vacation: 1,
       status: "Ingested",
     },
     {
+      objectName: "GLRAX",
+      opcDate: "20240924",
+      vacation: 2,
+      status: "Ingested",
+    },
+    {
+      objectName: "7X007",
+      opcDate: "20240924",
       vacation: 3,
-      opcDate: "20240924",
-      objectIntegratedNb: 180,
-      objectName: "CRE2",
       status: "Ingested",
     },
     {
+      objectName: "7X002",
+      opcDate: "20240923",
       vacation: 4,
-      opcDate: "20240924",
-      objectIntegratedNb: 180,
-      objectName: "CRE2",
       status: "Ingested",
     },
     // Add more data as necessary...
@@ -50,16 +45,17 @@ const DynamicTable = ({ values }) => {
       header: 'CRE Name',
     },
     ...uniqueDates.map(date => ({
-      accessorKey: date,  // Use opcDate as the accessor key
+      accessorKey: date,
       header: isValid(parse(date, 'yyyyMMdd', new Date()))
         ? format(parse(date, 'yyyyMMdd', new Date()), 'dd/MM/yyyy')
         : date,  // Ensure the date is valid before formatting
       cell: ({ row }) => {
-        const creVacations = row.original.vacations;
-        const vacationForDate = creVacations.find(vacation => vacation.opcDate === date);
+        const currentData = data.find(
+          entry => entry.objectName === row.original.objectName && entry.opcDate === date
+        );
         return (
           <Typography>
-            {vacationForDate ? `${vacationForDate.vacation}:${vacationForDate.opcDate}` : '-'}
+            {currentData ? `${currentData.vacation}:${currentData.opcDate}` : '-'}
           </Typography>
         );
       },
@@ -69,7 +65,6 @@ const DynamicTable = ({ values }) => {
   // Prepare table data with CRE names and their corresponding vacation dates
   const tableData = [...new Map(data.map(item => [item.objectName, {
     objectName: item.objectName,
-    vacations: data.filter(d => d.objectName === item.objectName), // Group vacations by CRE
   }])).values()];
 
   return (

@@ -10,6 +10,8 @@ import {
   TableRow,
   TextField,
   Box,
+  Card,
+  CardContent,
 } from "@mui/material";
 import { format, parse, isValid } from "date-fns";
 
@@ -54,11 +56,14 @@ const DynamicTable = ({ values }) => {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Filter state
+  const [filterStatus, setFilterStatus] = useState(""); // 'Integrated', 'Error', 'Ignored'
 
-  // Filtered data based on search input
-  const filteredData = creNames.filter(creName =>
-    creName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Count totals for each status
+  const integratedCount = data.filter(item => item.status.toLowerCase() === 'ingested' || item.status.toLowerCase() === 'integrated').length;
+  const errorCount = data.filter(item => item.status.toLowerCase() === 'error').length;
+  const ignoredCount = data.filter(item => item.status.toLowerCase() === 'ignored').length;
 
   // Function to determine cell background color based on status
   const getCellBackgroundColor = (status) => {
@@ -75,10 +80,56 @@ const DynamicTable = ({ values }) => {
     }
   };
 
+  // Filter data based on search input and card filter (status)
+  const filteredData = creNames.filter(creName =>
+    creName.toLowerCase().includes(searchQuery.toLowerCase())
+  ).filter(creName => {
+    if (filterStatus === "") return true; // No filtering
+    const creData = data.find(item => item.objectName === creName && item.status.toLowerCase() === filterStatus.toLowerCase());
+    return !!creData; // Filter by selected status
+  });
+
   return (
     <Paper>
       {/* Title */}
       <Typography variant="h6" gutterBottom>{title}</Typography>
+
+      {/* Cards Row for Filters */}
+      <Box mb={2} display="flex" justifyContent="space-between">
+        <Card
+          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "integrated" ? 'lightgreen' : 'white' }}
+          onClick={() => setFilterStatus(filterStatus === "integrated" ? "" : "integrated")}
+        >
+          <CardContent>
+            <Typography variant="h6" color="textSecondary">
+              Integrated
+            </Typography>
+            <Typography variant="h5">{integratedCount}</Typography>
+          </CardContent>
+        </Card>
+        <Card
+          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "error" ? 'lightcoral' : 'white' }}
+          onClick={() => setFilterStatus(filterStatus === "error" ? "" : "error")}
+        >
+          <CardContent>
+            <Typography variant="h6" color="textSecondary">
+              Error
+            </Typography>
+            <Typography variant="h5">{errorCount}</Typography>
+          </CardContent>
+        </Card>
+        <Card
+          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "ignored" ? 'lightyellow' : 'white' }}
+          onClick={() => setFilterStatus(filterStatus === "ignored" ? "" : "ignored")}
+        >
+          <CardContent>
+            <Typography variant="h6" color="textSecondary">
+              Ignored
+            </Typography>
+            <Typography variant="h5">{ignoredCount}</Typography>
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* Search Input */}
       <Box mb={2} display="flex" justifyContent="flex-start">

@@ -1,101 +1,39 @@
-const [clickedCard, setClickedCard] = useState(null); // Track clicked project
-const [clickedRow, setClickedRow] = useState(null); // Track clicked row in table
+import React, { useState } from "react";
+import { TextField, InputAdornment, IconButton } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
 
-const handleProjectClick = (projectId) => {
-  // Find the selected project
-  const selectedProject = filteredProjects.find(project => project.name === projectId);
-  
-  if (!selectedProject) {
-    console.error('Selected project not found.');
-    return;
-  }
+const SearchBar = () => {
+  const [searchText, setSearchText] = useState("");
 
-  setClickedCard(projectId); // Set the clicked project ID
-  
-  // Other logic related to selected project
-  console.log('projectId:', projectId);
+  const handleClear = () => {
+    setSearchText("");
+  };
 
-  // Rest of your logic for critical, received, etc.
-  if (critical === 'C') {
-    setFilteredCreData(selectedProject.critical);
-  }
-  if (critical === 'X') {
-    setFilteredCreData(selectedProject.notCritical);
-  }
-  if (critical === 'R') {
-    setFilteredCreData(selectedProject.received);
-  }
-  if (critical === 'B') {
-    setFilteredCreData(selectedProject.notExpectedReceived);
-  }
+  return (
+    <TextField
+      variant="outlined"
+      size="small"
+      placeholder="Rechercher..."
+      value={searchText}
+      onChange={(e) => setSearchText(e.target.value)}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon />
+          </InputAdornment>
+        ),
+        endAdornment: searchText && (
+          <InputAdornment position="end">
+            <IconButton onClick={handleClear}>
+              <CloseIcon />
+            </IconButton>
+          </InputAdornment>
+        ),
+      }}
+      fullWidth
+    />
+  );
 };
 
-const handleRowClick = (rowId) => {
-  setClickedRow(rowId); // Set clicked row ID
-};
-
-return (
-  <CreContext.Provider
-    value={{
-      filteredCreData,
-      filteredProjects,
-      filteredReceivedData,
-      filteredNotExpectedData,
-      filterCritique,
-      filterNonCritique,
-      CritiqueSize,
-      nonCritiqueSize,
-      receivedSize,
-      notExpectedSize,
-      setSubittedValues,
-      setTableTitle,
-      isLoading,
-      error,
-      projectLoading,
-      projectError,
-      critical,
-      projectTitle,
-      handleProjectClick,
-      handleRowClick,
-    }}
-  >
-    {/* Project Cards */}
-    <Box sx={{ display: 'flex', gap: 2 }}>
-      {filteredProjects.map((project) => (
-        <Card
-          key={project.id}
-          onClick={() => handleProjectClick(project.name)}
-          sx={{
-            width: '150px',
-            backgroundColor: clickedCard === project.name ? 'white' : 'lightgray', // Set color based on clicked project
-            cursor: 'pointer',
-          }}
-        >
-          <CardContent>
-            <Typography>{project.name}</Typography>
-          </CardContent>
-        </Card>
-      ))}
-    </Box>
-
-    {/* Table of Rows */}
-    <Table>
-      <TableBody>
-        {filteredCreData.map((cre, index) => (
-          <TableRow
-            key={index}
-            onClick={() => handleRowClick(cre.name)}
-            sx={{
-              backgroundColor: clickedRow === cre.name ? 'lightgray' : 'white', // Set row color based on click
-              cursor: 'pointer',
-            }}
-          >
-            <TableCell>{cre.name}</TableCell>
-            <TableCell>{cre.detail}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-    
-  </CreContext.Provider>
-);
+export default SearchBar;

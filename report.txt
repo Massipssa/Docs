@@ -17,7 +17,7 @@ import { format, parse, isValid } from "date-fns";
 const DynamicTable = ({ values }) => {
   const title = "CRE Integration";
 
-  // Sample data from your API or context
+  // Sample data (from your API or context)
   const data = [
     {
       objectName: "GLRAX",
@@ -35,13 +35,13 @@ const DynamicTable = ({ values }) => {
       objectName: "7X007",
       opcDate: "20240924",
       vacation: 3,
-      status: "Ingested",
+      status: "Error",
     },
     {
       objectName: "7X002",
       opcDate: "20240923",
       vacation: 4,
-      status: "Ingested",
+      status: "Ignored",
     },
     // Add more data as necessary...
   ];
@@ -59,6 +59,21 @@ const DynamicTable = ({ values }) => {
   const filteredData = creNames.filter(creName =>
     creName.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Function to determine cell background color based on status
+  const getCellBackgroundColor = (status) => {
+    switch (status.toLowerCase()) {
+      case 'error':
+        return 'red';
+      case 'ingested':
+      case 'integrated':
+        return 'green';
+      case 'ignored':
+        return 'yellow';
+      default:
+        return 'white';
+    }
+  };
 
   return (
     <Paper>
@@ -106,7 +121,13 @@ const DynamicTable = ({ values }) => {
                     (item) => item.objectName === creName && item.opcDate === date
                   );
                   return (
-                    <TableCell key={dateIndex} align="center">
+                    <TableCell
+                      key={dateIndex}
+                      align="center"
+                      sx={{
+                        backgroundColor: vacationForDate ? getCellBackgroundColor(vacationForDate.status) : 'white',
+                      }}
+                    >
                       {vacationForDate ? `${vacationForDate.vacation}:${vacationForDate.opcDate}` : '-'}
                     </TableCell>
                   );

@@ -1,3 +1,22 @@
+import { isValid, parse } from "date-fns";
+
+// ...
+
+const columns = uniqueDates.map(date => ({
+  accessorKey: date,
+  header: isValid(parse(date, 'yyyyMMdd', new Date())) ? format(new Date(date), 'dd/MM/yyyy') : date, // Ensure date is valid before formatting
+  cell: ({ row }) => {
+    const rowData = row.original;  // Get current row data
+    const currentVacation = rowData.vacations.find(v => v.opcDate === date);  // Find vacation for this date
+    return (
+      <Typography>
+        {currentVacation ? `${currentVacation.vacation}:${currentVacation.opcDate}` : '-'}
+      </Typography>
+    );
+  },
+}));
+
+
 const formattedData = data.map(item => {
   const parsedDate = parse(item.opcDate, "yyyyMMdd", new Date());  // Parse date string
   return {

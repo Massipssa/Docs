@@ -50,7 +50,7 @@ const DynamicTable = ({ values }) => {
       header: 'CRE Name',
     },
     ...uniqueDates.map(date => ({
-      accessorKey: date,
+      accessorKey: date,  // Use opcDate as the accessor key
       header: isValid(parse(date, 'yyyyMMdd', new Date()))
         ? format(parse(date, 'yyyyMMdd', new Date()), 'dd/MM/yyyy')
         : date,  // Ensure the date is valid before formatting
@@ -66,7 +66,7 @@ const DynamicTable = ({ values }) => {
     })),
   ];
 
-  // Group data by CRE name
+  // Prepare table data with CRE names and their corresponding vacation dates
   const tableData = [...new Map(data.map(item => [item.objectName, {
     objectName: item.objectName,
     vacations: data.filter(d => d.objectName === item.objectName), // Group vacations by CRE

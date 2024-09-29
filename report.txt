@@ -58,13 +58,13 @@ const DynamicTable = ({ values }) => {
   const [searchQuery, setSearchQuery] = useState("");
   
   // Filter state
-  const [filterStatus, setFilterStatus] = useState(""); // 'Integrated', 'Error', 'Ignored'
+  const [filterStatus, setFilterStatus] = useState(""); // 'Ingested', 'Error', 'Ignored'
 
   // Selected CRE details
   const [selectedCRE, setSelectedCRE] = useState(null);
 
   // Count totals for each status
-  const integratedCount = data.filter(item => item.status.toLowerCase() === 'ingested' || item.status.toLowerCase() === 'integrated').length;
+  const ingestedCount = data.filter(item => item.status.toLowerCase() === 'ingested').length;
   const errorCount = data.filter(item => item.status.toLowerCase() === 'error').length;
   const ignoredCount = data.filter(item => item.status.toLowerCase() === 'ignored').length;
 
@@ -74,7 +74,6 @@ const DynamicTable = ({ values }) => {
       case 'error':
         return 'red';
       case 'ingested':
-      case 'integrated':
         return 'green';
       case 'ignored':
         return 'yellow';
@@ -105,14 +104,14 @@ const DynamicTable = ({ values }) => {
       {/* Cards Row for Filters */}
       <Box mb={2} display="flex" justifyContent="space-between">
         <Card
-          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "integrated" ? 'lightgreen' : 'white', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-          onClick={() => setFilterStatus(filterStatus === "integrated" ? "" : "integrated")}
+          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "ingested" ? 'lightgreen' : 'white', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+          onClick={() => setFilterStatus(filterStatus === "ingested" ? "" : "ingested")}
         >
           <CardContent>
             <Typography variant="h6" color="textSecondary" align="center">
-              Integrated
+              Ingested
             </Typography>
-            <Typography variant="h5" align="center">{integratedCount}</Typography>
+            <Typography variant="h5" align="center">{ingestedCount}</Typography>
           </CardContent>
         </Card>
         <Card

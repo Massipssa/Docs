@@ -10,21 +10,30 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Paper, Typography } from "@mui/material";
-
-// Assuming you have a context that provides the data
-import { DataContext } from "../context/DataContext"; // Replace with your actual context path
+import { VacationContext } from "../context/VacationContext"; // Replace with your actual context path
+import dayjs from "dayjs"; // To help with date formatting
 
 const VacationGraph = () => {
   // Access data from the context
-  const data = useContext(DataContext);
+  const { isLoading, error, submittedValues } = useContext(VacationContext);
+  const data = submittedValues; // Assuming data comes from here
 
-  // Sample structure of the context data
-  // data = [{ vacation: 1, opcDate: '20240902', objectIntegratedNb: 218 }, ...]
+  // Check if the data is available
+  if (!data || !Array.isArray(data)) {
+    return <Typography>No data available</Typography>;
+  }
 
-  // Optional: Convert the opcDate to a more readable format if necessary
+  // Convert opcDate to a more readable format and structure data for each vacation
   const formattedData = data.map(item => ({
-    ...item,
-    opcDate: new Date(item.opcDate).toLocaleDateString('fr-FR'), // Formats the date
+    opcDate: dayjs(item.opcDate, "YYYYMMDD").format("DD/MM/YYYY"), // Format the date
+    vacation1: item.vacation === 1 ? item.objectIntegratedNb : null,
+    vacation2: item.vacation === 2 ? item.objectIntegratedNb : null,
+    vacation3: item.vacation === 3 ? item.objectIntegratedNb : null,
+    vacation4: item.vacation === 4 ? item.objectIntegratedNb : null,
+    vacation5: item.vacation === 5 ? item.objectIntegratedNb : null,
+    vacation6: item.vacation === 6 ? item.objectIntegratedNb : null,
+    vacation7: item.vacation === 7 ? item.objectIntegratedNb : null,
+    vacation8: item.vacation === 8 ? item.objectIntegratedNb : null,
   }));
 
   return (
@@ -43,15 +52,79 @@ const VacationGraph = () => {
           <Tooltip />
           <Legend />
 
-          {/* Lines for each vacation (adjust colors accordingly) */}
-          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#1f77b4" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 1" legendType="circle" />
-          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#ff7f0e" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 2" legendType="circle" />
-          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#2ca02c" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 3" legendType="circle" />
-          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#d62728" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 4" legendType="circle" />
-          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#9467bd" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 5" legendType="circle" />
-          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#8c564b" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 6" legendType="circle" />
-          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#e377c2" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 7" legendType="circle" />
-          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#7f7f7f" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 8" legendType="circle" />
+          {/* Lines for each vacation */}
+          <Line
+            type="monotone"
+            dataKey="vacation1"
+            stroke="#1f77b4"
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+            name="Vacation 1"
+            legendType="circle"
+          />
+          <Line
+            type="monotone"
+            dataKey="vacation2"
+            stroke="#ff7f0e"
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+            name="Vacation 2"
+            legendType="circle"
+          />
+          <Line
+            type="monotone"
+            dataKey="vacation3"
+            stroke="#2ca02c"
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+            name="Vacation 3"
+            legendType="circle"
+          />
+          <Line
+            type="monotone"
+            dataKey="vacation4"
+            stroke="#d62728"
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+            name="Vacation 4"
+            legendType="circle"
+          />
+          <Line
+            type="monotone"
+            dataKey="vacation5"
+            stroke="#9467bd"
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+            name="Vacation 5"
+            legendType="circle"
+          />
+          <Line
+            type="monotone"
+            dataKey="vacation6"
+            stroke="#8c564b"
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+            name="Vacation 6"
+            legendType="circle"
+          />
+          <Line
+            type="monotone"
+            dataKey="vacation7"
+            stroke="#e377c2"
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+            name="Vacation 7"
+            legendType="circle"
+          />
+          <Line
+            type="monotone"
+            dataKey="vacation8"
+            stroke="#7f7f7f"
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+            name="Vacation 8"
+            legendType="circle"
+          />
         </ComposedChart>
       </ResponsiveContainer>
     </Paper>

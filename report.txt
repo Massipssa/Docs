@@ -1,58 +1,61 @@
 import React, { useContext } from "react";
 import {
-  BarChart,
-  Bar,
+  ComposedChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
 } from "recharts";
-import { Box, Paper, Typography } from "@mui/material";
+import { Paper, Typography } from "@mui/material";
 
 // Assuming you have a context that provides the data
-import { DataContext } from "../context/DataContext"; // replace with your actual context path
+import { DataContext } from "../context/DataContext"; // Replace with your actual context path
 
-const VacationBarChart = () => {
+const VacationGraph = () => {
   // Access data from the context
   const data = useContext(DataContext);
 
-  // Group by vacation and aggregate the volume (objectIntegratedNb)
-  const groupedData = data.reduce((acc, item) => {
-    const existingVacation = acc.find((entry) => entry.vacation === item.vacation);
-    if (existingVacation) {
-      existingVacation.volume += item.objectIntegratedNb;
-    } else {
-      acc.push({
-        vacation: item.vacation,
-        volume: item.objectIntegratedNb
-      });
-    }
-    return acc;
-  }, []);
+  // Sample structure of the context data
+  // data = [{ vacation: 1, opcDate: '20240902', objectIntegratedNb: 218 }, ...]
+
+  // Optional: Convert the opcDate to a more readable format if necessary
+  const formattedData = data.map(item => ({
+    ...item,
+    opcDate: new Date(item.opcDate).toLocaleDateString('fr-FR'), // Formats the date
+  }));
 
   return (
     <Paper sx={{ padding: 3 }}>
       <Typography variant="h6" gutterBottom>
-        Volume total d'intégration par vacation
+        Volume total d'intégration selon la vacation et par jour
       </Typography>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart
-          data={groupedData}
-          layout="vertical"
+        <ComposedChart
+          data={formattedData}
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" />
-          <YAxis type="category" dataKey="vacation" />
+          <XAxis dataKey="opcDate" />
+          <YAxis />
           <Tooltip />
           <Legend />
-          <Bar dataKey="volume" fill="#8884d8" />
-        </BarChart>
+
+          {/* Lines for each vacation (adjust colors accordingly) */}
+          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#1f77b4" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 1" legendType="circle" />
+          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#ff7f0e" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 2" legendType="circle" />
+          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#2ca02c" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 3" legendType="circle" />
+          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#d62728" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 4" legendType="circle" />
+          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#9467bd" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 5" legendType="circle" />
+          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#8c564b" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 6" legendType="circle" />
+          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#e377c2" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 7" legendType="circle" />
+          <Line type="monotone" dataKey="objectIntegratedNb" stroke="#7f7f7f" dot={{ r: 6 }} activeDot={{ r: 8 }} name="Vacation 8" legendType="circle" />
+        </ComposedChart>
       </ResponsiveContainer>
     </Paper>
   );
 };
 
-export default VacationBarChart;
+export default VacationGraph;

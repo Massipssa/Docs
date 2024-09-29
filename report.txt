@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Paper,
   Typography,
@@ -8,6 +8,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
+  Box,
 } from "@mui/material";
 import { format, parse, isValid } from "date-fns";
 
@@ -15,7 +17,7 @@ import { format, parse, isValid } from "date-fns";
 const DynamicTable = ({ values }) => {
   const title = "CRE Integration";
 
-  // Sample data (from your API or context)
+  // Sample data from your API or context
   const data = [
     {
       objectName: "GLRAX",
@@ -50,11 +52,33 @@ const DynamicTable = ({ values }) => {
   // Prepare table data with CRE names and their corresponding vacation dates
   const creNames = [...new Set(data.map(item => item.objectName))];
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filtered data based on search input
+  const filteredData = creNames.filter(creName =>
+    creName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Paper>
+      {/* Title */}
       <Typography variant="h6" gutterBottom>{title}</Typography>
-      <TableContainer component={Paper}>
-        <Table>
+
+      {/* Search Input */}
+      <Box mb={2} display="flex" justifyContent="flex-start">
+        <TextField
+          label="Search CRE"
+          variant="outlined"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ width: "300px" }}
+        />
+      </Box>
+
+      {/* Scrollable Table */}
+      <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+        <Table stickyHeader>
           {/* Table Head */}
           <TableHead>
             <TableRow>
@@ -71,7 +95,7 @@ const DynamicTable = ({ values }) => {
 
           {/* Table Body */}
           <TableBody>
-            {creNames.map((creName, index) => (
+            {filteredData.map((creName, index) => (
               <TableRow key={index}>
                 {/* CRE Name Column */}
                 <TableCell>{creName}</TableCell>

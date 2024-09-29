@@ -1,143 +1,58 @@
-import React, { useContext } from "react";
-import {
-  ComposedChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import { Paper, Typography } from "@mui/material";
-import { VacationContext } from "../context/VacationContext";
-import dayjs from "dayjs"; // To help with date formatting
+import React from "react";
+import { Paper, Chip, Typography } from "@mui/material";
+import { format } from "date-fns";
 
-const VacationGraph = () => {
-  // Access data from the context
-  const { isLoading, error, submittedValues } = useContext(VacationContext);
-  const data = submittedValues; // Assuming data comes from here
+// DynamicTable Component
+const DynamicTable = ({ values }) => {
+  const title = "CRE Integration";
+  const { activityStartDate, activityEndDate } = values || {};
 
-  // Check if the data is available
+  // Ensure dates are formatted properly
+  const formattedStart = activityStartDate ? format(new Date(activityStartDate), 'yyyyMMdd') : '';
+  const formattedEnd = activityEndDate ? format(new Date(activityEndDate), 'yyyyMMdd') : '';
+
+  // Fetch data here (this part of the logic depends on your actual API and query handling)
+
+  const data = [...];  // Placeholder for your API data (from query or context)
+
   if (!data || !Array.isArray(data)) {
     return <Typography>No data available</Typography>;
   }
 
-  // Format opcDate and group data by vacation
-  const formattedData = data.map(item => ({
-    opcDate: dayjs(item.opcDate, "YYYYMMDD").format("DD/MM/YYYY"), // Convert opcDate to a readable format
-    [`vacation${item.vacation}`]: item.objectIntegratedNb, // Dynamically assign vacation number
+  // Create columns based on dates (unique opcDate values)
+  const uniqueDates = [...new Set(data.map(item => item.opcDate))];
+
+  const columns = uniqueDates.map(date => ({
+    accessorKey: date,
+    header: format(new Date(date), 'dd/MM/yyyy'),
+    cell: ({ row }) => {
+      const rowData = row.original;  // Get current row data
+      const currentVacation = rowData.vacations.find(v => v.opcDate === date);  // Find vacation for this date
+      return (
+        <Typography>
+          {currentVacation ? `${currentVacation.vacation}:${currentVacation.opcDate}` : '-'}
+        </Typography>
+      );
+    },
   }));
 
-  // Group data by opcDate, combining vacations for the same date
-  const groupedData = Object.values(
-    formattedData.reduce((acc, item) => {
-      const dateKey = item.opcDate;
-      if (!acc[dateKey]) {
-        acc[dateKey] = { opcDate: dateKey };
-      }
-      Object.keys(item).forEach(key => {
-        if (key !== "opcDate") {
-          acc[dateKey][key] = item[key];
-        }
-      });
-      return acc;
-    }, {})
-  );
+  // Rows with CRE names and vacation:opcdate data
+  const tableData = data.map(item => ({
+    objectName: item.objectName,
+    vacations: data.filter(d => d.objectName === item.objectName),  // Filter by CRE name
+  }));
 
   return (
-    <Paper sx={{ padding: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Volume total d'intégration selon la vacation et par jour
-      </Typography>
-      <ResponsiveContainer width="100%" height={300}>
-        <ComposedChart
-          data={groupedData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="opcDate" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-
-          {/* Lines for each vacation */}
-          <Line
-            type="monotone"
-            dataKey="vacation1"
-            stroke="#1f77b4"
-            dot={{ r: 6 }}
-            activeDot={{ r: 8 }}
-            name="Vacation 1"
-            legendType="circle"
-          />
-          <Line
-            type="monotone"
-            dataKey="vacation2"
-            stroke="#ff7f0e"
-            dot={{ r: 6 }}
-            activeDot={{ r: 8 }}
-            name="Vacation 2"
-            legendType="circle"
-          />
-          <Line
-            type="monotone"
-            dataKey="vacation3"
-            stroke="#2ca02c"
-            dot={{ r: 6 }}
-            activeDot={{ r: 8 }}
-            name="Vacation 3"
-            legendType="circle"
-          />
-          <Line
-            type="monotone"
-            dataKey="vacation4"
-            stroke="#d62728"
-            dot={{ r: 6 }}
-            activeDot={{ r: 8 }}
-            name="Vacation 4"
-            legendType="circle"
-          />
-          <Line
-            type="monotone"
-            dataKey="vacation5"
-            stroke="#9467bd"
-            dot={{ r: 6 }}
-            activeDot={{ r: 8 }}
-            name="Vacation 5"
-            legendType="circle"
-          />
-          <Line
-            type="monotone"
-            dataKey="vacation6"
-            stroke="#8c564b"
-            dot={{ r: 6 }}
-            activeDot={{ r: 8 }}
-            name="Vacation 6"
-            legendType="circle"
-          />
-          <Line
-            type="monotone"
-            dataKey="vacation7"
-            stroke="#e377c2"
-            dot={{ r: 6 }}
-            activeDot={{ r: 8 }}
-            name="Vacation 7"
-            legendType="circle"
-          />
-          <Line
-            type="monotone"
-            dataKey="vacation8"
-            stroke="#7f7f7f"
-            dot={{ r: 6 }}
-            activeDot={{ r: 8 }}
-            name="Vacation 8"
-            legendType="circle"
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+    <Paper>
+      <Typography variant="h6">{title}</Typography>
+      <ObjectTable
+        columns={columns}
+        data={tableData}
+        pageSize={5}
+        showActions={false}
+      />
     </Paper>
   );
 };
 
-export default VacationGraph;
+export default DynamicTable;

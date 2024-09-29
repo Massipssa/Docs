@@ -7,15 +7,7 @@ const DynamicTable = ({ values }) => {
   const title = "CRE Integration";
   const { activityStartDate, activityEndDate } = values || {};
 
-  // Ensure dates are formatted properly
-  const formattedStart = activityStartDate
-    ? format(new Date(activityStartDate), 'yyyyMMdd')
-    : '';
-  const formattedEnd = activityEndDate
-    ? format(new Date(activityEndDate), 'yyyyMMdd')
-    : '';
-
-  // Fetch data (this would be done via API or passed through props/context)
+  // Sample data from your API
   const data = [
     {
       vacation: 1,
@@ -28,41 +20,57 @@ const DynamicTable = ({ values }) => {
       vacation: 2,
       opcDate: "20240923",
       objectIntegratedNb: 179,
+      objectName: "CRE1",
+      status: "Ingested",
+    },
+    {
+      vacation: 3,
+      opcDate: "20240924",
+      objectIntegratedNb: 180,
       objectName: "CRE2",
       status: "Ingested",
     },
-    // Add other entries here...
+    {
+      vacation: 4,
+      opcDate: "20240924",
+      objectIntegratedNb: 180,
+      objectName: "CRE2",
+      status: "Ingested",
+    },
+    // Add more data as necessary...
   ];
 
-  // Check if the data is available
-  if (!data || !Array.isArray(data)) {
-    return <Typography>No data available</Typography>;
-  }
-
-  // Create columns based on unique opcDates (as headers)
+  // Extract unique opcDate values to form the table columns
   const uniqueDates = [...new Set(data.map(item => item.opcDate))];
 
-  const columns = uniqueDates.map(date => ({
-    accessorKey: date,
-    header: isValid(parse(date, 'yyyyMMdd', new Date()))
-      ? format(parse(date, 'yyyyMMdd', new Date()), 'dd/MM/yyyy')
-      : date, // Ensure the date is valid before formatting
-    cell: ({ row }) => {
-      const rowData = row.original;
-      const currentVacation = rowData.vacations.find(v => v.opcDate === date);
-      return (
-        <Typography>
-          {currentVacation ? `${currentVacation.vacation}:${currentVacation.opcDate}` : '-'}
-        </Typography>
-      );
+  // Create columns for each unique date
+  const columns = [
+    {
+      accessorKey: 'objectName',
+      header: 'CRE Name',
     },
-  }));
+    ...uniqueDates.map(date => ({
+      accessorKey: date,
+      header: isValid(parse(date, 'yyyyMMdd', new Date()))
+        ? format(parse(date, 'yyyyMMdd', new Date()), 'dd/MM/yyyy')
+        : date,  // Ensure the date is valid before formatting
+      cell: ({ row }) => {
+        const creVacations = row.original.vacations;
+        const vacationForDate = creVacations.find(vacation => vacation.opcDate === date);
+        return (
+          <Typography>
+            {vacationForDate ? `${vacationForDate.vacation}:${vacationForDate.opcDate}` : '-'}
+          </Typography>
+        );
+      },
+    })),
+  ];
 
-  // Prepare table data with CRE names and their corresponding vacation dates
-  const tableData = data.map(item => ({
+  // Group data by CRE name
+  const tableData = [...new Map(data.map(item => [item.objectName, {
     objectName: item.objectName,
-    vacations: data.filter(d => d.objectName === item.objectName), // Filter by CRE name
-  }));
+    vacations: data.filter(d => d.objectName === item.objectName), // Group vacations by CRE
+  }])).values()];
 
   return (
     <Paper>

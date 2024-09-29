@@ -1,224 +1,31 @@
-import React, { useState } from "react";
+import React from "react";
 import {
-  Paper,
+  List,
+  ListItem,
+  ListItemText,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Box,
-  Card,
-  CardContent,
 } from "@mui/material";
-import { format, parse, isValid } from "date-fns";
 
-// DynamicTable Component
-const DynamicTable = ({ values }) => {
-  const title = "CRE Integration";
-
-  // Sample data (from your API or context)
-  const data = [
-    {
-      objectName: "GLRAX",
-      opcDate: "20240923",
-      vacation: 1,
-      status: "Ingested",
-    },
-    {
-      objectName: "GLRAX",
-      opcDate: "20240924",
-      vacation: 2,
-      status: "Ingested",
-    },
-    {
-      objectName: "7X007",
-      opcDate: "20240924",
-      vacation: 3,
-      status: "Error",
-    },
-    {
-      objectName: "7X002",
-      opcDate: "20240923",
-      vacation: 4,
-      status: "Ignored",
-    },
-    // Add more data as necessary...
-  ];
-
-  // Extract unique opcDate values to form the table columns
-  const uniqueDates = [...new Set(data.map(item => item.opcDate))];
-
-  // Prepare table data with CRE names and their corresponding vacation dates
-  const creNames = [...new Set(data.map(item => item.objectName))];
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  // Filter state
-  const [filterStatus, setFilterStatus] = useState(""); // 'Ingested', 'Error', 'Ignored'
-
-  // Selected CRE details
-  const [selectedCRE, setSelectedCRE] = useState(null);
-
-  // Count totals for each status
-  const ingestedCount = data.filter(item => item.status.toLowerCase() === 'ingested').length;
-  const errorCount = data.filter(item => item.status.toLowerCase() === 'error').length;
-  const ignoredCount = data.filter(item => item.status.toLowerCase() === 'ignored').length;
-
-  // Function to determine cell background color based on status
-  const getCellBackgroundColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'error':
-        return 'red';
-      case 'ingested':
-        return 'green';
-      case 'ignored':
-        return 'yellow';
-      default:
-        return 'white';
-    }
-  };
-
-  // Filter data based on search input and card filter (status)
-  const filteredData = creNames.filter(creName => {
-    // Apply search filter
-    if (!creName.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    // Apply status filter (Ingested, Error, Ignored)
-    if (filterStatus) {
-      const creData = data.find(item => item.objectName === creName && item.status.toLowerCase() === filterStatus.toLowerCase());
-      return !!creData; // Show only CREs that match the selected status
-    }
-    return true; // Show all CREs if no status filter is applied
-  });
-
-  // Handle cell click to display CRE details
-  const handleCellClick = (creData) => {
-    setSelectedCRE(creData);
-  };
-
+const InlineList = () => {
   return (
-    <Paper>
-      {/* Title */}
-      <Typography variant="h6" gutterBottom>{title}</Typography>
-
-      {/* Cards Row for Filters */}
-      <Box mb={2} display="flex" justifyContent="space-between">
-        <Card
-          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "ingested" ? 'lightgreen' : 'white', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-          onClick={() => setFilterStatus(filterStatus === "ingested" ? "" : "ingested")}
-        >
-          <CardContent>
-            <Typography variant="h6" color="textSecondary" align="center">
-              Ingested
+    <List>
+      <ListItem>
+        <ListItemText
+          disableTypography
+          primary={
+            <Typography variant="body1" component="span" style={{ display: 'inline' }}>
+              Primary Text
             </Typography>
-            <Typography variant="h5" align="center">{ingestedCount}</Typography>
-          </CardContent>
-        </Card>
-        <Card
-          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "error" ? 'lightcoral' : 'white', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-          onClick={() => setFilterStatus(filterStatus === "error" ? "" : "error")}
-        >
-          <CardContent>
-            <Typography variant="h6" color="textSecondary" align="center">
-              Error
+          }
+          secondary={
+            <Typography variant="body2" component="span" color="textSecondary" style={{ display: 'inline', marginLeft: 8 }}>
+              Secondary Text
             </Typography>
-            <Typography variant="h5" align="center">{errorCount}</Typography>
-          </CardContent>
-        </Card>
-        <Card
-          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "ignored" ? 'lightyellow' : 'white', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-          onClick={() => setFilterStatus(filterStatus === "ignored" ? "" : "ignored")}
-        >
-          <CardContent>
-            <Typography variant="h6" color="textSecondary" align="center">
-              Ignored
-            </Typography>
-            <Typography variant="h5" align="center">{ignoredCount}</Typography>
-          </CardContent>
-        </Card>
-      </Box>
-
-      {/* Search Input */}
-      <Box mb={2} display="flex" justifyContent="flex-start">
-        <TextField
-          label="Search CRE"
-          variant="outlined"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ width: "300px" }}
+          }
         />
-      </Box>
-
-      {/* Scrollable Table */}
-      <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
-        <Table stickyHeader>
-          {/* Table Head */}
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>CRE Name</strong></TableCell>
-              {uniqueDates.map((date, index) => (
-                <TableCell key={index} align="center">
-                  {isValid(parse(date, 'yyyyMMdd', new Date()))
-                    ? format(parse(date, 'yyyyMMdd', new Date()), 'dd/MM/yyyy')
-                    : date}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-
-          {/* Table Body */}
-          <TableBody>
-            {filteredData.map((creName, index) => (
-              <TableRow key={index}>
-                {/* CRE Name Column */}
-                <TableCell>{creName}</TableCell>
-
-                {/* Vacation:opcDate columns for each date */}
-                {uniqueDates.map((date, dateIndex) => {
-                  const vacationForDate = data.find(
-                    (item) => item.objectName === creName && item.opcDate === date
-                  );
-                  return (
-                    <TableCell
-                      key={dateIndex}
-                      align="center"
-                      sx={{
-                        backgroundColor: vacationForDate ? getCellBackgroundColor(vacationForDate.status) : 'white',
-                        cursor: vacationForDate ? 'pointer' : 'default',
-                      }}
-                      onClick={() => vacationForDate && handleCellClick(vacationForDate)}
-                    >
-                      {vacationForDate ? `${vacationForDate.vacation}:${vacationForDate.opcDate}` : '-'}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* CRE Details Card (Displayed below the table) */}
-      {selectedCRE && (
-        <Box mt={2}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">CRE Details</Typography>
-              <Typography><strong>CRE Name:</strong> {selectedCRE.objectName}</Typography>
-              <Typography><strong>Vacation:</strong> {selectedCRE.vacation}</Typography>
-              <Typography><strong>OpcDate:</strong> {selectedCRE.opcDate}</Typography>
-              <Typography><strong>Status:</strong> {selectedCRE.status}</Typography>
-            </CardContent>
-          </Card>
-        </Box>
-      )}
-    </Paper>
+      </ListItem>
+    </List>
   );
 };
 
-export default DynamicTable;
+export default InlineList;

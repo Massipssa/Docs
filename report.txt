@@ -83,12 +83,17 @@ const DynamicTable = ({ values }) => {
   };
 
   // Filter data based on search input and card filter (status)
-  const filteredData = creNames.filter(creName =>
-    creName.toLowerCase().includes(searchQuery.toLowerCase())
-  ).filter(creName => {
-    if (filterStatus === "") return true; // No filtering
-    const creData = data.find(item => item.objectName === creName && item.status.toLowerCase() === filterStatus.toLowerCase());
-    return !!creData; // Filter by selected status
+  const filteredData = creNames.filter(creName => {
+    // Apply search filter
+    if (!creName.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    // Apply status filter (Ingested, Error, Ignored)
+    if (filterStatus) {
+      const creData = data.find(item => item.objectName === creName && item.status.toLowerCase() === filterStatus.toLowerCase());
+      return !!creData; // Show only CREs that match the selected status
+    }
+    return true; // Show all CREs if no status filter is applied
   });
 
   // Handle cell click to display CRE details

@@ -1,39 +1,58 @@
-import React, { useState } from "react";
-import { TextField, InputAdornment, IconButton } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import CloseIcon from "@mui/icons-material/Close";
+import React, { useContext } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from "recharts";
+import { Box, Paper, Typography } from "@mui/material";
 
-const SearchBar = () => {
-  const [searchText, setSearchText] = useState("");
+// Assuming you have a context that provides the data
+import { DataContext } from "../context/DataContext"; // replace with your actual context path
 
-  const handleClear = () => {
-    setSearchText("");
-  };
+const VacationBarChart = () => {
+  // Access data from the context
+  const data = useContext(DataContext);
+
+  // Group by vacation and aggregate the volume (objectIntegratedNb)
+  const groupedData = data.reduce((acc, item) => {
+    const existingVacation = acc.find((entry) => entry.vacation === item.vacation);
+    if (existingVacation) {
+      existingVacation.volume += item.objectIntegratedNb;
+    } else {
+      acc.push({
+        vacation: item.vacation,
+        volume: item.objectIntegratedNb
+      });
+    }
+    return acc;
+  }, []);
 
   return (
-    <TextField
-      variant="outlined"
-      size="small"
-      placeholder="Rechercher..."
-      value={searchText}
-      onChange={(e) => setSearchText(e.target.value)}
-      InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <SearchIcon />
-          </InputAdornment>
-        ),
-        endAdornment: searchText && (
-          <InputAdornment position="end">
-            <IconButton onClick={handleClear}>
-              <CloseIcon />
-            </IconButton>
-          </InputAdornment>
-        ),
-      }}
-      fullWidth
-    />
+    <Paper sx={{ padding: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        Volume total d'intégration par vacation
+      </Typography>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart
+          data={groupedData}
+          layout="vertical"
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis type="number" />
+          <YAxis type="category" dataKey="vacation" />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="volume" fill="#8884d8" />
+        </BarChart>
+      </ResponsiveContainer>
+    </Paper>
   );
 };
 
-export default SearchBar;
+export default VacationBarChart;

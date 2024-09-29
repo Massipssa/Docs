@@ -60,6 +60,9 @@ const DynamicTable = ({ values }) => {
   // Filter state
   const [filterStatus, setFilterStatus] = useState(""); // 'Integrated', 'Error', 'Ignored'
 
+  // Selected CRE details
+  const [selectedCRE, setSelectedCRE] = useState(null);
+
   // Count totals for each status
   const integratedCount = data.filter(item => item.status.toLowerCase() === 'ingested' || item.status.toLowerCase() === 'integrated').length;
   const errorCount = data.filter(item => item.status.toLowerCase() === 'error').length;
@@ -89,6 +92,11 @@ const DynamicTable = ({ values }) => {
     return !!creData; // Filter by selected status
   });
 
+  // Handle cell click to display CRE details
+  const handleCellClick = (creData) => {
+    setSelectedCRE(creData);
+  };
+
   return (
     <Paper>
       {/* Title */}
@@ -97,36 +105,36 @@ const DynamicTable = ({ values }) => {
       {/* Cards Row for Filters */}
       <Box mb={2} display="flex" justifyContent="space-between">
         <Card
-          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "integrated" ? 'lightgreen' : 'white' }}
+          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "integrated" ? 'lightgreen' : 'white', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           onClick={() => setFilterStatus(filterStatus === "integrated" ? "" : "integrated")}
         >
           <CardContent>
-            <Typography variant="h6" color="textSecondary">
+            <Typography variant="h6" color="textSecondary" align="center">
               Integrated
             </Typography>
-            <Typography variant="h5">{integratedCount}</Typography>
+            <Typography variant="h5" align="center">{integratedCount}</Typography>
           </CardContent>
         </Card>
         <Card
-          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "error" ? 'lightcoral' : 'white' }}
+          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "error" ? 'lightcoral' : 'white', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           onClick={() => setFilterStatus(filterStatus === "error" ? "" : "error")}
         >
           <CardContent>
-            <Typography variant="h6" color="textSecondary">
+            <Typography variant="h6" color="textSecondary" align="center">
               Error
             </Typography>
-            <Typography variant="h5">{errorCount}</Typography>
+            <Typography variant="h5" align="center">{errorCount}</Typography>
           </CardContent>
         </Card>
         <Card
-          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "ignored" ? 'lightyellow' : 'white' }}
+          sx={{ width: "30%", cursor: 'pointer', backgroundColor: filterStatus === "ignored" ? 'lightyellow' : 'white', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           onClick={() => setFilterStatus(filterStatus === "ignored" ? "" : "ignored")}
         >
           <CardContent>
-            <Typography variant="h6" color="textSecondary">
+            <Typography variant="h6" color="textSecondary" align="center">
               Ignored
             </Typography>
-            <Typography variant="h5">{ignoredCount}</Typography>
+            <Typography variant="h5" align="center">{ignoredCount}</Typography>
           </CardContent>
         </Card>
       </Box>
@@ -177,7 +185,9 @@ const DynamicTable = ({ values }) => {
                       align="center"
                       sx={{
                         backgroundColor: vacationForDate ? getCellBackgroundColor(vacationForDate.status) : 'white',
+                        cursor: vacationForDate ? 'pointer' : 'default',
                       }}
+                      onClick={() => vacationForDate && handleCellClick(vacationForDate)}
                     >
                       {vacationForDate ? `${vacationForDate.vacation}:${vacationForDate.opcDate}` : '-'}
                     </TableCell>
@@ -188,6 +198,21 @@ const DynamicTable = ({ values }) => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* CRE Details Card (Displayed below the table) */}
+      {selectedCRE && (
+        <Box mt={2}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6">CRE Details</Typography>
+              <Typography><strong>CRE Name:</strong> {selectedCRE.objectName}</Typography>
+              <Typography><strong>Vacation:</strong> {selectedCRE.vacation}</Typography>
+              <Typography><strong>OpcDate:</strong> {selectedCRE.opcDate}</Typography>
+              <Typography><strong>Status:</strong> {selectedCRE.status}</Typography>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
     </Paper>
   );
 };

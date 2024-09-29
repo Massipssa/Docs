@@ -1,12 +1,21 @@
 import React from "react";
-import { Paper, Typography } from "@mui/material";
+import {
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 import { format, parse, isValid } from "date-fns";
 
 // DynamicTable Component
 const DynamicTable = ({ values }) => {
   const title = "CRE Integration";
 
-  // Sample data from your API
+  // Sample data (from your API or context)
   const data = [
     {
       objectName: "GLRAX",
@@ -38,44 +47,51 @@ const DynamicTable = ({ values }) => {
   // Extract unique opcDate values to form the table columns
   const uniqueDates = [...new Set(data.map(item => item.opcDate))];
 
-  // Create columns for each unique date
-  const columns = [
-    {
-      accessorKey: 'objectName',
-      header: 'CRE Name',
-    },
-    ...uniqueDates.map(date => ({
-      accessorKey: date,
-      header: isValid(parse(date, 'yyyyMMdd', new Date()))
-        ? format(parse(date, 'yyyyMMdd', new Date()), 'dd/MM/yyyy')
-        : date,  // Ensure the date is valid before formatting
-      cell: ({ row }) => {
-        const currentData = data.find(
-          entry => entry.objectName === row.original.objectName && entry.opcDate === date
-        );
-        return (
-          <Typography>
-            {currentData ? `${currentData.vacation}:${currentData.opcDate}` : '-'}
-          </Typography>
-        );
-      },
-    })),
-  ];
-
   // Prepare table data with CRE names and their corresponding vacation dates
-  const tableData = [...new Map(data.map(item => [item.objectName, {
-    objectName: item.objectName,
-  }])).values()];
+  const creNames = [...new Set(data.map(item => item.objectName))];
 
   return (
     <Paper>
-      <Typography variant="h6">{title}</Typography>
-      <ObjectTable
-        columns={columns}
-        data={tableData}
-        pageSize={5}
-        showActions={false}
-      />
+      <Typography variant="h6" gutterBottom>{title}</Typography>
+      <TableContainer component={Paper}>
+        <Table>
+          {/* Table Head */}
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>CRE Name</strong></TableCell>
+              {uniqueDates.map((date, index) => (
+                <TableCell key={index} align="center">
+                  {isValid(parse(date, 'yyyyMMdd', new Date()))
+                    ? format(parse(date, 'yyyyMMdd', new Date()), 'dd/MM/yyyy')
+                    : date}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+
+          {/* Table Body */}
+          <TableBody>
+            {creNames.map((creName, index) => (
+              <TableRow key={index}>
+                {/* CRE Name Column */}
+                <TableCell>{creName}</TableCell>
+
+                {/* Vacation:opcDate columns for each date */}
+                {uniqueDates.map((date, dateIndex) => {
+                  const vacationForDate = data.find(
+                    (item) => item.objectName === creName && item.opcDate === date
+                  );
+                  return (
+                    <TableCell key={dateIndex} align="center">
+                      {vacationForDate ? `${vacationForDate.vacation}:${vacationForDate.opcDate}` : '-'}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Paper>
   );
 };

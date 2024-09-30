@@ -1,37 +1,72 @@
-import React, { useState } from 'react';
-import { Box, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import React from 'react';
+import { Grid, Typography, Box } from '@mui/material';
 
-function SmallSelectWithAlignment() {
-  const [value, setValue] = useState('');
-
-  const handleChange = (event) => {
-    setValue(event.target.value);
-  };
-
+const CREDetails = () => {
   return (
-    <Box sx={{ width: 300 }}>
-      <FormControl fullWidth size="small" variant="outlined">
-        <InputLabel id="demo-simple-select-label">Age</InputLabel>
-        <Select
-          labelId="demo-simple-select-label"
-          id="demo-simple-select"
-          value={value}
-          label="Age"
-          onChange={handleChange}
-          // Adjust padding to ensure text is centered vertically
-          sx={{
-            '& .MuiSelect-select': {
-              padding: '8px 14px', // Adjust padding here
-            },
-          }}
-        >
-          <MenuItem value={10}>Ten</MenuItem>
-          <MenuItem value={20}>Twenty</MenuItem>
-          <MenuItem value={30}>Thirty</MenuItem>
-        </Select>
-      </FormControl>
+    <Box p={2}>
+      <Grid container spacing={2}>
+        {/* First Row */}
+        <Grid item xs={6}>
+          <Typography variant="body1" fontWeight="bold">
+            CRE
+          </Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography variant="body1">07SPS</Typography>
+        </Grid>
+
+        {/* Second Row */}
+        <Grid item xs={6}>
+          <Typography variant="body1" fontWeight="bold">
+            Vacation
+          </Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography variant="body1">2</Typography>
+        </Grid>
+
+        {/* Third Row */}
+        <Grid item xs={6}>
+          <Typography variant="body1" fontWeight="bold">
+            Date OPC
+          </Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography variant="body1">20240924</Typography>
+        </Grid>
+
+        {/* Fourth Row */}
+        <Grid item xs={6}>
+          <Typography variant="body1" fontWeight="bold">
+            Statut
+          </Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography variant="body1">Ingested</Typography>
+        </Grid>
+
+        {/* Fifth Row */}
+        <Grid item xs={6}>
+          <Typography variant="body1" fontWeight="bold">
+            Heure de réception
+          </Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography variant="body1">2024-09-25 16:34:11</Typography>
+        </Grid>
+
+        {/* Sixth Row */}
+        <Grid item xs={6}>
+          <Typography variant="body1" fontWeight="bold">
+            Heure d'intégration
+          </Typography>
+        </Grid>
+        <Grid item xs={6}>
+          <Typography variant="body1">2024-09-25 19:00:15</Typography>
+        </Grid>
+      </Grid>
     </Box>
   );
-}
+};
 
-export default SmallSelectWithAlignment;
+export default CREDetails;

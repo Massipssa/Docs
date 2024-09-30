@@ -1,36 +1,73 @@
 import React, { useState } from 'react';
-import { Drawer, Box, Button, Typography } from '@mui/material';
+import { TextField, Box, Popper, Paper, InputAdornment, IconButton, ClickAwayListener } from '@mui/material';
+import { DateRange } from 'react-date-range';
+import { addDays } from 'date-fns';
+import { fr } from 'date-fns/locale'; // Import the correct locale
+import 'react-date-range/dist/styles.css'; // main css file
+import 'react-date-range/dist/theme/default.css'; // theme css file
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday'; // Calendar icon
 
-function CustomDrawer() {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+function CustomDateRangePicker() {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedRange, setSelectedRange] = useState({
+    startDate: new Date(),
+    endDate: addDays(new Date(), 7),
+    key: 'selection',
+  });
 
-  const toggleDrawer = (open) => (event) => {
-    // Close the drawer if clicking outside or pressing escape
-    if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
-      return;
-    }
-    setIsDrawerOpen(open);
+  const handleRangeChange = (ranges) => {
+    setSelectedRange(ranges.selection);
   };
 
-  return (
-    <Box>
-      {/* Button to open the drawer */}
-      <Button onClick={() => setIsDrawerOpen(true)}>Open Drawer</Button>
+  const handleInputClick = (event) => {
+    setAnchorEl(anchorEl ? null : event.currentTarget);
+  };
 
-      {/* Drawer component */}
-      <Drawer
-        anchor="right"
-        open={isDrawerOpen}
-        onClose={toggleDrawer(false)} // Close the drawer when clicking outside
-      >
-        {/* Drawer Content */}
-        <Box sx={{ width: 250, padding: 2 }}>
-          <Typography variant="h6">Drawer Content</Typography>
-          <Button onClick={() => setIsDrawerOpen(false)}>Close Drawer</Button>
-        </Box>
-      </Drawer>
-    </Box>
+  const handleClickAway = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
+  const id = open ? 'date-range-popper' : undefined;
+
+  return (
+    <ClickAwayListener onClickAway={handleClickAway}>
+      <Box>
+        {/* Input field with calendar icon and label */}
+        <TextField
+          label="Select Date Range"
+          aria-describedby={id}
+          value={`${selectedRange.startDate.toLocaleDateString()} - ${selectedRange.endDate.toLocaleDateString()}`}
+          onClick={handleInputClick}
+          fullWidth
+          placeholder="MM/DD/YYYY - MM/DD/YYYY"
+          readOnly
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={handleInputClick}>
+                  <CalendarTodayIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* Popper to show the date range picker */}
+        <Popper id={id} open={open} anchorEl={anchorEl} placement="bottom-start">
+          <Paper>
+            <DateRange
+              ranges={[selectedRange]}
+              onChange={handleRangeChange}
+              moveRangeOnFirstSelection={false}
+              editableDateInputs={true}
+              locale={fr} // Setting locale
+            />
+          </Paper>
+        </Popper>
+      </Box>
+    </ClickAwayListener>
   );
 }
 
-export default CustomDrawer;
+export default CustomDateRangePicker;

@@ -64,6 +64,7 @@ function CustomDateRangePicker() {
                 },
               },
             ]}
+            sx={{ zIndex: 1300 }} // Set z-index higher than other components
           >
             <Paper>
               <DateRange

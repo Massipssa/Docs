@@ -1,34 +1,84 @@
-import React from 'react';
-import { List, ListItem, ListItemText, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { TextField, Box, Popper, Paper, InputAdornment, ClickAwayListener } from '@mui/material';
+import { DateRange } from 'react-date-range';
+import { addDays } from 'date-fns';
+import { CalendarToday } from '@mui/icons-material'; // Icon for the calendar
+import { fr } from 'date-fns/locale';
+import 'react-date-range/dist/styles.css'; // main css file
+import 'react-date-range/dist/theme/default.css'; // theme css file
 
-function InlineTextItemList() {
+function CustomDateRangePicker() {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedRange, setSelectedRange] = useState({
+    startDate: new Date(),
+    endDate: addDays(new Date(), 7),
+    key: 'selection',
+  });
+
+  const handleRangeChange = (ranges) => {
+    setSelectedRange(ranges.selection);
+  };
+
+  const handleInputClick = (event) => {
+    setAnchorEl(anchorEl ? null : event.currentTarget);
+  };
+
+  const handleClickAway = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
+  const id = open ? 'date-range-popper' : undefined;
+
   return (
-    <List>
-      <ListItem>
-        <ListItemText
-          primary={
-            <Typography
-              component="span"
-              variant="body1"
-              sx={{ display: 'inline-block', marginRight: 1 }}
-            >
-              Primary Text
-            </Typography>
-          }
-          secondary={
-            <Typography
-              component="span"
-              variant="body2"
-              color="textSecondary"
-              sx={{ display: 'inline-block' }}
-            >
-              Secondary Text
-            </Typography>
-          }
-        />
-      </ListItem>
-    </List>
+    <Box>
+      <ClickAwayListener onClickAway={handleClickAway}>
+        <div>
+          <TextField
+            aria-describedby={id}
+            label="Select Date Range"
+            value={`${selectedRange.startDate.toLocaleDateString()} - ${selectedRange.endDate.toLocaleDateString()}`}
+            onClick={handleInputClick}
+            fullWidth
+            placeholder="MM/DD/YYYY - MM/DD/YYYY"
+            readOnly
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <CalendarToday />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <Popper
+            id={id}
+            open={open}
+            anchorEl={anchorEl}
+            placement="top-start" // Ensure the picker appears above the component
+            modifiers={[
+              {
+                name: 'offset',
+                options: {
+                  offset: [0, 10], // Adjust the distance between the input and the calendar
+                },
+              },
+            ]}
+          >
+            <Paper>
+              <DateRange
+                ranges={[selectedRange]}
+                onChange={handleRangeChange}
+                moveRangeOnFirstSelection={false}
+                editableDateInputs={true}
+                locale={fr}
+              />
+            </Paper>
+          </Popper>
+        </div>
+      </ClickAwayListener>
+    </Box>
   );
 }
 
-export default InlineTextItemList;
+export default CustomDateRangePicker;

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { TextField, Box, Popper, Paper } from '@mui/material';
+import { TextField, Box, Popper, Paper, InputAdornment, IconButton } from '@mui/material';
 import { DateRange } from 'react-date-range';
 import { addDays } from 'date-fns';
-import { fr } from 'date-fns/locale'; // Import the correct locale
+import { fr } from 'date-fns/locale'; // Import locale from date-fns
 import 'react-date-range/dist/styles.css'; // main css file
 import 'react-date-range/dist/theme/default.css'; // theme css file
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday'; // Import calendar icon
 
 function CustomDateRangePicker() {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -33,11 +34,21 @@ function CustomDateRangePicker() {
     <Box>
       <TextField
         aria-describedby={id}
+        label="Date Range"  // Add label here
         value={`${selectedRange.startDate.toLocaleDateString()} - ${selectedRange.endDate.toLocaleDateString()}`}
         onClick={handleInputClick}
         fullWidth
         placeholder="MM/DD/YYYY - MM/DD/YYYY"
         readOnly
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <IconButton onClick={handleInputClick}>
+                <CalendarTodayIcon />
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
       />
 
       <Popper id={id} open={open} anchorEl={anchorEl} placement="bottom-start" onClickAway={handleClose}>
@@ -47,7 +58,7 @@ function CustomDateRangePicker() {
             onChange={handleRangeChange}
             moveRangeOnFirstSelection={false}
             editableDateInputs={true}
-            locale={fr} // Pass the locale here
+            locale={fr} // Pass locale for French or other languages
           />
         </Paper>
       </Popper>

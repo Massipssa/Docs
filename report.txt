@@ -1,73 +1,37 @@
 import React, { useState } from 'react';
-import { TextField, Box, Popper, Paper, InputAdornment, IconButton, ClickAwayListener } from '@mui/material';
-import { DateRange } from 'react-date-range';
-import { addDays } from 'date-fns';
-import { fr } from 'date-fns/locale'; // Import the correct locale
-import 'react-date-range/dist/styles.css'; // main css file
-import 'react-date-range/dist/theme/default.css'; // theme css file
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday'; // Calendar icon
+import { Box, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
-function CustomDateRangePicker() {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedRange, setSelectedRange] = useState({
-    startDate: new Date(),
-    endDate: addDays(new Date(), 7),
-    key: 'selection',
-  });
+function SmallSelectWithAlignment() {
+  const [value, setValue] = useState('');
 
-  const handleRangeChange = (ranges) => {
-    setSelectedRange(ranges.selection);
+  const handleChange = (event) => {
+    setValue(event.target.value);
   };
-
-  const handleInputClick = (event) => {
-    setAnchorEl(anchorEl ? null : event.currentTarget);
-  };
-
-  const handleClickAway = () => {
-    setAnchorEl(null);
-  };
-
-  const open = Boolean(anchorEl);
-  const id = open ? 'date-range-popper' : undefined;
 
   return (
-    <ClickAwayListener onClickAway={handleClickAway}>
-      <Box>
-        {/* Input field with calendar icon and label */}
-        <TextField
-          label="Select Date Range"
-          aria-describedby={id}
-          value={`${selectedRange.startDate.toLocaleDateString()} - ${selectedRange.endDate.toLocaleDateString()}`}
-          onClick={handleInputClick}
-          fullWidth
-          placeholder="MM/DD/YYYY - MM/DD/YYYY"
-          readOnly
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={handleInputClick}>
-                  <CalendarTodayIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
+    <Box sx={{ width: 300 }}>
+      <FormControl fullWidth size="small" variant="outlined">
+        <InputLabel id="demo-simple-select-label">Age</InputLabel>
+        <Select
+          labelId="demo-simple-select-label"
+          id="demo-simple-select"
+          value={value}
+          label="Age"
+          onChange={handleChange}
+          // Adjust padding to ensure text is centered vertically
+          sx={{
+            '& .MuiSelect-select': {
+              padding: '8px 14px', // Adjust padding here
+            },
           }}
-        />
-
-        {/* Popper to show the date range picker */}
-        <Popper id={id} open={open} anchorEl={anchorEl} placement="bottom-start">
-          <Paper>
-            <DateRange
-              ranges={[selectedRange]}
-              onChange={handleRangeChange}
-              moveRangeOnFirstSelection={false}
-              editableDateInputs={true}
-              locale={fr} // Setting locale
-            />
-          </Paper>
-        </Popper>
-      </Box>
-    </ClickAwayListener>
+        >
+          <MenuItem value={10}>Ten</MenuItem>
+          <MenuItem value={20}>Twenty</MenuItem>
+          <MenuItem value={30}>Thirty</MenuItem>
+        </Select>
+      </FormControl>
+    </Box>
   );
 }
 
-export default CustomDateRangePicker;
+export default SmallSelectWithAlignment;

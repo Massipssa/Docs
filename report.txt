@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TextField, Box, Popper, Paper } from '@mui/material';
 import { DateRange } from 'react-date-range';
 import { addDays } from 'date-fns';
+import { fr } from 'date-fns/locale'; // Import the correct locale
 import 'react-date-range/dist/styles.css'; // main css file
 import 'react-date-range/dist/theme/default.css'; // theme css file
 
@@ -46,6 +47,7 @@ function CustomDateRangePicker() {
             onChange={handleRangeChange}
             moveRangeOnFirstSelection={false}
             editableDateInputs={true}
+            locale={fr} // Pass the locale here
           />
         </Paper>
       </Popper>

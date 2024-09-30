@@ -1,55 +1,55 @@
 import React, { useState } from 'react';
-import { Box, TextField } from '@mui/material';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { fr } from 'date-fns/locale';
+import { TextField, Box, Popper, Paper } from '@mui/material';
+import { DateRange } from 'react-date-range';
+import { addDays } from 'date-fns';
+import 'react-date-range/dist/styles.css'; // main css file
+import 'react-date-range/dist/theme/default.css'; // theme css file
 
 function CustomDateRangePicker() {
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedRange, setSelectedRange] = useState({
+    startDate: new Date(),
+    endDate: addDays(new Date(), 7),
+    key: 'selection',
+  });
 
-  const handleStartDateChange = (newDate) => {
-    setStartDate(newDate);
+  const handleRangeChange = (ranges) => {
+    setSelectedRange(ranges.selection);
   };
 
-  const handleEndDateChange = (newDate) => {
-    setEndDate(newDate);
+  const handleInputClick = (event) => {
+    setAnchorEl(anchorEl ? null : event.currentTarget);
   };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
+  const id = open ? 'date-range-popper' : undefined;
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        {/* Combined input box showing range */}
-        <TextField
-          value={
-            startDate && endDate
-              ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
-              : ''
-          }
-          placeholder="MM/DD/YYYY - MM/DD/YYYY"
-          fullWidth
-          onFocus={(e) => {
-            e.target.blur(); // Prevent typing in the input
-          }}
-        />
-        
-        {/* Start Date Picker */}
-        <DatePicker
-          label="Start Date"
-          value={startDate}
-          onChange={handleStartDateChange}
-          renderInput={(params) => <TextField {...params} />}
-        />
+    <Box>
+      <TextField
+        aria-describedby={id}
+        value={`${selectedRange.startDate.toLocaleDateString()} - ${selectedRange.endDate.toLocaleDateString()}`}
+        onClick={handleInputClick}
+        fullWidth
+        placeholder="MM/DD/YYYY - MM/DD/YYYY"
+        readOnly
+      />
 
-        {/* End Date Picker */}
-        <DatePicker
-          label="End Date"
-          value={endDate}
-          onChange={handleEndDateChange}
-          renderInput={(params) => <TextField {...params} />}
-        />
-      </Box>
-    </LocalizationProvider>
+      <Popper id={id} open={open} anchorEl={anchorEl} placement="bottom-start" onClickAway={handleClose}>
+        <Paper>
+          <DateRange
+            ranges={[selectedRange]}
+            onChange={handleRangeChange}
+            moveRangeOnFirstSelection={false}
+            editableDateInputs={true}
+          />
+        </Paper>
+      </Popper>
+    </Box>
   );
 }
 

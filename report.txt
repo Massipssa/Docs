@@ -1,31 +1,56 @@
-import React from "react";
-import {
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-} from "@mui/material";
+import React, { useState } from 'react';
+import { Box, TextField } from '@mui/material';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { fr } from 'date-fns/locale';
 
-const InlineList = () => {
+function CustomDateRangePicker() {
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
+  const handleStartDateChange = (newDate) => {
+    setStartDate(newDate);
+  };
+
+  const handleEndDateChange = (newDate) => {
+    setEndDate(newDate);
+  };
+
   return (
-    <List>
-      <ListItem>
-        <ListItemText
-          disableTypography
-          primary={
-            <Typography variant="body1" component="span" style={{ display: 'inline' }}>
-              Primary Text
-            </Typography>
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        {/* Combined input box showing range */}
+        <TextField
+          value={
+            startDate && endDate
+              ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
+              : ''
           }
-          secondary={
-            <Typography variant="body2" component="span" color="textSecondary" style={{ display: 'inline', marginLeft: 8 }}>
-              Secondary Text
-            </Typography>
-          }
+          placeholder="MM/DD/YYYY - MM/DD/YYYY"
+          fullWidth
+          onFocus={(e) => {
+            e.target.blur(); // Prevent typing in the input
+          }}
         />
-      </ListItem>
-    </List>
-  );
-};
+        
+        {/* Start Date Picker */}
+        <DatePicker
+          label="Start Date"
+          value={startDate}
+          onChange={handleStartDateChange}
+          renderInput={(params) => <TextField {...params} />}
+        />
 
-export default InlineList;
+        {/* End Date Picker */}
+        <DatePicker
+          label="End Date"
+          value={endDate}
+          onChange={handleEndDateChange}
+          renderInput={(params) => <TextField {...params} />}
+        />
+      </Box>
+    </LocalizationProvider>
+  );
+}
+
+export default CustomDateRangePicker;

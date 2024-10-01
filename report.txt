@@ -1,27 +1,14 @@
 import React, { useState, useRef } from 'react';
-import { Tabs, Tab, Box, Typography, Container } from '@mui/material';
+import { Tabs, Tab, Box, Container } from '@mui/material';
 
-// Composants pour chaque onglet
-function Component1() {
-  return <Typography variant="h6">Contenu de l'onglet 1</Typography>;
-}
+// Components for each tab
+import SyntheseFilter from 'components/Dashboard/Common/Filter/SyntheseFilter';
+import IntegrationFilter from 'components/Dashboard/Common/Filter/IntegrationFilter';
+import VacationFilter from 'components/Dashboard/Common/Filter/VacationFilter';
+import ReturnFlowFilter from 'components/Dashboard/Common/Filter/ReturnFlowFilter';
 
-function Component2() {
-  return <Typography variant="h6">Contenu de l'onglet 2</Typography>;
-}
-
-function Component3() {
-  return <Typography variant="h6">Contenu de l'onglet 3</Typography>;
-}
-
-function Component4() {
-  return <Typography variant="h6">Contenu de l'onglet 4</Typography>;
-}
-
-// Fonction qui gère l'affichage du contenu en fonction de l'onglet
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
-
+// Tab panel component
+function TabPanel({ children, value, index, ...other }) {
   return (
     <div
       role="tabpanel"
@@ -32,55 +19,69 @@ function TabPanel(props) {
     >
       {value === index && (
         <Box p={3}>
-          <Typography>{children}</Typography>
+          {children}
         </Box>
       )}
     </div>
   );
 }
 
-// Onglets principaux
+// Main tabs component
 const MyTabs = () => {
   const [value, setValue] = useState(0);
-  const tabsRef = useRef(null);
+  const tabsRef = useRef([]);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
 
-    // Retirer le focus du Tab après le clic
-    if (tabsRef.current) {
-      tabsRef.current.blur();
+    // Remove the focus from the tab after click
+    if (tabsRef.current[newValue]) {
+      tabsRef.current[newValue].blur();
     }
   };
 
+  const components = [
+    <SyntheseFilter />,
+    <IntegrationFilter />,
+    <VacationFilter />,
+    <ReturnFlowFilter />
+  ];
+
   return (
-    <Container>
+    <Container maxWidth={false} sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs
           value={value}
           onChange={handleChange}
           aria-label="basic tabs"
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ alignItems: 'flex-start', display: 'flex' }}
         >
-          <Tab ref={tabsRef} label="Onglet 1" />
-          <Tab ref={tabsRef} label="Onglet 2" />
-          <Tab ref={tabsRef} label="Onglet 3" />
-          <Tab ref={tabsRef} label="Onglet 4" />
+          {['Synthèse', 'Intégration CRE', 'Intégration Vacation', 'Retour flux'].map((tab, index) => (
+            <Tab
+              key={index}
+              ref={(el) => (tabsRef.current[index] = el)}
+              label={tab}
+              sx={{
+                textTransform: 'none',
+                bgcolor: value === index ? 'lightgray' : 'transparent',
+                outline: 'none',
+                '&:focus': { outline: 'none' },
+                '&:hover': { backgroundColor: 'lightgray' }
+              }}
+              disableRipple
+            />
+          ))}
         </Tabs>
       </Box>
 
-      {/* Rendu des composants selon l'onglet sélectionné */}
-      <TabPanel value={value} index={0}>
-        <Component1 />
-      </TabPanel>
-      <TabPanel value={value} index={1}>
-        <Component2 />
-      </TabPanel>
-      <TabPanel value={value} index={2}>
-        <Component3 />
-      </TabPanel>
-      <TabPanel value={value} index={3}>
-        <Component4 />
-      </TabPanel>
+      {/* Render components based on selected tab */}
+      {components.map((component, index) => (
+        <TabPanel key={index} value={value} index={index}>
+          {component}
+        </TabPanel>
+      ))}
     </Container>
   );
 };

@@ -1,40 +1,78 @@
+import React, { useState } from 'react';
+import { Tabs, Tab, Box, Typography, Container } from '@mui/material';
 
-Gravitee.io est une plateforme open source qui se spécialise dans la gestion des API (Application Programming Interface) et des accès sécurisés aux services. Elle est conçue pour simplifier la gestion des API et offrir une gamme de fonctionnalités complètes pour les entreprises qui souhaitent centraliser et sécuriser l'accès à leurs API.
+// Composants pour chaque onglet
+function Component1() {
+  return <Typography variant="h6">Contenu de l'onglet 1</Typography>;
+}
 
-Voici une présentation officielle de Gravitee en français :
+function Component2() {
+  return <Typography variant="h6">Contenu de l'onglet 2</Typography>;
+}
 
-Présentation de Gravitee.io
-Gravitee.io est une suite logicielle complète pour la gestion des API et l'identité, offrant des solutions pour le contrôle, la sécurisation, et la gouvernance des API. Son architecture modulaire permet de choisir et d'intégrer uniquement les fonctionnalités dont vous avez besoin.
+function Component3() {
+  return <Typography variant="h6">Contenu de l'onglet 3</Typography>;
+}
 
-Caractéristiques principales de Gravitee.io :
-Gestion des API :
+function Component4() {
+  return <Typography variant="h6">Contenu de l'onglet 4</Typography>;
+}
 
-Portail développeur : Permet aux développeurs d'accéder facilement aux API publiées, de consulter la documentation, et de tester les API.
-Passerelle API (API Gateway) : Offrant des performances élevées, elle permet de protéger, surveiller et distribuer les API tout en assurant une sécurité renforcée (limitation du débit, authentification, autorisation).
-Tableau de bord de supervision : Donne des informations détaillées sur les API, avec des statistiques d'utilisation, des performances et des alertes en temps réel.
-Sécurité des API :
+// Fonction qui gère l'affichage du contenu en fonction de l'onglet
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
 
-Contrôle d'accès basé sur des rôles (RBAC) : Gestion fine des permissions pour contrôler qui peut accéder à quelles API.
-Authentification OAuth2 et OpenID Connect : Intégration facile avec les mécanismes de sécurité pour protéger les API.
-Gestion des accès (IAM - Identity and Access Management) :
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`tabpanel-${index}`}
+      aria-labelledby={`tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box p={3}>
+          <Typography>{children}</Typography>
+        </Box>
+      )}
+    </div>
+  );
+}
 
-Gravitee Access Management : Fournit des fonctionnalités avancées d'identité et d'accès, permettant la mise en place de stratégies d'authentification unique (SSO), de gestion des utilisateurs, ainsi que de l’authentification multifactorielle (MFA).
-Support des protocoles standards : Prise en charge des protocoles standardisés comme OAuth2, OpenID Connect, SAML, pour assurer une compatibilité avec d'autres systèmes.
-Monétisation des API :
+// Onglets principaux
+const MyTabs = () => {
+  const [value, setValue] = useState(0);
 
-Possibilité de définir des modèles de monétisation pour les API, permettant de transformer une infrastructure d'API en une source de revenus potentielle, avec des modèles d'abonnement et des quotas d'utilisation.
-Extensibilité et modularité :
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
 
-Plug-ins : Gravitee.io offre une grande extensibilité avec une architecture basée sur des plug-ins. Vous pouvez ainsi ajouter des fonctionnalités comme de nouveaux protocoles de sécurité, des politiques spécifiques à votre organisation, etc.
-Connectivité aux bases de données et aux services externes : Intégration aisée avec des systèmes externes pour l'authentification, la gestion des données et la surveillance.
-Cas d'utilisation de Gravitee.io :
-Gestion des API internes et publiques : Gravitee.io permet aux entreprises de centraliser la gestion des API internes ou celles exposées au public. Cela permet de gérer les droits d'accès, surveiller leur usage, et renforcer la sécurité.
-Sécurisation des services : Grâce à l'intégration de l'authentification et des politiques de sécurité, Gravitee.io assure que seules les personnes et systèmes autorisés peuvent accéder aux API.
-Transformation numérique : En offrant une solution robuste pour la gestion des API, Gravitee.io accompagne les entreprises dans leur transformation numérique en leur permettant de créer des écosystèmes d'API performants et sécurisés.
-Avantages de Gravitee.io :
-Solution open source : Gravitee.io est une solution open source, ce qui offre une flexibilité maximale en permettant aux entreprises de l'adapter à leurs besoins spécifiques.
-Haute performance : La passerelle API est conçue pour gérer de grands volumes de trafic tout en offrant un temps de réponse rapide.
-Support communautaire et entreprise : En plus de sa communauté open source, Gravitee.io offre également des versions commerciales avec des options de support professionnel pour les entreprises.
-Intégration et personnalisation faciles : Gravitee.io peut être intégré dans différents environnements d'entreprise, avec une large compatibilité et des possibilités de personnalisation étendues.
-Conclusion :
-Gravitee.io est une plateforme complète et flexible pour la gestion des API et des accès, adaptée aux entreprises souhaitant sécuriser et gérer efficacement leurs écosystèmes d'API. Grâce à ses fonctionnalités avancées et à son modèle open source, Gravitee.io permet aux organisations de renforcer leur infrastructure numérique tout en facilitant la gestion des accès et des identités.
+  return (
+    <Container>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={value} onChange={handleChange} aria-label="basic tabs">
+          <Tab label="Onglet 1" />
+          <Tab label="Onglet 2" />
+          <Tab label="Onglet 3" />
+          <Tab label="Onglet 4" />
+        </Tabs>
+      </Box>
+
+      {/* Rendu des composants selon l'onglet sélectionné */}
+      <TabPanel value={value} index={0}>
+        <Component1 />
+      </TabPanel>
+      <TabPanel value={value} index={1}>
+        <Component2 />
+      </TabPanel>
+      <TabPanel value={value} index={2}>
+        <Component3 />
+      </TabPanel>
+      <TabPanel value={value} index={3}>
+        <Component4 />
+      </TabPanel>
+    </Container>
+  );
+};
+
+export default MyTabs;

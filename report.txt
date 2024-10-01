@@ -1,85 +1,40 @@
-import React, { useState } from 'react';
-import { TextField, Box, Popper, Paper, InputAdornment, ClickAwayListener } from '@mui/material';
-import { DateRange } from 'react-date-range';
-import { addDays } from 'date-fns';
-import { CalendarToday } from '@mui/icons-material'; // Icon for the calendar
-import { fr } from 'date-fns/locale';
-import 'react-date-range/dist/styles.css'; // main css file
-import 'react-date-range/dist/theme/default.css'; // theme css file
 
-function CustomDateRangePicker() {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedRange, setSelectedRange] = useState({
-    startDate: new Date(),
-    endDate: addDays(new Date(), 7),
-    key: 'selection',
-  });
+Gravitee.io est une plateforme open source qui se spécialise dans la gestion des API (Application Programming Interface) et des accès sécurisés aux services. Elle est conçue pour simplifier la gestion des API et offrir une gamme de fonctionnalités complètes pour les entreprises qui souhaitent centraliser et sécuriser l'accès à leurs API.
 
-  const handleRangeChange = (ranges) => {
-    setSelectedRange(ranges.selection);
-  };
+Voici une présentation officielle de Gravitee en français :
 
-  const handleInputClick = (event) => {
-    setAnchorEl(anchorEl ? null : event.currentTarget);
-  };
+Présentation de Gravitee.io
+Gravitee.io est une suite logicielle complète pour la gestion des API et l'identité, offrant des solutions pour le contrôle, la sécurisation, et la gouvernance des API. Son architecture modulaire permet de choisir et d'intégrer uniquement les fonctionnalités dont vous avez besoin.
 
-  const handleClickAway = () => {
-    setAnchorEl(null);
-  };
+Caractéristiques principales de Gravitee.io :
+Gestion des API :
 
-  const open = Boolean(anchorEl);
-  const id = open ? 'date-range-popper' : undefined;
+Portail développeur : Permet aux développeurs d'accéder facilement aux API publiées, de consulter la documentation, et de tester les API.
+Passerelle API (API Gateway) : Offrant des performances élevées, elle permet de protéger, surveiller et distribuer les API tout en assurant une sécurité renforcée (limitation du débit, authentification, autorisation).
+Tableau de bord de supervision : Donne des informations détaillées sur les API, avec des statistiques d'utilisation, des performances et des alertes en temps réel.
+Sécurité des API :
 
-  return (
-    <Box>
-      <ClickAwayListener onClickAway={handleClickAway}>
-        <div>
-          <TextField
-            aria-describedby={id}
-            label="Select Date Range"
-            value={`${selectedRange.startDate.toLocaleDateString()} - ${selectedRange.endDate.toLocaleDateString()}`}
-            onClick={handleInputClick}
-            fullWidth
-            placeholder="MM/DD/YYYY - MM/DD/YYYY"
-            readOnly
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <CalendarToday />
-                </InputAdornment>
-              ),
-            }}
-          />
+Contrôle d'accès basé sur des rôles (RBAC) : Gestion fine des permissions pour contrôler qui peut accéder à quelles API.
+Authentification OAuth2 et OpenID Connect : Intégration facile avec les mécanismes de sécurité pour protéger les API.
+Gestion des accès (IAM - Identity and Access Management) :
 
-          <Popper
-            id={id}
-            open={open}
-            anchorEl={anchorEl}
-            placement="top-start" // Ensure the picker appears above the component
-            modifiers={[
-              {
-                name: 'offset',
-                options: {
-                  offset: [0, 10], // Adjust the distance between the input and the calendar
-                },
-              },
-            ]}
-            sx={{ zIndex: 1300 }} // Set z-index higher than other components
-          >
-            <Paper>
-              <DateRange
-                ranges={[selectedRange]}
-                onChange={handleRangeChange}
-                moveRangeOnFirstSelection={false}
-                editableDateInputs={true}
-                locale={fr}
-              />
-            </Paper>
-          </Popper>
-        </div>
-      </ClickAwayListener>
-    </Box>
-  );
-}
+Gravitee Access Management : Fournit des fonctionnalités avancées d'identité et d'accès, permettant la mise en place de stratégies d'authentification unique (SSO), de gestion des utilisateurs, ainsi que de l’authentification multifactorielle (MFA).
+Support des protocoles standards : Prise en charge des protocoles standardisés comme OAuth2, OpenID Connect, SAML, pour assurer une compatibilité avec d'autres systèmes.
+Monétisation des API :
 
-export default CustomDateRangePicker;
+Possibilité de définir des modèles de monétisation pour les API, permettant de transformer une infrastructure d'API en une source de revenus potentielle, avec des modèles d'abonnement et des quotas d'utilisation.
+Extensibilité et modularité :
+
+Plug-ins : Gravitee.io offre une grande extensibilité avec une architecture basée sur des plug-ins. Vous pouvez ainsi ajouter des fonctionnalités comme de nouveaux protocoles de sécurité, des politiques spécifiques à votre organisation, etc.
+Connectivité aux bases de données et aux services externes : Intégration aisée avec des systèmes externes pour l'authentification, la gestion des données et la surveillance.
+Cas d'utilisation de Gravitee.io :
+Gestion des API internes et publiques : Gravitee.io permet aux entreprises de centraliser la gestion des API internes ou celles exposées au public. Cela permet de gérer les droits d'accès, surveiller leur usage, et renforcer la sécurité.
+Sécurisation des services : Grâce à l'intégration de l'authentification et des politiques de sécurité, Gravitee.io assure que seules les personnes et systèmes autorisés peuvent accéder aux API.
+Transformation numérique : En offrant une solution robuste pour la gestion des API, Gravitee.io accompagne les entreprises dans leur transformation numérique en leur permettant de créer des écosystèmes d'API performants et sécurisés.
+Avantages de Gravitee.io :
+Solution open source : Gravitee.io est une solution open source, ce qui offre une flexibilité maximale en permettant aux entreprises de l'adapter à leurs besoins spécifiques.
+Haute performance : La passerelle API est conçue pour gérer de grands volumes de trafic tout en offrant un temps de réponse rapide.
+Support communautaire et entreprise : En plus de sa communauté open source, Gravitee.io offre également des versions commerciales avec des options de support professionnel pour les entreprises.
+Intégration et personnalisation faciles : Gravitee.io peut être intégré dans différents environnements d'entreprise, avec une large compatibilité et des possibilités de personnalisation étendues.
+Conclusion :
+Gravitee.io est une plateforme complète et flexible pour la gestion des API et des accès, adaptée aux entreprises souhaitant sécuriser et gérer efficacement leurs écosystèmes d'API. Grâce à ses fonctionnalités avancées et à son modèle open source, Gravitee.io permet aux organisations de renforcer leur infrastructure numérique tout en facilitant la gestion des accès et des identités.

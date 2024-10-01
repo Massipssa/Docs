@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Tabs, Tab, Box, Typography, Container } from '@mui/material';
 
 // Composants pour chaque onglet
@@ -42,19 +42,29 @@ function TabPanel(props) {
 // Onglets principaux
 const MyTabs = () => {
   const [value, setValue] = useState(0);
+  const tabsRef = useRef(null);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
+
+    // Retirer le focus du Tab après le clic
+    if (tabsRef.current) {
+      tabsRef.current.blur();
+    }
   };
 
   return (
     <Container>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={value} onChange={handleChange} aria-label="basic tabs">
-          <Tab label="Onglet 1" />
-          <Tab label="Onglet 2" />
-          <Tab label="Onglet 3" />
-          <Tab label="Onglet 4" />
+        <Tabs
+          value={value}
+          onChange={handleChange}
+          aria-label="basic tabs"
+        >
+          <Tab ref={tabsRef} label="Onglet 1" />
+          <Tab ref={tabsRef} label="Onglet 2" />
+          <Tab ref={tabsRef} label="Onglet 3" />
+          <Tab ref={tabsRef} label="Onglet 4" />
         </Tabs>
       </Box>
 

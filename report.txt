@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'; // Date adapter
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TextField } from '@mui/material';
-import dayjs from 'dayjs'; // Optional: For date manipulation
+import dayjs from 'dayjs';
 
-const MyDatePicker = () => {
+const SmallDatePicker = () => {
   const [selectedDate, setSelectedDate] = useState(dayjs());
 
   const handleDateChange = (newDate) => {
@@ -18,10 +18,21 @@ const MyDatePicker = () => {
         label="Select Date"
         value={selectedDate}
         onChange={handleDateChange}
-        renderInput={(params) => <TextField {...params} />}
+        renderInput={(params) => (
+          <TextField 
+            {...params} 
+            sx={{ 
+              width: 150, // Set a smaller width
+              '& .MuiInputBase-root': {
+                fontSize: '0.875rem', // Reduce font size for smaller input
+              },
+            }} 
+            size="small" // Apply small size to text input
+          />
+        )}
       />
     </LocalizationProvider>
   );
 };
 
-export default MyDatePicker;
+export default SmallDatePicker;

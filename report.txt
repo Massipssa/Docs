@@ -1,117 +1,59 @@
-// DateCards.tsx
+// CreNumberCard.tsx
 
-import { useQuery } from '@tanstack/react-query';
-import { lastIntegrationDate } from '@rest/CreAPI';
-import Loading from '@components/Common/Loading/Loading';
-import { useContext, memo } from 'react';
-import { CreContext } from '@Context/CreContext';
-import { LIGHT_GRAY_COLOR } from '@constants/Color.constant';
-import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
+import React from 'react';
 import { Typography, Chip } from '@mui/material';
+import { LIGHT_GRAY_COLOR } from '@constants/color.constant';
 
-// Custom hook for fetching integration data
-const useIntegrationData = (activityDate: string | undefined) => {
-    return useQuery(
-        ['lastIntegrationDate', activityDate],
-        () => lastIntegrationDate(activityDate),
-        { enabled: !!activityDate, refetchOnWindowFocus: false }
-    );
-};
-
-function formatDateString(dateString: string): string {
-    if (!dateString) return 'No data available';
-    const [datePart, timePart] = dateString.split(' ');
-    const [year, month, day] = datePart.split('-');
-    return `${day}/${month}/${year} ${timePart}`;
+interface CreNumberCardProps {
+    filterStatus: string;
+    count: number;
+    status: string;
+    title: string;
+    clickColor: string;
+    setFilterStatus: (status: string) => void;
 }
 
-export default function DateCards() {
-    const { submittedValues } = useContext(CreContext);
-    const activityDate = submittedValues.activityDate;
+const CreNumberCard: React.FC<CreNumberCardProps> = React.memo(
+    ({ filterStatus, count, status, title, clickColor, setFilterStatus }) => {
+        
+        // Helper function to handle click event
+        const handleClick = () => {
+            setFilterStatus(filterStatus === status ? '' : status);
+        };
 
-    const { data, error, isLoading } = useIntegrationData(activityDate);
+        // Styles
+        const chipStyles = {
+            width: '100%',
+            minHeight: '60px',
+            cursor: 'pointer',
+            backgroundColor: filterStatus === status ? clickColor : LIGHT_GRAY_COLOR,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            border: `1px solid ${clickColor}`,
+            borderRadius: '2px',
+            '&:hover': {
+                backgroundColor: clickColor,
+            },
+        };
 
-    if (isLoading) {
-        return <LoadingChip />;
+        return (
+            <Chip
+                sx={chipStyles}
+                onClick={handleClick}
+                label={
+                    <>
+                        <Typography variant="h6" color="textSecondary" align="center">
+                            {title}
+                        </Typography>
+                        <Typography variant="h5" align="center">
+                            {count}
+                        </Typography>
+                    </>
+                }
+            />
+        );
     }
+);
 
-    if (error) {
-        return <ErrorChip error={error.message || 'Unknown error'} />;
-    }
-
-    return (
-        <IntegrationChip
-            title="Dernière Intégration"
-            value={formatDateString(data?.lastIntegrationTime)}
-        />
-    );
-}
-
-// Memoized IntegrationChip to prevent unnecessary re-renders
-const IntegrationChip = memo(({ title, value }: { title: string; value: string }) => {
-    return (
-        <Chip
-            label={<TitleWithIcon title={title} value={<strong>{value}</strong>} />}
-            sx={chipStyles}
-        />
-    );
-});
-
-// Component for displaying title with icon
-const TitleWithIcon = ({ title, value }: { title: string; value: React.ReactNode }) => {
-    return (
-        <Typography variant="body1" component="div" sx={titleStyles}>
-            <ManageHistoryIcon sx={{ mr: 1 }} />
-            {title}: {value}
-        </Typography>
-    );
-};
-
-// Loading state component
-const LoadingChip = memo(() => {
-    return (
-        <Chip
-            label={
-                <TitleWithIcon
-                    title="Loading"
-                    value={<Loading key="fetchIntegDate" />}
-                />
-            }
-            sx={chipStyles}
-        />
-    );
-});
-
-// Error state component
-const ErrorChip = memo(({ error }: { error: string }) => {
-    return (
-        <Chip
-            label={
-                <TitleWithIcon
-                    title="Error"
-                    value={<strong>{error}</strong>}
-                />
-            }
-            sx={{ ...chipStyles, bgcolor: 'error.main' }}
-        />
-    );
-});
-
-// Shared style objects for reuse
-const chipStyles = {
-    mt: 1,
-    mb: 1,
-    alignItems: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    width: '100%',
-    minHeight: '50px',
-    bgcolor: LIGHT_GRAY_COLOR,
-};
-
-const titleStyles = {
-    display: 'flex',
-    alignItems: 'center',
-    padding: 1,
-};
+export default CreNumberCard;

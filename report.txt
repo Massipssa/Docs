@@ -1,99 +1,44 @@
-// IntegrationCre.tsx
+import React, { useState, useCallback } from 'react';
+import { Box, Grid } from '@mui/material';
+import IntegrationDrawer from '../Drawer/IntegrationDrawer';
+import CreBarChart from '../Synthese/CRE/ReceptionChart';
+import CardsSyntheseTitle from '../cards/common/CardSyntheseTitle';
+import { DEFAULT_SEARCH_INTEGRATION } from '@constants/Default.constant';
+import IntegrationCre from '../IntegrationCre/IntegrationCre';
 
-import React, { useState, useMemo } from 'react';
-import { Paper, Box } from '@mui/material';
-import { format } from 'date-fns';
-import { useQuery } from '@tanstack/react-query';
-import FetchingCard from './FetchingCard';
-import CreAccordionDetails from './CreAccordionDetails';
-import IntegrationTable from './IntegrationTable';
-import CreNumberCards from './CreNumberCards';
-import { fetchCreByRangeDate } from '@rest/CreAPI';
-import { IngestionStatus } from './util';
+interface SubmittedValues {
+  [key: string]: any;
+}
 
-const useFetchCreData = (startActivityDate: string, endActivityDate: string) => {
-  return useQuery(['creData', { startActivityDate, endActivityDate }], () => fetchCreByRangeDate(startActivityDate, endActivityDate), {
-    enabled: !!startActivityDate && !!endActivityDate, // Only fetch when dates are available
-  });
-};
+const IntegrationFilter = () => {
+  const [submittedValues, setSubmittedValues] = useState<SubmittedValues>(DEFAULT_SEARCH_INTEGRATION);
 
-const filterByIngestionStatus = (data: any[], ingestionStatus: IngestionStatus) => {
-  return data.filter((item) => item.status.toLowerCase() === ingestionStatus.toLowerCase()).length;
-};
-
-const IntegrationCre: React.FC<{ values: any }> = ({ values }) => {
-  const { activityStartDate, activityEndDate } = values || {};
-  const formattedStart = activityStartDate ? format(activityStartDate, 'yyyyMMdd').toString() : '';
-  const formattedEnd = activityEndDate ? format(activityEndDate, 'yyyyMMdd').toString() : '';
-
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
-  const [selectedCRE, setSelectedCRE] = useState<any>(null);
-
-  const { data, error, isLoading } = useFetchCreData(formattedStart, formattedEnd);
-
-  const creNames = useMemo(() => [...new Set(data?.map((item) => item.objectName))], [data]);
-
-  const uniqueDates = useMemo(() => [...new Set(data?.map((item) => item.opcDate))], [data]);
-
-  const filteredData = useMemo(() => {
-    return creNames.filter((creName) => {
-      if (!creName.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (filterStatus) {
-        const creData = data?.find((item) => item.objectName === creName && item.status.toLowerCase() === filterStatus.toLowerCase());
-        return !!creData;
-      }
-      return true; // Show all if no filter applied
-    });
-  }, [creNames, searchQuery, filterStatus, data]);
-
-  const ingestedCount = filterByIngestionStatus(data, IngestionStatus.INGESTED);
-  const errorCount = filterByIngestionStatus(data, IngestionStatus.ERROR);
-  const ignoredCount = filterByIngestionStatus(data, IngestionStatus.IGNORED);
-
-  const handleCellClick = (creData: any) => {
-    setSelectedCRE(creData);
-  };
-
-  if (isLoading || error) {
-    return (
-      <FetchingCard
-        key={'creIntegration'}
-        isLoading={isLoading}
-        error={error}
-        title={'CRE Integration'}
-        minWidth="300px"
-      />
-    );
-  }
+  const handleValueChange = useCallback((field: string, value: any) => {
+    setSubmittedValues((prevValues) => ({
+      ...prevValues,
+      [field]: value,
+    }));
+  }, []);
 
   return (
-    <>
-      {/* CRE Status Cards */}
-      <CreNumberCards
-        filterStatus={filterStatus}
-        ingestedCount={ingestedCount}
-        ignoredCount={ignoredCount}
-        errorCount={errorCount}
-        setFilterStatus={setFilterStatus}
-      />
-
-      {/* Integration Table */}
-      <Paper variant="outlined" sx={{ p: 2, border: '1px solid #0000001a', borderRadius: 3 }}>
-        <IntegrationTable
-          data={data}
-          filteredData={filteredData}
-          handleCellClick={handleCellClick}
-          uniqueDates={uniqueDates}
+    <Box container spacing={3}>
+      <Grid item xs={12} md={12}>
+        <IntegrationDrawer
+          values={submittedValues}
+          onValueChange={handleValueChange}
         />
-      </Paper>
+      </Grid>
 
-      {/* CRE Accordion Details */}
-      {selectedCRE && (
-        <CreAccordionDetails key={'creDetails'} selectedCRE={selectedCRE} />
-      )}
-    </>
+      <Grid item xs={12} md={12}>
+        <IntegrationCre values={submittedValues} />
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <CardsSyntheseTitle title="Todo" />
+        <CreBarChart />
+      </Grid>
+    </Box>
   );
 };
 
-export default IntegrationCre;
+export default IntegrationFilter;

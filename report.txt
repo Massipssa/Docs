@@ -1,162 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Grid } from '@mui/material';
-import { useFetchData } from '@components/Api/Get';
-import RangeDatePicker from '@components/Common/Date/RangeDatePicker';
-import MultichoiceDropdown from '@components/Common/Select/MultichoiceDropdown';
-import { subDays } from 'date-fns';
-import { GET_ALL_PROJECTS } from '@constants/API';
+import React, { useState, useEffect } from 'react';
+import { Box, Skeleton, Typography } from '@mui/material';
 
-// Define constants
-const creReceptionStatus = [
-  'Attendu Reçu',
-  'Attendu Non Reçu',
-  'Non Attendu Non Reçu',
-  'Rejeté (Erreur)',
-  'Ignoré',
-];
+function ExampleComponent() {
+  const [loading, setLoading] = useState(true);
 
-// Helper component for dropdowns
-const DropdownWithLabel = ({ label, options, selectedOptions, setSelectedOptions }) => (
-  <Grid item xs={6}>
-    <MultichoiceDropdown
-      options={options}
-      label={label}
-      selectedOptions={selectedOptions}
-      setSelectedOptions={setSelectedOptions}
-    />
-  </Grid>
-);
-
-// Helper component for date pickers
-const DateRangePickerWithLabel = ({ label, startDate, endDate, setStartDate, setEndDate }) => (
-  <Grid item xs={6}>
-    <RangeDatePicker
-      label={label}
-      startDate={startDate}
-      endDate={endDate}
-      onChange={(ranges) => {
-        setStartDate(ranges.startDate);
-        setEndDate(ranges.endDate);
-      }}
-    />
-  </Grid>
-);
-
-const IntegrationDrawer = ({ values, onValueChange }) => {
-  const [integrationStartDate, setIntegrationStartDate] = useState(subDays(new Date(), 7));
-  const [integrationEndDate, setIntegrationEndDate] = useState(subDays(new Date(), 1));
-  const [activityStartDate, setActivityStartDate] = useState(subDays(new Date(), 7));
-  const [activityEndDate, setActivityEndDate] = useState(subDays(new Date(), 1));
-
-  const [project, setProject] = useState([]);
-  const [chantier, setChantier] = useState([]);
-  const [frequency, setFrequency] = useState([]);
-  const [creType, setCreType] = useState([]);
-  const [creCritique, setCreCritique] = useState([]);
-  const [cre, setCre] = useState([]);
-  const [statusReception, setReceptionStatus] = useState([]);
-
-  // Fetch project, chantier, and cre data
-  const [listProjects, setListProjects] = useState([]);
-  useFetchData(GET_ALL_PROJECTS, setListProjects);
-
-  const [listChantiers, setListChantiers] = useState([]);
-  useFetchData('http://localhost:8080/api/chantier/get_all_chantiers', setListChantiers);
-
-  const [listCre, setListCre] = useState([]);
-  useFetchData('http://localhost:8080/api/cre/all_cre_names', setListCre);
-
-  // Consolidated useEffect for state changes
+  // Simulating content loading
   useEffect(() => {
-    onValueChange('integrationStartDate', integrationStartDate);
-    onValueChange('integrationEndDate', integrationEndDate);
-    onValueChange('activityStartDate', activityStartDate);
-    onValueChange('activityEndDate', activityEndDate);
-    onValueChange('project', project);
-    onValueChange('chantier', chantier);
-    onValueChange('frequency', frequency);
-    onValueChange('creType', creType);
-    onValueChange('creCritique', creCritique);
-    onValueChange('cre', cre);
-    onValueChange('statusReception', statusReception);
-  }, [
-    integrationStartDate, integrationEndDate, activityStartDate, activityEndDate, 
-    project, chantier, frequency, creType, creCritique, cre, statusReception, 
-    onValueChange
-  ]);
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 3000); // Simulate a 3-second loading time
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <Box sx={{ mt: 3, mb: 2, display: 'flex', gap: 2 }}>
-      <Grid container spacing={3}>
-        {/* Date Range Pickers */}
-        <DateRangePickerWithLabel
-          label="Date Intégration"
-          startDate={integrationStartDate}
-          endDate={integrationEndDate}
-          setStartDate={setIntegrationStartDate}
-          setEndDate={setIntegrationEndDate}
+    <Box>
+      {loading ? (
+        // Skeleton placeholder for loading state
+        <Skeleton
+          variant="rectangular"
+          width={400}
+          height={200}
+          animation="wave" // Adds a wave animation for smoother UX
         />
-
-        <DateRangePickerWithLabel
-          label="Date Activité"
-          startDate={activityStartDate}
-          endDate={activityEndDate}
-          setStartDate={setActivityStartDate}
-          setEndDate={setActivityEndDate}
-        />
-
-        {/* Dropdowns */}
-        <DropdownWithLabel
-          label="Projet"
-          options={listProjects}
-          selectedOptions={project}
-          setSelectedOptions={setProject}
-        />
-
-        <DropdownWithLabel
-          label="Chantier"
-          options={listChantiers}
-          selectedOptions={chantier}
-          setSelectedOptions={setChantier}
-        />
-
-        <DropdownWithLabel
-          label="Fréquence"
-          options={['Quotidien', 'Mensuel']}
-          selectedOptions={frequency}
-          setSelectedOptions={setFrequency}
-        />
-
-        <DropdownWithLabel
-          label="CRE Type"
-          options={['Stock', 'Flux']}
-          selectedOptions={creType}
-          setSelectedOptions={setCreType}
-        />
-
-        <DropdownWithLabel
-          label="CRE Critique"
-          options={['Oui', 'Non']}
-          selectedOptions={creCritique}
-          setSelectedOptions={setCreCritique}
-        />
-
-        <DropdownWithLabel
-          label="CRE"
-          options={listCre}
-          selectedOptions={cre}
-          setSelectedOptions={setCre}
-        />
-
-        <DropdownWithLabel
-          label="Statut"
-          options={creReceptionStatus}
-          selectedOptions={statusReception}
-          setSelectedOptions={setReceptionStatus}
-        />
-      </Grid>
+      ) : (
+        // Content to display once loading is complete
+        <Typography variant="h6" component="div">
+          Content loaded successfully!
+        </Typography>
+      )}
     </Box>
   );
-};
+}
 
-export default IntegrationDrawer;
+export default ExampleComponent;

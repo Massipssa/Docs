@@ -1,98 +1,108 @@
-import React from 'react';
+// IntegrationTable.tsx
+
+import React, { useState, useMemo } from 'react';
 import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
   Box,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Typography,
   Chip,
-  List,
 } from '@mui/material';
-import { ErrorOutline as ErrorOutlineIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { LIGHT_GRAY_COLOR } from '@constants/color.constant';
+import { getCellBackgroundColor } from './util';
 
-// Define the interface for props
-interface CreAccordionDetailsProps {
-  selectedCRE: {
-    objectName: string;
-    vacation: string;
-    opcDate: string;
-    status: string;
-    timestampOfReception: string;
-    timestamp: string;
-    errorDescription?: string;
-  };
+interface IntegrationTableProps {
+  uniqueDates: string[];
+  data: any[];
+  filteredData: any[];
+  handleCellClick: (vacationForDate: any) => void;
 }
 
-const CreAccordionDetails: React.FC<CreAccordionDetailsProps> = ({ selectedCRE }) => {
-  const navigate = useNavigate();
+// Reusable table component to render the Integration Table
+const IntegrationTable: React.FC<IntegrationTableProps> = ({ uniqueDates, data, filteredData, handleCellClick }) => {
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Handle navigation to CRE details
-  const handleCreDetails = (creName: string) => {
-    navigate('/cre/details', { state: { creName } });
-  };
-
-  // Shared sx style for inline items
-  const inlineTextStyle = {
-    cursor: 'pointer',
-    textDecoration: 'underline',
-    color: 'blue',
-  };
+  // Memoized filtered data based on the search query
+  const searchedFilteredData = useMemo(() => {
+    if (!searchQuery) return filteredData;
+    return filteredData.filter(cre => cre.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [searchQuery, filteredData]);
 
   return (
-    <Box mt={2}>
-      <Accordion defaultExpanded>
-        <AccordionSummary>
-          <Typography variant="h6" sx={{ ml: 1, bgcolor: 'LIGHT_GRAY_COLOR' }}>
-            Détails du CRE: <strong>{selectedCRE.objectName}</strong>
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <List dense>
-            <InlineTextItemList title="CRE" value={selectedCRE.objectName} handleClick={() => handleCreDetails(selectedCRE.objectName)} />
-            <InlineTextItemList title="Vacation" value={selectedCRE.vacation} />
-            <InlineTextItemList title="Date OPC" value={selectedCRE.opcDate} />
-            <InlineTextItemList title="Statut" value={selectedCRE.status} />
-            <InlineTextItemList title="Heure de réception" value={selectedCRE.timestampOfReception} />
-            <InlineTextItemList title="Heure d'intégration" value={selectedCRE.timestamp} />
-
-            {/* Only display the error description if it exists */}
-            {selectedCRE.errorDescription && (
-              <InlineTextItemList
-                title="Description de l'erreur"
-                value={selectedCRE.errorDescription}
-                error
-              />
-            )}
-          </List>
-        </AccordionDetails>
-      </Accordion>
-    </Box>
-  );
-};
-
-// Reusable InlineTextItemList component
-interface InlineTextItemListProps {
-  title: string;
-  value: string;
-  handleClick?: () => void;
-  error?: boolean;
-}
-
-const InlineTextItemList: React.FC<InlineTextItemListProps> = ({ title, value, handleClick, error = false }) => {
-  return (
-    <Typography component="span" sx={handleClick ? inlineTextStyle : {}}>
-      {title}: {value}
-      {error && (
-        <Chip
-          icon={<ErrorOutlineIcon color="error" />}
-          label={value}
-          color="error"
-          sx={{ ml: 1 }}
+    <>
+      {/* Search Bar */}
+      <Box mb={2} display="flex" justifyContent="flex-start">
+        <TextField
+          label="Rechercher un CRE..."
+          variant="outlined"
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ width: '300px' }}
         />
-      )}
-    </Typography>
+      </Box>
+
+      {/* Table */}
+      <TableContainer component={Paper} sx={{ maxHeight: 400, boxShadow: 'none', border: '1px solid #0000001a' }}>
+        <Table stickyHeader size="small">
+          {/* Table Head */}
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ bgcolor: LIGHT_GRAY_COLOR }}>
+                <strong>CRE</strong>
+              </TableCell>
+              {uniqueDates.map((date, index) => (
+                <TableCell key={index} align="center" sx={{ bgcolor: LIGHT_GRAY_COLOR }}>
+                  <strong>{date}</strong>
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+
+          {/* Table Body */}
+          <TableBody>
+            {searchedFilteredData.map((creName, index) => (
+              <TableRow key={index}>
+                {/* CRE Name Column */}
+                <TableCell>{creName}</TableCell>
+
+                {/* Vacation/OPC Date Columns */}
+                {uniqueDates.map((date, dateIndex) => {
+                  const vacationForDate = data.find(
+                    (item) => item.objectName === creName && item.opcDate === date
+                  );
+
+                  return (
+                    <TableCell key={dateIndex} align="center">
+                      <Chip
+                        label={
+                          vacationForDate
+                            ? `${vacationForDate.vacation}:${vacationForDate.opcDate}`
+                            : '-'
+                        }
+                        sx={{
+                          backgroundColor: vacationForDate
+                            ? getCellBackgroundColor(vacationForDate.status)
+                            : 'white',
+                          cursor: vacationForDate ? 'pointer' : 'default',
+                        }}
+                        onClick={() => vacationForDate && handleCellClick(vacationForDate)}
+                      />
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
   );
 };
 
-export default CreAccordionDetails;
+export default React.memo(IntegrationTable);

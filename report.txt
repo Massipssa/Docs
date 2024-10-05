@@ -1,5 +1,3 @@
-// IntegrationTable.tsx
-
 import React, { useState, useMemo } from 'react';
 import {
   Paper,
@@ -12,6 +10,9 @@ import {
   TextField,
   Box,
   Chip,
+  CircularProgress,
+  Typography,
+  Button,
 } from '@mui/material';
 import { LIGHT_GRAY_COLOR } from '@constants/color.constant';
 import { getCellBackgroundColor } from './util';
@@ -21,10 +22,20 @@ interface IntegrationTableProps {
   data: any[];
   filteredData: any[];
   handleCellClick: (vacationForDate: any) => void;
+  isLoading: boolean;
+  error: any;
+  retryFetch: () => void; // Function to retry fetching data
 }
 
-// Reusable table component to render the Integration Table
-const IntegrationTable: React.FC<IntegrationTableProps> = ({ uniqueDates, data, filteredData, handleCellClick }) => {
+const IntegrationTable: React.FC<IntegrationTableProps> = ({ 
+  uniqueDates, 
+  data, 
+  filteredData, 
+  handleCellClick, 
+  isLoading, 
+  error, 
+  retryFetch 
+}) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Memoized filtered data based on the search query
@@ -32,6 +43,32 @@ const IntegrationTable: React.FC<IntegrationTableProps> = ({ uniqueDates, data, 
     if (!searchQuery) return filteredData;
     return filteredData.filter(cre => cre.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [searchQuery, filteredData]);
+
+  // Render the loading state
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="400px">
+        <CircularProgress />
+        <Typography variant="h6" sx={{ ml: 2 }}>
+          Loading CRE Data...
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Render the error state
+  if (error) {
+    return (
+      <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height="400px">
+        <Typography variant="h6" color="error" gutterBottom>
+          Error fetching data: {error.message}
+        </Typography>
+        <Button variant="contained" color="primary" onClick={retryFetch}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <>

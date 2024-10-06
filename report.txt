@@ -1,19 +1,48 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
-// Sample data, this should be replaced with your actual data from the backend
-const data = [
-  { opcDate: '20240913', ingested: 120, error: 5, ignored: 8 },
-  { opcDate: '20240914', ingested: 150, error: 3, ignored: 2 },
-  { opcDate: '20240915', ingested: 130, error: 10, ignored: 5 },
-  { opcDate: '20240916', ingested: 170, error: 7, ignored: 6 },
-  { opcDate: '20240917', ingested: 160, error: 4, ignored: 7 },
+// Example raw data (replace this with your actual data from the image)
+const rawData = [
+  { fileType: 'CRE', opcDate: '20240913', objectName: '7IVLT', vacation: '5', status: 'ingested' },
+  { fileType: 'CRE', opcDate: '20240913', objectName: 'MC041', vacation: '5', status: 'error' },
+  { fileType: 'CRE', opcDate: '20240914', objectName: '7X002', vacation: '6', status: 'ignored' },
+  { fileType: 'CRE', opcDate: '20240914', objectName: '7X003', vacation: '5', status: 'ingested' },
+  // Add more entries similar to the format in the image
 ];
 
+// Function to process the raw data
+const processData = (data) => {
+  const dateMap = {};
+
+  data.forEach((entry) => {
+    const { opcDate, status } = entry;
+
+    if (!dateMap[opcDate]) {
+      dateMap[opcDate] = { opcDate, ingested: 0, error: 0, ignored: 0 };
+    }
+
+    // Increment the count based on status
+    if (status === 'ingested') dateMap[opcDate].ingested += 1;
+    if (status === 'error') dateMap[opcDate].error += 1;
+    if (status === 'ignored') dateMap[opcDate].ignored += 1;
+  });
+
+  // Convert the map into an array
+  return Object.values(dateMap);
+};
+
 const StatusLineChart = () => {
+  const [chartData, setChartData] = useState([]);
+
+  useEffect(() => {
+    // Process the raw data and set it to chart data
+    const processedData = processData(rawData);
+    setChartData(processedData);
+  }, []);
+
   return (
     <Box sx={{ padding: 3 }}>
       <Typography variant="h6" gutterBottom>
@@ -22,12 +51,8 @@ const StatusLineChart = () => {
 
       <ResponsiveContainer width="100%" height={400}>
         <LineChart
-          width={500}
-          height={300}
-          data={data}
-          margin={{
-            top: 5, right: 30, left: 20, bottom: 5,
-          }}
+          data={chartData}
+          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="opcDate" />

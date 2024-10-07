@@ -1,42 +1,18 @@
-Rapport de Test de Résilience Gravitee
-Objectif
-Ce document a pour objectif de présenter les résultats des tests de résilience effectués sur la plateforme Gravitee. Ces tests simulent diverses pannes, telles que la déconnexion de services externes (bucket S3, ElastiCache, etc.), afin d'évaluer la capacité de la plateforme à fonctionner et à récupérer dans des conditions défavorables.
-
-Scénarios de Test
-1. Déconnexion de la Console de Management Gravitee
-Action :
-
-Nous avons simulé une déconnexion de la console Gravitee en arrêtant les pods associés à plusieurs reprises.
-Observations :
-
-En moyenne, les pods ont mis 30 à 35 secondes pour repasser en état Running après avoir été arrêtés.
-La plateforme s'est rétablie avec succès après chaque redémarrage, montrant un comportement stable durant ces interruptions.
-2. Déconnexion d'ElastiCache
-Action :
-
-Nous avons simulé un échec de connexion à ElastiCache en mal configurant intentionnellement les identifiants d'authentification.
-Logs :
-
-Les logs ont rapporté des erreurs d'authentification répétées, avec des messages tels que :
-vbnet
-Copier le code
-ERROR i.g.r.redis.vertx.RedisClient - Unable to connect to Redis
-ErrorType: WRONGPASS invalid username-password pair
-Observations :
-
-La panne de connexion à ElastiCache a été immédiatement détectée par la plateforme. Toutefois, la plateforme a continué de fonctionner, bien que certaines fonctionnalités dépendantes d'ElastiCache aient été affectées.
-3. Déconnexion du Bucket S3
-Action :
-
-Nous avons simulé une déconnexion du bucket S3 en fournissant une secret_access_key incorrecte dans la configuration de Logstash.
-Logs :
-
-Les logs du pod Gateway ont montré que la Gateway n’a pas réussi à se connecter au Pod Logstash, rendant ainsi le pod inaccessible :
-mathematica
-Copier le code
-ERROR C.f.PeerCert - Failed Connection exception: Logstash failed connection
-Observations :
-
-L'API Gravitee a continué de répondre malgré la déconnexion du bucket S3. Cependant, les logs et les métriques n'étaient plus visibles pendant la période de déconnexion du bucket.
-Conclusion
-Les tests de résilience effectués sur la plateforme Gravitee ont démontré que la plateforme est capable de continuer à fonctionner malgré la perte de certains services externes. Des améliorations sont toutefois possibles dans la gestion des logs et des métriques lors de déconnexions prolongées. Des ajustements dans la configuration et des stratégies de récupération plus rapides pourraient être envisagés pour une meilleure résilience globale.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-gateway-gravité-to-external-bridge
+  namespace: <votre-namespace>
+spec:
+  podSelector:
+    matchLabels:
+      app: gateway-gravité # Sélectionne le pod gateway-gravité
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: <adresse-IP-du-bridge>/32 # Remplacer par l'adresse IP du service bridge
+      ports:
+        - protocol: TCP
+          port: <port-du-service-bridge> # Spécifiez le port utilisé par le bridge

@@ -1,85 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Typography } from '@mui/material';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
+Rapport de Test de Résilience Gravitee
+Objectif
+Ce document a pour objectif de présenter les résultats des tests de résilience effectués sur la plateforme Gravitee. Ces tests simulent diverses pannes, telles que la déconnexion de services externes (bucket S3, ElastiCache, etc.), afin d'évaluer la capacité de la plateforme à fonctionner et à récupérer dans des conditions défavorables.
 
-// Example raw data (replace this with your actual data from the image)
-const rawData = [
-  { fileType: 'CRE', opcDate: '20240913', objectName: '7IVLT', vacation: '5', status: 'ingested' },
-  { fileType: 'CRE', opcDate: '20240913', objectName: 'MC041', vacation: '5', status: 'error' },
-  { fileType: 'CRE', opcDate: '20240914', objectName: '7X002', vacation: '6', status: 'ignored' },
-  { fileType: 'CRE', opcDate: '20240914', objectName: '7X003', vacation: '5', status: 'ingested' },
-  // Add more entries similar to the format in the image
-];
+Scénarios de Test
+1. Déconnexion de la Console de Management Gravitee
+Action :
 
-// Function to convert opcDate from YYYYMMDD to MM/DD/YYYY
-const formatOpcDate = (opcDate) => {
-  const year = opcDate.substring(0, 4);
-  const month = opcDate.substring(4, 6);
-  const day = opcDate.substring(6, 8);
-  return `${month}/${day}/${year}`;
-};
+Nous avons simulé une déconnexion de la console Gravitee en arrêtant les pods associés à plusieurs reprises.
+Observations :
 
-// Function to process the raw data
-const processData = (data) => {
-  const dateMap = {};
+En moyenne, les pods ont mis 30 à 35 secondes pour repasser en état Running après avoir été arrêtés.
+La plateforme s'est rétablie avec succès après chaque redémarrage, montrant un comportement stable durant ces interruptions.
+2. Déconnexion d'ElastiCache
+Action :
 
-  data.forEach((entry) => {
-    const { opcDate, status } = entry;
+Nous avons simulé un échec de connexion à ElastiCache en mal configurant intentionnellement les identifiants d'authentification.
+Logs :
 
-    if (!dateMap[opcDate]) {
-      dateMap[opcDate] = { opcDate, ingested: 0, error: 0, ignored: 0 };
-    }
+Les logs ont rapporté des erreurs d'authentification répétées, avec des messages tels que :
+vbnet
+Copier le code
+ERROR i.g.r.redis.vertx.RedisClient - Unable to connect to Redis
+ErrorType: WRONGPASS invalid username-password pair
+Observations :
 
-    // Increment the count based on status
-    if (status === 'ingested') dateMap[opcDate].ingested += 1;
-    if (status === 'error') dateMap[opcDate].error += 1;
-    if (status === 'ignored') dateMap[opcDate].ignored += 1;
-  });
+La panne de connexion à ElastiCache a été immédiatement détectée par la plateforme. Toutefois, la plateforme a continué de fonctionner, bien que certaines fonctionnalités dépendantes d'ElastiCache aient été affectées.
+3. Déconnexion du Bucket S3
+Action :
 
-  // Convert the map into an array
-  return Object.values(dateMap);
-};
+Nous avons simulé une déconnexion du bucket S3 en fournissant une secret_access_key incorrecte dans la configuration de Logstash.
+Logs :
 
-const StatusLineChart = () => {
-  const [chartData, setChartData] = useState([]);
+Les logs du pod Gateway ont montré que la Gateway n’a pas réussi à se connecter au Pod Logstash, rendant ainsi le pod inaccessible :
+mathematica
+Copier le code
+ERROR C.f.PeerCert - Failed Connection exception: Logstash failed connection
+Observations :
 
-  useEffect(() => {
-    // Process the raw data and set it to chart data
-    const processedData = processData(rawData);
-    setChartData(processedData);
-  }, []);
-
-  return (
-    <Box sx={{ padding: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Object Count by OPC Date (Ingested, Error, Ignored)
-      </Typography>
-
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart
-          data={chartData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          
-          {/* Format opcDate in MM/DD/YYYY */}
-          <XAxis
-            dataKey="opcDate"
-            tickFormatter={formatOpcDate}  // Use custom formatter here
-          />
-          
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="ingested" stroke="#82ca9d" />
-          <Line type="monotone" dataKey="error" stroke="#ff7300" />
-          <Line type="monotone" dataKey="ignored" stroke="#8884d8" />
-        </LineChart>
-      </ResponsiveContainer>
-    </Box>
-  );
-};
-
-export default StatusLineChart;
+L'API Gravitee a continué de répondre malgré la déconnexion du bucket S3. Cependant, les logs et les métriques n'étaient plus visibles pendant la période de déconnexion du bucket.
+Conclusion
+Les tests de résilience effectués sur la plateforme Gravitee ont démontré que la plateforme est capable de continuer à fonctionner malgré la perte de certains services externes. Des améliorations sont toutefois possibles dans la gestion des logs et des métriques lors de déconnexions prolongées. Des ajustements dans la configuration et des stratégies de récupération plus rapides pourraient être envisagés pour une meilleure résilience globale.

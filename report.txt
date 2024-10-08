@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import MaterialReactTable from 'material-react-table';
 import { Button } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const CREMonitorTable = ({ rows }) => {
   const [visibleRows, setVisibleRows] = useState(10); // Initial number of rows to display
@@ -23,12 +24,20 @@ const CREMonitorTable = ({ rows }) => {
         columns={columns}
         data={rows.slice(0, visibleRows)} // Only display the number of visible rows
         enablePagination={false} // Disable built-in pagination
-        enableRowActions={true}
-        renderRowActions={() => (
-          <Button>
-            <VisibilityIcon />
-          </Button>
-        )}
+        enableExpanding={false} // Disable the row toggle functionality
+        enableRowSelection={false} // Disable row selection if applicable
+        enableFullScreenToggle={false} // Disable full screen toggle feature
+        sx={{
+          '& .MuiTableCell-root': {
+            border: 'none', // Removes borders from all table cells
+          },
+          '& .MuiTable-root': {
+            border: 'none', // Removes borders from the table itself
+          },
+          '& .MuiTableHead-root': {
+            borderBottom: 'none', // Removes the border under the table header
+          },
+        }}
       />
       {visibleRows < rows.length && (
         <Button

@@ -1,49 +1,67 @@
-import React, { useState } from 'react';
-import { Accordion, AccordionSummary, AccordionDetails, Card, CardContent, Typography, Grid } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import React, { useState, useEffect } from 'react';
+import { Paper } from '@mui/material';
+import AccordionTable from './AccordionTable'; // Assuming AccordionTable is your accordion component
+import StatsCards from './StatsCards'; // Assuming StatsCards is your card component
 
-const data = [
-  { id: 1, title: 'Card 1', accordionTitle: 'Accordion 1', content: 'This is content for accordion 1.' },
-  { id: 2, title: 'Card 2', accordionTitle: 'Accordion 2', content: 'This is content for accordion 2.' },
-  { id: 3, title: 'Card 3', accordionTitle: 'Accordion 3', content: 'This is content for accordion 3.' },
-];
+export default function CrePerVacationPage() {
+  const [vacationId, date] = useState(null); // Assuming these come from a hook or API
+  const [expandedAccordion, setExpandedAccordion] = useState(null); // Track expanded accordion
 
-const MultipleCardAccordion = () => {
-  const [expandedAccordion, setExpandedAccordion] = useState(null); // Track the currently expanded accordion
+  // Fetch data (example API call logic)
+  useEffect(() => {
+    async function fetchData() {
+      const apiUrl = `GET_VACATION_CRE?opdate=${date}&vacation=${vacationId}`;
+      const data = await fetch(apiUrl).then(res => res.json());
+      setData(data); // Assuming you store your data in a state
+    }
+    fetchData();
+  }, [vacationId, date]);
 
-  // Function to handle card click
+  const cards = [
+    { id: 0, title: 'EXPECTED_CRE', icon: <CheckCircleOutlineIcon />, size: data.expectedReceivedCre.length },
+    { id: 1, title: 'EXPECTED_NOT_RECEIVED_CRE', icon: <WarningAmberIcon />, size: data.expectedNotReceivedCriticalCre.length },
+    { id: 2, title: 'NOT_EXPECTED_RECEIVED_CRE', icon: <BlockIcon />, size: data.notExpectedReceivedCre.length }
+  ];
+
+  // Card click handler - expand corresponding accordion
   const handleCardClick = (id) => {
-    // Toggle the accordion: expand if it's collapsed, collapse if it's already expanded
-    setExpandedAccordion((prevExpanded) => (prevExpanded === id ? null : id));
+    setExpandedAccordion(prev => (prev === id ? null : id)); // Toggle accordion expansion
   };
 
   return (
-    <div>
-      <Grid container spacing={2}>
-        {/* Loop through data to generate cards and accordions */}
-        {data.map((item) => (
-          <Grid item xs={12} key={item.id}>
-            {/* Card Component */}
-            <Card onClick={() => handleCardClick(item.id)} style={{ cursor: 'pointer', marginBottom: '10px' }}>
-              <CardContent>
-                <Typography variant="h6">{item.title}</Typography>
-              </CardContent>
-            </Card>
+    <Paper sx={{ padding: 2, mt: 2 }}>
+      <VacationBreadcrumb /> {/* Assuming this is a breadcrumb component */}
+      <StatsCards cards={cards} onClick={handleCardClick} /> {/* Pass the click handler to the cards */}
 
-            {/* Accordion Component */}
-            <Accordion expanded={expandedAccordion === item.id}>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography>{item.accordionTitle}</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography>{item.content}</Typography>
-              </AccordionDetails>
-            </Accordion>
-          </Grid>
-        ))}
-      </Grid>
-    </div>
+      {/* Accordion for Expected CRE */}
+      <AccordionTable
+        title="EXPECTED_CRE"
+        expanded={expandedAccordion === 0}  // Accordion expands if the selected id matches
+        data={data.expectedReceivedCre}
+        icon={<CheckCircleOutlineIcon sx={{ mr: 1 }} />}
+        columns={syntheseCreColumnsToDisplay}
+        renderDetailPanel={renderCreDetails}
+      />
+
+      {/* Accordion for Expected but Not Received CRE */}
+      <AccordionTable
+        title="EXPECTED_NOT_RECEIVED_CRE"
+        expanded={expandedAccordion === 1} // Accordion expands if the selected id matches
+        data={data.expectedNotReceivedCriticalCre}
+        icon={<WarningAmberIcon sx={{ mr: 1 }} />}
+        columns={syntheseCreColumnsToDisplay}
+        renderDetailPanel={renderCreDetails}
+      />
+
+      {/* Accordion for Not Expected but Received CRE */}
+      <AccordionTable
+        title="NOT_EXPECTED_RECEIVED_CRE"
+        expanded={expandedAccordion === 2} // Accordion expands if the selected id matches
+        data={data.notExpectedReceivedCre}
+        icon={<BlockIcon sx={{ mr: 1 }} />}
+        columns={syntheseCreColumnsToDisplay}
+        renderDetailPanel={renderCreDetails}
+      />
+    </Paper>
   );
-};
-
-export default MultipleCardAccordion;
+}

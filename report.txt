@@ -1,69 +1,46 @@
-export const ClickableProjectCard = ({
-  item,
-  onClick,
-  onIconClick, // New prop for icon button click
-  showActions,
-  displayProjectDescription,
-  critical,
-  clickedCard,
-}) => {
-  return (
-    <Card
-      variant="outlined"
-      key={item.name}
-      onClick={() => onClick(item.name)} // Card click handler
-      sx={{
-        boxShadow: 'none',
-        display: 'flex',
-        flexDirection: 'column', // Stack elements vertically
-        justifyContent: 'space-between', // Ensures title and icon are spaced appropriately
-        alignItems: 'center',
-        textAlign: 'center',
-        width: '100%',
-        height: 70, // Set height to 70px
-        border: '1px solid',
-        borderColor: clickedCard === item.name ? setColor(item, critical) : 'white',
-        cursor: 'pointer',
-        position: 'relative', // Position relative for internal positioning
-        padding: '8px', // Add some padding for better spacing
-      }}
-    >
-      {/* Centered card title */}
-      <CardContent
-        sx={{
-          flexGrow: 1,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Typography
-          variant="subtitle2"
-          sx={{
-            whiteSpace: 'nowrap', // Prevents title from wrapping
-            overflow: 'hidden',
-            textOverflow: 'ellipsis', // Ellipsis for overflowed text
-            textAlign: 'center',
-          }}
-        >
-          {item.name}
-        </Typography>
-      </CardContent>
+import React, { useState } from 'react';
+import MaterialReactTable from 'material-react-table';
+import { Button } from '@mui/material';
 
-      {/* Icon aligned under title, on the right */}
-      {showActions && (
-        <CardActions
-          sx={{
-            position: 'absolute',
-            right: 8, // 8px from the right
-            bottom: 8, // Placed under the title
-          }}
+const CREMonitorTable = ({ rows }) => {
+  const [visibleRows, setVisibleRows] = useState(10); // Initial number of rows to display
+
+  const handleLoadMore = () => {
+    setVisibleRows((prevVisibleRows) => prevVisibleRows + 10); // Load 10 more rows on click
+  };
+
+  const columns = [
+    { accessorKey: 'CRE', header: 'CRE' },
+    { accessorKey: 'frequence', header: 'Fréquence' },
+    { accessorKey: 'type', header: 'Type' },
+    { accessorKey: 'vacation', header: 'Vacation' },
+    { accessorKey: 'actions', header: 'Actions', Cell: () => <Button><VisibilityIcon /></Button> },
+  ];
+
+  return (
+    <>
+      <MaterialReactTable
+        columns={columns}
+        data={rows.slice(0, visibleRows)} // Only display the number of visible rows
+        enablePagination={false} // Disable built-in pagination
+        enableRowActions={true}
+        renderRowActions={() => (
+          <Button>
+            <VisibilityIcon />
+          </Button>
+        )}
+      />
+      {visibleRows < rows.length && (
+        <Button
+          variant="contained"
+          onClick={handleLoadMore}
+          style={{ marginTop: '10px' }}
         >
-          <IconButton onClick={(e) => { e.stopPropagation(); onIconClick(item.name); }}>
-            <VisibilityOutlinedIcon />
-          </IconButton>
-        </CardActions>
+          Load More
+        </Button>
       )}
-    </Card>
+    </>
   );
 };
+
+export default CREMonitorTable;

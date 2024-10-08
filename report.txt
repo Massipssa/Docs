@@ -27,16 +27,15 @@ const CREMonitorTable = ({ rows }) => {
         enableExpanding={false} // Disable the row toggle functionality
         enableRowSelection={false} // Disable row selection if applicable
         enableFullScreenToggle={false} // Disable full screen toggle feature
-        sx={{
-          '& .MuiTableCell-root': {
-            border: 'none', // Removes borders from all table cells
-          },
-          '& .MuiTable-root': {
-            border: 'none', // Removes borders from the table itself
-          },
-          '& .MuiTableHead-root': {
-            borderBottom: 'none', // Removes the border under the table header
-          },
+
+        muiTableContainerProps={{
+          style: { border: 'none' }, // Remove table container borders
+        }}
+        muiTableHeadCellProps={{
+          style: { borderBottom: 'none' }, // Remove border bottom in table head cells
+        }}
+        muiTableBodyCellProps={{
+          style: { border: 'none' }, // Remove borders in table body cells
         }}
       />
       {visibleRows < rows.length && (

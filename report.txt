@@ -14,43 +14,41 @@ export const ClickableProjectCard = ({
       sx={{
         boxShadow: 'none',
         display: 'flex',
-        justifyContent: 'center', // Center text horizontally
-        alignItems: 'center', // Center text vertically
+        flexDirection: 'column', // Stack elements vertically
+        justifyContent: 'space-between', // Ensures title and icon are spaced appropriately
+        alignItems: 'center', // Centers content horizontally
         textAlign: 'center',
         width: '100%',
-        height: 70, // Set the height to 70px
+        height: 70, // Set height to 70px
         border: '1px solid',
         borderColor: clickedCard === item.name ? setColor(item, critical) : 'white',
         cursor: 'pointer',
-        position: 'relative', // Make the card a positioned element for absolute positioning
+        position: 'relative', // Position relative for internal positioning
+        padding: '8px', // Add some padding for better spacing
       }}
     >
-      {/* Centered text */}
-      <CardContent sx={{ flexGrow: 1 }}>
+      {/* Centered card title */}
+      <CardContent sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
         <Typography
           variant="subtitle2"
           sx={{
-            whiteSpace: 'normal',
-            wordWrap: 'break-word', // Break long words
-            lineHeight: '1.2em',
-            overflow: 'hidden', // Hide overflow if text exceeds the card
-            display: '-webkit-box',
-            WebkitLineClamp: 2, // Limit to 2 lines for a smaller height
-            WebkitBoxOrient: 'vertical',
-            textAlign: 'center', // Ensure the text is centered
+            whiteSpace: 'nowrap', // Prevents title from wrapping
+            overflow: 'hidden',
+            textOverflow: 'ellipsis', // Ellipsis for overflowed text
+            textAlign: 'center',
           }}
         >
           {item.name}
         </Typography>
       </CardContent>
 
-      {/* Icon aligned to the right bottom */}
+      {/* Icon aligned under title, on the right */}
       {showActions && (
         <CardActions
           sx={{
-            position: 'absolute', // Absolutely position the icon
-            bottom: 8, // 8px from the bottom
+            position: 'absolute',
             right: 8, // 8px from the right
+            bottom: 8, // Placed under the title
           }}
         >
           <IconButton>

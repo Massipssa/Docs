@@ -1,54 +1,49 @@
 import React, { useState } from 'react';
-import MaterialReactTable from 'material-react-table';
-import { Button } from '@mui/material';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import { Accordion, AccordionSummary, AccordionDetails, Card, CardContent, Typography, Grid } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-const CREMonitorTable = ({ rows }) => {
-  const [visibleRows, setVisibleRows] = useState(10); // Initial number of rows to display
+const data = [
+  { id: 1, title: 'Card 1', accordionTitle: 'Accordion 1', content: 'This is content for accordion 1.' },
+  { id: 2, title: 'Card 2', accordionTitle: 'Accordion 2', content: 'This is content for accordion 2.' },
+  { id: 3, title: 'Card 3', accordionTitle: 'Accordion 3', content: 'This is content for accordion 3.' },
+];
 
-  const handleLoadMore = () => {
-    setVisibleRows((prevVisibleRows) => prevVisibleRows + 10); // Load 10 more rows on click
+const MultipleCardAccordion = () => {
+  const [expandedAccordion, setExpandedAccordion] = useState(null); // Track the currently expanded accordion
+
+  // Function to handle card click
+  const handleCardClick = (id) => {
+    // Toggle the accordion: expand if it's collapsed, collapse if it's already expanded
+    setExpandedAccordion((prevExpanded) => (prevExpanded === id ? null : id));
   };
 
-  const columns = [
-    { accessorKey: 'CRE', header: 'CRE' },
-    { accessorKey: 'frequence', header: 'Fréquence' },
-    { accessorKey: 'type', header: 'Type' },
-    { accessorKey: 'vacation', header: 'Vacation' },
-    { accessorKey: 'actions', header: 'Actions', Cell: () => <Button><VisibilityIcon /></Button> },
-  ];
-
   return (
-    <>
-      <MaterialReactTable
-        columns={columns}
-        data={rows.slice(0, visibleRows)} // Only display the number of visible rows
-        enablePagination={false} // Disable built-in pagination
-        enableExpanding={false} // Disable the row toggle functionality
-        enableRowSelection={false} // Disable row selection if applicable
-        enableFullScreenToggle={false} // Disable full screen toggle feature
+    <div>
+      <Grid container spacing={2}>
+        {/* Loop through data to generate cards and accordions */}
+        {data.map((item) => (
+          <Grid item xs={12} key={item.id}>
+            {/* Card Component */}
+            <Card onClick={() => handleCardClick(item.id)} style={{ cursor: 'pointer', marginBottom: '10px' }}>
+              <CardContent>
+                <Typography variant="h6">{item.title}</Typography>
+              </CardContent>
+            </Card>
 
-        muiTableContainerProps={{
-          style: { border: 'none' }, // Remove table container borders
-        }}
-        muiTableHeadCellProps={{
-          style: { borderBottom: 'none' }, // Remove border bottom in table head cells
-        }}
-        muiTableBodyCellProps={{
-          style: { border: 'none' }, // Remove borders in table body cells
-        }}
-      />
-      {visibleRows < rows.length && (
-        <Button
-          variant="contained"
-          onClick={handleLoadMore}
-          style={{ marginTop: '10px' }}
-        >
-          Load More
-        </Button>
-      )}
-    </>
+            {/* Accordion Component */}
+            <Accordion expanded={expandedAccordion === item.id}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography>{item.accordionTitle}</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography>{item.content}</Typography>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+        ))}
+      </Grid>
+    </div>
   );
 };
 
-export default CREMonitorTable;
+export default MultipleCardAccordion;

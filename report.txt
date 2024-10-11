@@ -1,11 +1,19 @@
-L'objectif de ces tests est de simuler différents scénarios de charge afin de garantir que Gravitee fonctionne comme prévu dans des conditions normales, extrêmes et prolongées.
+affinity:
+  podAntiAffinity:
+    # This rule tries to avoid scheduling the pods on the same node
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/component: gateway
+            app.kubernetes.io/instance: graviteeio
+        topologyKey: "kubernetes.io/hostname"  # Ensure pods are not placed on the same node
 
-Pour simuler la charge sur les pods de la Gateway, nous avons appliqué trois politiques aux requêtes et aux réponses dans notre requête POST, afin de simuler de la charge sur la Gateway et éviter qu'elle ne serve simplement de pass-plat (transmette les données sans traitement).
-
-Requête
-Latency : Cette politique introduit un délai dans les réponses pour simuler la latence réseau et tester la résistance du système face à des retards.
-IP Filtering : Cette politique permet de restreindre ou d’autoriser les requêtes en fonction des adresses IP, afin de simuler un contrôle d’accès.
-Mock : Cette politique génère des réponses fictives sans faire appel au backend, permettant ainsi de simuler divers scénarios sans dépendre des systèmes externes.
-Réponse
-JSON to JSON Transformation : Cette politique permet de transformer le format JSON des réponses, utile pour adapter les données renvoyées selon les besoins du client.
-JSON to XML : Cette politique transforme les réponses JSON en XML, facilitant l'intégration avec des systèmes qui attendent des réponses en format XML.
+    # This rule tries to avoid scheduling pods in the same region if possible
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: gateway
+              app.kubernetes.io/instance: graviteeio
+          topologyKey: topology.kubernetes.io/region  # Prefer different regions if possible

@@ -1,67 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Paper } from '@mui/material';
-import AccordionTable from './AccordionTable'; // Assuming AccordionTable is your accordion component
-import StatsCards from './StatsCards'; // Assuming StatsCards is your card component
+L'objectif de ces tests est de simuler différents scénarios de charge afin de garantir que Gravitee fonctionne comme prévu dans des conditions normales, extrêmes et prolongées.
 
-export default function CrePerVacationPage() {
-  const [vacationId, date] = useState(null); // Assuming these come from a hook or API
-  const [expandedAccordion, setExpandedAccordion] = useState(null); // Track expanded accordion
+Pour simuler la charge sur les pods de la Gateway, nous avons appliqué trois politiques aux requêtes et aux réponses dans notre requête POST, afin de simuler de la charge sur la Gateway et éviter qu'elle ne serve simplement de pass-plat (transmette les données sans traitement).
 
-  // Fetch data (example API call logic)
-  useEffect(() => {
-    async function fetchData() {
-      const apiUrl = `GET_VACATION_CRE?opdate=${date}&vacation=${vacationId}`;
-      const data = await fetch(apiUrl).then(res => res.json());
-      setData(data); // Assuming you store your data in a state
-    }
-    fetchData();
-  }, [vacationId, date]);
-
-  const cards = [
-    { id: 0, title: 'EXPECTED_CRE', icon: <CheckCircleOutlineIcon />, size: data.expectedReceivedCre.length },
-    { id: 1, title: 'EXPECTED_NOT_RECEIVED_CRE', icon: <WarningAmberIcon />, size: data.expectedNotReceivedCriticalCre.length },
-    { id: 2, title: 'NOT_EXPECTED_RECEIVED_CRE', icon: <BlockIcon />, size: data.notExpectedReceivedCre.length }
-  ];
-
-  // Card click handler - expand corresponding accordion
-  const handleCardClick = (id) => {
-    setExpandedAccordion(prev => (prev === id ? null : id)); // Toggle accordion expansion
-  };
-
-  return (
-    <Paper sx={{ padding: 2, mt: 2 }}>
-      <VacationBreadcrumb /> {/* Assuming this is a breadcrumb component */}
-      <StatsCards cards={cards} onClick={handleCardClick} /> {/* Pass the click handler to the cards */}
-
-      {/* Accordion for Expected CRE */}
-      <AccordionTable
-        title="EXPECTED_CRE"
-        expanded={expandedAccordion === 0}  // Accordion expands if the selected id matches
-        data={data.expectedReceivedCre}
-        icon={<CheckCircleOutlineIcon sx={{ mr: 1 }} />}
-        columns={syntheseCreColumnsToDisplay}
-        renderDetailPanel={renderCreDetails}
-      />
-
-      {/* Accordion for Expected but Not Received CRE */}
-      <AccordionTable
-        title="EXPECTED_NOT_RECEIVED_CRE"
-        expanded={expandedAccordion === 1} // Accordion expands if the selected id matches
-        data={data.expectedNotReceivedCriticalCre}
-        icon={<WarningAmberIcon sx={{ mr: 1 }} />}
-        columns={syntheseCreColumnsToDisplay}
-        renderDetailPanel={renderCreDetails}
-      />
-
-      {/* Accordion for Not Expected but Received CRE */}
-      <AccordionTable
-        title="NOT_EXPECTED_RECEIVED_CRE"
-        expanded={expandedAccordion === 2} // Accordion expands if the selected id matches
-        data={data.notExpectedReceivedCre}
-        icon={<BlockIcon sx={{ mr: 1 }} />}
-        columns={syntheseCreColumnsToDisplay}
-        renderDetailPanel={renderCreDetails}
-      />
-    </Paper>
-  );
-}
+Requête
+Latency : Cette politique introduit un délai dans les réponses pour simuler la latence réseau et tester la résistance du système face à des retards.
+IP Filtering : Cette politique permet de restreindre ou d’autoriser les requêtes en fonction des adresses IP, afin de simuler un contrôle d’accès.
+Mock : Cette politique génère des réponses fictives sans faire appel au backend, permettant ainsi de simuler divers scénarios sans dépendre des systèmes externes.
+Réponse
+JSON to JSON Transformation : Cette politique permet de transformer le format JSON des réponses, utile pour adapter les données renvoyées selon les besoins du client.
+JSON to XML : Cette politique transforme les réponses JSON en XML, facilitant l'intégration avec des systèmes qui attendent des réponses en format XML.

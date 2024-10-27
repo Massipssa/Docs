@@ -1,5 +1,4 @@
-## Oauth2
-
+# Oauth2
 
 ![oauth2_openid](./img/oauth2_openID.png)
 
@@ -11,9 +10,9 @@
 - Grant Type
   - Code
   - Implicit
-  - 
+  - ...
 - Response type
   - Token
   - Token type
   - Expiration (expires_in)
-  - Scopes    
+  - Scopes

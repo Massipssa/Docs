@@ -1,4 +1,4 @@
-## Kerberos concepts
+# Kerberos
 
 - It's a client/server based architecture
 

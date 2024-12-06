@@ -1,19 +1,18 @@
-affinity:
-  podAntiAffinity:
-    # This rule tries to avoid scheduling the pods on the same node
-    requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchLabels:
-            app.kubernetes.io/component: gateway
-            app.kubernetes.io/instance: graviteeio
-        topologyKey: "kubernetes.io/hostname"  # Ensure pods are not placed on the same node
+SELECT *
+FROM {{ ref('your_model_name') }}
+WHERE (
+    -- Case 1: event_type IN ('02', '03', '09') AND balance = 0 -> OK
+    (event_type IN ('02', '03', '09') AND balance = 0)
 
-    # This rule tries to avoid scheduling pods in the same region if possible
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/component: gateway
-              app.kubernetes.io/instance: graviteeio
-          topologyKey: topology.kubernetes.io/region  # Prefer different regions if possible
+    -- Case 2: event_type NOT IN ('02', '03', '09') AND balance > 0 -> OK
+    OR (event_type NOT IN ('02', '03', '09') AND balance > 0)
+)
+IS NOT TRUE
+OR (
+    -- Case 3: event_type IN ('02', '03', '09') AND balance <> 0 -> KO
+    (event_type IN ('02', '03', '09') AND balance <> 0)
+
+    -- Case 4: event_type NOT IN ('02', '03', '09') AND balance = 0 -> KO
+    OR (event_type NOT IN ('02', '03', '09') AND balance = 0)
+)
+IS TRUE;

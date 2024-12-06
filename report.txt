@@ -1,18 +1,11 @@
+WITH duplicates AS (
+    SELECT
+        your_column_1,
+        your_column_2,
+        COUNT(*) AS row_count
+    FROM {{ ref('your_model_name') }}
+    GROUP BY your_column_1, your_column_2
+    HAVING COUNT(*) > 1
+)
 SELECT *
-FROM {{ ref('your_model_name') }}
-WHERE (
-    -- Case 1: event_type IN ('02', '03', '09') AND balance = 0 -> OK
-    (event_type IN ('02', '03', '09') AND balance = 0)
-
-    -- Case 2: event_type NOT IN ('02', '03', '09') AND balance > 0 -> OK
-    OR (event_type NOT IN ('02', '03', '09') AND balance > 0)
-)
-IS NOT TRUE
-OR (
-    -- Case 3: event_type IN ('02', '03', '09') AND balance <> 0 -> KO
-    (event_type IN ('02', '03', '09') AND balance <> 0)
-
-    -- Case 4: event_type NOT IN ('02', '03', '09') AND balance = 0 -> KO
-    OR (event_type NOT IN ('02', '03', '09') AND balance = 0)
-)
-IS TRUE;
+FROM duplicates

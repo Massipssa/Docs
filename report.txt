@@ -50,27 +50,39 @@ const menuItems: MenuItem[] = [
 ];
 
 export default function SidebarMenu() {
+  const [selectedIndex, setSelectedIndex] = useState<string | null>(null);
   const [openItems, setOpenItems] = useState<string[]>([]);
 
-  const handleToggle = (title: string) => {
-    if (openItems.includes(title)) {
-      setOpenItems(openItems.filter((item) => item !== title));
+  const handleClick = (id: string) => {
+    setSelectedIndex(id);
+  };
+
+  const handleToggle = (id: string) => {
+    if (openItems.includes(id)) {
+      setOpenItems(openItems.filter((itemId) => itemId !== id));
     } else {
-      setOpenItems([...openItems, title]);
+      setOpenItems([...openItems, id]);
     }
   };
 
-  const renderMenuItem = (item: MenuItem, level: number = 0) => {
+  const renderMenuItem = (item: MenuItem, id: string, level: number = 0) => {
     const hasChildren = item.children && item.children.length > 0;
-    const isOpen = openItems.includes(item.title);
+    const isOpen = openItems.includes(id);
 
     return (
-      <Box key={item.title}>
+      <Box key={id}>
         <ListItem
           button
-          onClick={() => hasChildren && handleToggle(item.title)}
+          onClick={() => {
+            handleClick(id);
+            if (hasChildren) handleToggle(id);
+          }}
           sx={{
-            pl: level * 2, // Indentation for levels
+            bgcolor: selectedIndex === id ? '#d6eaf8' : 'inherit', // Highlight selected item
+            borderRadius: '4px',
+            marginRight: '2px',
+            ':hover': { bgcolor: '#d6eaf8' },
+            pl: level * 2, // Indentation for child items
             display: 'flex',
             alignItems: 'center',
           }}
@@ -94,7 +106,9 @@ export default function SidebarMenu() {
         {hasChildren && (
           <Collapse in={isOpen} timeout="auto" unmountOnExit>
             <List disablePadding>
-              {item.children!.map((child) => renderMenuItem(child, level + 1))}
+              {item.children!.map((child, index) =>
+                renderMenuItem(child, `${id}-${index}`, level + 1)
+              )}
             </List>
           </Collapse>
         )}
@@ -112,7 +126,9 @@ export default function SidebarMenu() {
       }}
     >
       <List>
-        {menuItems.map((item) => renderMenuItem(item))}
+        {menuItems.map((item, index) =>
+          renderMenuItem(item, `item-${index}`)
+        )}
       </List>
     </Box>
   );

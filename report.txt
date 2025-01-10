@@ -11,8 +11,6 @@ import {
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import GroupIcon from '@mui/icons-material/Group';
 import SettingsIcon from '@mui/icons-material/Settings';
-import BugReportIcon from '@mui/icons-material/BugReport';
-import MergeTypeIcon from '@mui/icons-material/MergeType';
 import TaskIcon from '@mui/icons-material/Task';
 
 interface MenuItem {
@@ -49,7 +47,11 @@ const menuItems: MenuItem[] = [
   },
 ];
 
-export default function SidebarMenu() {
+interface SidebarMenuProps {
+  drawerOpen: boolean;
+}
+
+export default function SidebarMenu({ drawerOpen }: SidebarMenuProps) {
   const [selectedIndex, setSelectedIndex] = useState<string | null>(null);
   const [openItems, setOpenItems] = useState<string[]>([]);
 
@@ -82,29 +84,37 @@ export default function SidebarMenu() {
             borderRadius: '4px',
             marginRight: '2px',
             ':hover': { bgcolor: '#d6eaf8' },
-            pl: level * 2, // Indentation for child items
+            pl: drawerOpen ? level * 2 : 1, // Adjust padding based on drawer state
             display: 'flex',
             alignItems: 'center',
           }}
         >
-          <ListItemIcon>{item.icon}</ListItemIcon>
-          <ListItemText
-            primary={
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography>{item.title}</Typography>
-                {item.count !== undefined && (
-                  <Typography sx={{ ml: 2, fontSize: 12, color: '#757575' }}>
-                    {item.count}
-                  </Typography>
-                )}
-              </Box>
-            }
-          />
+          <ListItemIcon sx={{ minWidth: '40px' }}>{item.icon}</ListItemIcon>
+          {drawerOpen && (
+            <ListItemText
+              primary={
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Typography>{item.title}</Typography>
+                  {item.count !== undefined && (
+                    <Typography sx={{ ml: 2, fontSize: 12, color: '#757575' }}>
+                      {item.count}
+                    </Typography>
+                  )}
+                </Box>
+              }
+            />
+          )}
           {hasChildren &&
-            (isOpen ? <ExpandLess /> : <ExpandMore />)}
+            (drawerOpen ? (
+              isOpen ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              )
+            ) : null)}
         </ListItem>
         {hasChildren && (
-          <Collapse in={isOpen} timeout="auto" unmountOnExit>
+          <Collapse in={isOpen && drawerOpen} timeout="auto" unmountOnExit>
             <List disablePadding>
               {item.children!.map((child, index) =>
                 renderMenuItem(child, `${id}-${index}`, level + 1)
@@ -119,10 +129,12 @@ export default function SidebarMenu() {
   return (
     <Box
       sx={{
-        width: '240px',
+        width: drawerOpen ? '240px' : '60px', // Adjust width based on drawer state
         bgcolor: '#f5f5f5',
         height: '100vh',
         boxShadow: '2px 0 5px rgba(0,0,0,0.1)',
+        transition: 'width 0.3s ease', // Smooth transition for drawer open/close
+        overflowX: 'hidden', // Prevent content overflow when closed
       }}
     >
       <List>

@@ -1,147 +1,49 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Collapse,
-  Typography,
-} from '@mui/material';
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
-import GroupIcon from '@mui/icons-material/Group';
-import SettingsIcon from '@mui/icons-material/Settings';
-import TaskIcon from '@mui/icons-material/Task';
+// File: CreNumberCards.tsx
+import React from 'react';
+import { Grid, Typography, Box, Divider } from '@mui/material';
+import CreNumberCard from './CreNumberCard';
+import { GREEN_COLOR, RED_COLOR, BLUE_COLOR } from '@constants/Color_constant';
 
-interface MenuItem {
-  title: string;
-  icon: React.ReactNode;
-  count?: number;
-  children?: MenuItem[];
-}
-
-const menuItems: MenuItem[] = [
-  {
-    title: 'Group',
-    icon: <GroupIcon />,
-    children: [
-      { title: 'Pinned' },
-      { title: 'Issues', count: 0 },
-      { title: 'Merge requests', count: 3 },
-      { title: 'Epics', count: 0 },
-    ],
-  },
-  {
-    title: 'Manage',
-    icon: <TaskIcon />,
-    children: [
-      { title: 'Activity' },
-      { title: 'Members' },
-      { title: 'Labels' },
-    ],
-  },
-  {
-    title: 'Settings',
-    icon: <SettingsIcon />,
-    children: [],
-  },
-];
-
-interface SidebarMenuProps {
-  drawerOpen: boolean;
-}
-
-export default function SidebarMenu({ drawerOpen }: SidebarMenuProps) {
-  const [selectedIndex, setSelectedIndex] = useState<string | null>(null);
-  const [openItems, setOpenItems] = useState<string[]>([]);
-
-  const handleClick = (id: string) => {
-    setSelectedIndex(id);
-  };
-
-  const handleToggle = (id: string) => {
-    if (openItems.includes(id)) {
-      setOpenItems(openItems.filter((itemId) => itemId !== id));
-    } else {
-      setOpenItems([...openItems, id]);
-    }
-  };
-
-  const renderMenuItem = (item: MenuItem, id: string, level: number = 0) => {
-    const hasChildren = item.children && item.children.length > 0;
-    const isOpen = openItems.includes(id);
-
-    return (
-      <Box key={id}>
-        <ListItem
-          button
-          onClick={() => {
-            handleClick(id);
-            if (hasChildren) handleToggle(id);
-          }}
-          sx={{
-            bgcolor: selectedIndex === id ? '#d6eaf8' : 'inherit', // Highlight selected item
-            borderRadius: '4px',
-            marginRight: '2px',
-            ':hover': { bgcolor: '#d6eaf8' },
-            pl: drawerOpen ? level * 2 : 1, // Adjust padding based on drawer state
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: '40px' }}>{item.icon}</ListItemIcon>
-          {drawerOpen && (
-            <ListItemText
-              primary={
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography>{item.title}</Typography>
-                  {item.count !== undefined && (
-                    <Typography sx={{ ml: 2, fontSize: 12, color: '#757575' }}>
-                      {item.count}
-                    </Typography>
-                  )}
-                </Box>
-              }
-            />
-          )}
-          {hasChildren &&
-            (drawerOpen ? (
-              isOpen ? (
-                <ExpandLess />
-              ) : (
-                <ExpandMore />
-              )
-            ) : null)}
-        </ListItem>
-        {hasChildren && (
-          <Collapse in={isOpen && drawerOpen} timeout="auto" unmountOnExit>
-            <List disablePadding>
-              {item.children!.map((child, index) =>
-                renderMenuItem(child, `${id}-${index}`, level + 1)
-              )}
-            </List>
-          </Collapse>
-        )}
-      </Box>
-    );
-  };
+const CreNumberCards = () => {
+  const jobSummary = [
+    { title: 'Total runs', count: 2129, color: BLUE_COLOR },
+    { title: 'Running', count: 0, color: BLUE_COLOR },
+    { title: 'Canceled', count: 0, color: BLUE_COLOR },
+    { title: 'Successful runs', count: 2005, color: GREEN_COLOR },
+    { title: 'Failed runs', count: 124, color: RED_COLOR },
+    { title: 'Run success rate', count: '94%', color: GREEN_COLOR },
+    { title: 'DPU hours', count: 504, color: BLUE_COLOR },
+  ];
 
   return (
-    <Box
-      sx={{
-        width: drawerOpen ? '240px' : '60px', // Adjust width based on drawer state
-        bgcolor: '#f5f5f5',
-        height: '100vh',
-        boxShadow: '2px 0 5px rgba(0,0,0,0.1)',
-        transition: 'width 0.3s ease', // Smooth transition for drawer open/close
-        overflowX: 'hidden', // Prevent content overflow when closed
-      }}
-    >
-      <List>
-        {menuItems.map((item, index) =>
-          renderMenuItem(item, `item-${index}`)
-        )}
-      </List>
+    <Box sx={{ padding: 2 }}>
+      <Typography variant="h6" sx={{ marginBottom: 2 }}>
+        Job runs summary
+      </Typography>
+      <Grid container alignItems="center" spacing={2}>
+        {jobSummary.map((item, index) => (
+          <React.Fragment key={index}>
+            <Grid item>
+              <CreNumberCard title={item.title} count={item.count} color={item.color} />
+            </Grid>
+            {index < jobSummary.length - 1 && (
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={{
+                  marginLeft: 1,
+                  marginRight: 1,
+                  height: 'auto',
+                  borderWidth: 1,
+                  backgroundColor: '#e0e0e0',
+                }}
+              />
+            )}
+          </React.Fragment>
+        ))}
+      </Grid>
     </Box>
   );
-}
+};
+
+export default CreNumberCards;

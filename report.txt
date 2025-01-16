@@ -1,38 +1,47 @@
-{% macro store_test_results(results, log_tbl=ref('dp_dq_tools', 'dq_issue_log'), batch=1000) %}
-    {% set enable_store_result = var('dp_dq_tools_enable_store_test_results', false) %}
-    
-    {% if not enable_store_result or not execute %}
-        {{ log("Ignored as `store_test_results` functionality is NOT being enabled.", true) if execute }}
-        {% return %}
+{% macro store_test_results(results, log_tbl=ref('dp_do_tools', 'dq_issue_log'), batch=1000) %}
+    {# Enable or disable storing test results via configuration #}
+    {% set enable_store_results = var('dbt_do_tools_enable_store_test_results', false) %}
+    {% if not enable_store_results %}
+        {{ log("Storing test results functionality is NOT being enabled.", true) }}
+        {{ return() }}
     {% endif %}
-    
-    {# Convert generator to a list for valid results filtering #}
-    {% set valid_results = results | selectattr('node.resource_type', 'eq', 'test') | 
-                                           rejectattr('status', 'in', ['error', 'skipped']) | list %}
 
-    {% if valid_results | length == 0 %}
-        {{ log("No valid test results to process.", true) if execute }}
-        {% return %}
+    {# Filter relevant test results to process #}
+    {% set test_results = [] %}
+    {% for result in results %}
+        {% if result.resource_type | lower == 'test' and result.status | lower not in ['error', 'skipped'] %}
+            {% do test_results.append(result) %}
+        {% endif %}
+    {% endfor %}
+
+    {# Exit early if no test results to process #}
+    {% if test_results | length == 0 %}
+        {{ log("No test results to process.", true) }}
+        {{ return() }}
     {% endif %}
-    
-    {# Perform a single bulk insert for all valid results #}
+
+    {# Batch insert all test results directly into the table #}
     INSERT INTO {{ log_tbl }}
-    SELECT
-        timestamp as check_timestamp,
+    SELECT 
+        '{{ execute_at }}' AS check_timestamp,
         table_name,
         table_query,
         column_name,
+        ref_table,
         ref_column,
-        dq_issue_id as invocation_id,
-        dbt_model,
-        test_severity_config as severity,
-        test_severity_config as kpi_category,
+        dq_issue_type,
+        dq_invocation_id AS invocation_id,
+        agg_model,
+        severity_config AS severity,
+        test_kpi_category_config AS kpi_category,
         no_of_records,
         no_of_records_scanned,
         no_of_records_failed,
         no_of_table_columns,
         test_unique_id
-    FROM (
-        {{ valid_results | map(attribute='result') | join(" UNION ALL ") }}
+    FROM UNNEST(
+        {{ test_results }}
     );
+
+    {{ log("Successfully stored all test results in the log table.", true) }}
 {% endmacro %}

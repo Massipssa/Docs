@@ -1,3 +1,4 @@
+create view dbt_retail_ccf_hml_database.kpi_test as
 with
 -- Extract test details
 test_details as (
@@ -6,16 +7,16 @@ test_details as (
         result.node.name as test_name,
         result.node.alias as test_name_long,
         result.node.schema || '.' || result.node.name as dq_model,
-        dp.dq_tools.get_config_severity(result.node) as test_severity_config,
-        dp.dq_tools.get_kpi_categorize(result.node) as test_kpi_category_config,
-        dp.dq_tools.get_ds_issue_type(result.node) as ds_issue_type,
-        dp.dq_tools.get_relation(testing_model_relation) as table_name
+        dq_tools.get_config_severity(result.node) as test_severity_config,
+        dq_tools.get_kpi_categorize(result.node) as test_kpi_category_config,
+        dq_tools.get_ds_issue_type(result.node) as ds_issue_type,
+        dq_tools.get_relation(testing_model_relation) as table_name
 ),
 
 -- Fetch columns for generic tests
 column_info as (
     select
-        dp.dq_tools.get_columns_in_relation_custom(testing_model_relation) as table_columns
+        dq_tools.get_columns_in_relation_custom(testing_model_relation) as table_columns
 ),
 
 -- Subquery for counting records
@@ -24,7 +25,7 @@ record_count as (
         case
             when test_type = 'generic' then (
                 select count(*)
-                from dp.dq_tools.get_where_subquery(testing_model, result.node.config)
+                from dq_tools.get_where_subquery(testing_model, result.node.config)
             )
             else null
         end as no_of_records
@@ -39,7 +40,7 @@ record_metrics as (
         result.execution_time as execution_time_seconds,
         result.file.original_file_path || ':' || file.test_defined as file_path,
         dq_target_name as dq_target_name,
-        dp.dq_tools.get_invocation_id() as dp_invocation_id,
+        dq_tools.get_invocation_id() as dp_invocation_id,
         current_timestamp() as timestamp
     from result
 )

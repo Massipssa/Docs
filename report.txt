@@ -19,13 +19,15 @@ column_info as (
         dq_tools.get_columns_in_relation_custom(testing_model_relation) as table_columns
 ),
 
--- Subquery for counting records
+-- Subquery for counting records (adjusted to handle dq_tools function)
 record_count as (
     select
         case
             when test_type = 'generic' then (
                 select count(*)
-                from dq_tools.get_where_subquery(testing_model, result.node.config)
+                from (
+                    dq_tools.get_where_subquery(testing_model, result.node.config)
+                ) as subquery_alias
             )
             else null
         end as no_of_records

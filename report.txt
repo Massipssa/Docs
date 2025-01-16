@@ -6,9 +6,9 @@
         {% return %}
     {% endif %}
     
-    {# Filter and process valid test results in a single step #}
+    {# Convert generator to a list for valid results filtering #}
     {% set valid_results = results | selectattr('node.resource_type', 'eq', 'test') | 
-                                           rejectattr('status', 'in', ['error', 'skipped']) %}
+                                           rejectattr('status', 'in', ['error', 'skipped']) | list %}
 
     {% if valid_results | length == 0 %}
         {{ log("No valid test results to process.", true) if execute }}
@@ -33,6 +33,6 @@
         no_of_table_columns,
         test_unique_id
     FROM (
-        {{ results | map(attribute='result') | join(" UNION ALL ") }}
+        {{ valid_results | map(attribute='result') | join(" UNION ALL ") }}
     );
 {% endmacro %}

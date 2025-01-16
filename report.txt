@@ -1,65 +1,38 @@
-create view dbt_retail_ccf_hml_database.kpi_test as
-with
--- Extract test details
-test_details as (
-    select
-        result.node.unique_id as test_unique_id,
-        result.node.name as test_name,
-        result.node.alias as test_name_long,
-        result.node.schema || '.' || result.node.name as dq_model,
-        dq_tools.get_config_severity(result.node) as test_severity_config,
-        dq_tools.get_kpi_categorize(result.node) as test_kpi_category_config,
-        dq_tools.get_ds_issue_type(result.node) as ds_issue_type,
-        dq_tools.get_relation(testing_model_relation) as table_name
-),
+{% macro store_test_results(results, log_tbl=ref('dp_dq_tools', 'dq_issue_log'), batch=1000) %}
+    {% set enable_store_result = var('dp_dq_tools_enable_store_test_results', false) %}
+    
+    {% if not enable_store_result or not execute %}
+        {{ log("Ignored as `store_test_results` functionality is NOT being enabled.", true) if execute }}
+        {% return %}
+    {% endif %}
+    
+    {# Filter and process valid test results in a single step #}
+    {% set valid_results = results | selectattr('node.resource_type', 'eq', 'test') | 
+                                           rejectattr('status', 'in', ['error', 'skipped']) %}
 
--- Fetch columns for generic tests
-column_info as (
-    select
-        dq_tools.get_columns_in_relation_custom(testing_model_relation) as table_columns
-),
-
--- Subquery for counting records (adjusted to handle dq_tools function)
-record_count as (
-    select
-        case
-            when test_type = 'generic' then (
-                select count(*)
-                from (
-                    dq_tools.get_where_subquery(testing_model, result.node.config)
-                ) as subquery_alias
-            )
-            else null
-        end as no_of_records
-),
-
--- Scanned records and metrics
-record_metrics as (
-    select
+    {% if valid_results | length == 0 %}
+        {{ log("No valid test results to process.", true) if execute }}
+        {% return %}
+    {% endif %}
+    
+    {# Perform a single bulk insert for all valid results #}
+    INSERT INTO {{ log_tbl }}
+    SELECT
+        timestamp as check_timestamp,
+        table_name,
+        table_query,
+        column_name,
+        ref_column,
+        dq_issue_id as invocation_id,
+        dbt_model,
+        test_severity_config as severity,
+        test_severity_config as kpi_category,
+        no_of_records,
         no_of_records_scanned,
-        coalesce(failures, 0) as no_of_records_failed,
-        test_type,
-        result.execution_time as execution_time_seconds,
-        result.file.original_file_path || ':' || file.test_defined as file_path,
-        dq_target_name as dq_target_name,
-        dq_tools.get_invocation_id() as dp_invocation_id,
-        current_timestamp() as timestamp
-    from result
-)
-
--- Final query assembling the results
-select
-    td.*,
-    ci.*,
-    rc.no_of_records,
-    rm.no_of_records_scanned,
-    rm.no_of_records_failed,
-    rm.execution_time_seconds,
-    rm.file_path,
-    rm.dq_target_name,
-    rm.dp_invocation_id,
-    rm.timestamp
-from test_details td
-left join column_info ci on true
-left join record_count rc on true
-left join record_metrics rm on true;
+        no_of_records_failed,
+        no_of_table_columns,
+        test_unique_id
+    FROM (
+        {{ results | map(attribute='result') | join(" UNION ALL ") }}
+    );
+{% endmacro %}

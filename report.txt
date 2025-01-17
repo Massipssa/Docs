@@ -1,51 +1,49 @@
-{% macro store_test_results(results, log_tbl=ref('dp_do_tools', 'dq_issue_log'), batch=1000) %}
-    {% set enable_store_results = var('dbt_do_tools_enable_store_test_results', false) %}
-    {% if not enable_store_results %}
-        {{ log("Storing test results functionality is NOT enabled.", true) }}
-        {{ return() }}
-    {% endif %}
+// File: src/components/ActionTotalsCard.js
 
-    {# Filter and prepare test results #}
-    {% set filtered_results = [] %}
-    {% for result in results %}
-        {% if result.resource_type | lower == 'test' and result.status | lower not in ['error', 'skipped'] %}
-            {% do filtered_results.append(result) %}
-        {% endif %}
-    {% endfor %}
+import React from 'react';
+import { Grid, Card, CardContent, Typography, Box } from '@mui/material';
 
-    {# Exit if no results #}
-    {% if filtered_results | length == 0 %}
-        {{ log("No test results to process.", true) }}
-        {{ return() }}
-    {% endif %}
+const ActionTotalsCard = () => {
+  const data = [
+    { label: "Total", value: 204, percentage: "10.78%" },
+    { label: "Blocked", value: 110, percentage: "18.18%" },
+    { label: "Allowed", value: 94, percentage: "2.13%" },
+    { label: "Captcha", value: 0, percentage: "0%" },
+    { label: "Challenge", value: 0, percentage: "0%" },
+  ];
 
-    {# Chunk results into batches #}
-    {% set total_results = filtered_results | length %}
-    {% for i in range(0, total_results, batch) %}
-        {% set chunk = filtered_results[i:i+batch] %}
+  return (
+    <Box>
+      {/* Header */}
+      <Typography variant="h6" gutterBottom>
+        Action totals for the specified time range - All traffic
+      </Typography>
+      <Typography variant="body2" color="textSecondary" gutterBottom>
+        Request counts for all traffic during the specified time range. This shows counts for all possible terminating actions, while the rest of the dashboard shows only the actions that you've selected in the filters. If you're filtering on a relative time range, each action also shows the percentage change from the prior, equivalent-length time range. For example, if you've chosen 1 day as the time range, the percentage change reflects the difference between 48-24 hours ago and 24-0 hours ago.
+      </Typography>
 
-        INSERT INTO {{ log_tbl }}
-        SELECT 
-            '{{ execute_at }}' AS check_timestamp,
-            table_name,
-            table_query,
-            column_name,
-            ref_table,
-            ref_column,
-            dq_issue_type,
-            dq_invocation_id AS invocation_id,
-            agg_model,
-            severity_config AS severity,
-            test_kpi_category_config AS kpi_category,
-            no_of_records,
-            no_of_records_scanned,
-            no_of_records_failed,
-            no_of_table_columns,
-            test_unique_id
-        FROM UNNEST(
-            {{ chunk }}
-        );
+      {/* Data Cards */}
+      <Grid container spacing={2} style={{ marginTop: "16px" }}>
+        {data.map((item, index) => (
+          <Grid item xs={12} sm={6} md={2.4} key={index}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" align="center">
+                  {item.label}
+                </Typography>
+                <Typography variant="h4" align="center" style={{ margin: "8px 0" }}>
+                  {item.value}
+                </Typography>
+                <Typography variant="subtitle1" align="center" color="textSecondary">
+                  {item.percentage}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
+};
 
-        {{ log("Inserted batch of size " ~ (chunk | length) ~ " into " ~ log_tbl, true) }}
-    {% endfor %}
-{% endmacro %}
+export default ActionTotalsCard;

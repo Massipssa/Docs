@@ -1,49 +1,60 @@
-// File: src/components/ActionTotalsCard.js
+{% macro store_test_results(results, log_tbl=ref('dp_dq_tools', 'dq_issue_log'), batch=1000) %}
+    {# Exit if storage is disabled #}
+    {% if var('dp_dq_tools.enable_store_test_results', false) == false %}
+        {{ log("Skipping store_test_results; feature not enabled.", true) if execute }}
+        {% return %}
+    {% endif %}
 
-import React from 'react';
-import { Grid, Card, CardContent, Typography, Box } from '@mui/material';
+    {# Filter out valid test results #}
+    {% set test_results = [] %}
+    {% for result in results if result.node.resource_type | lower == 'test' 
+        and result.status | lower not in ['error', 'skipped'] %}
+        {% do test_results.append(result) %}
+    {% endfor %}
+    
+    {% if test_results | length == 0 %}
+        {{ log("No test results to process.", true) if execute }}
+        {% return %}
+    {% endif %}
 
-const ActionTotalsCard = () => {
-  const data = [
-    { label: "Total", value: 204, percentage: "10.78%" },
-    { label: "Blocked", value: 110, percentage: "18.18%" },
-    { label: "Allowed", value: 94, percentage: "2.13%" },
-    { label: "Captcha", value: 0, percentage: "0%" },
-    { label: "Challenge", value: 0, percentage: "0%" },
-  ];
+    {# Log total results for debugging #}
+    {{ log("Processing " ~ test_results | length ~ " test results.", true) if execute }}
 
-  return (
-    <Box>
-      {/* Header */}
-      <Typography variant="h6" gutterBottom>
-        Action totals for the specified time range - All traffic
-      </Typography>
-      <Typography variant="body2" color="textSecondary" gutterBottom>
-        Request counts for all traffic during the specified time range. This shows counts for all possible terminating actions, while the rest of the dashboard shows only the actions that you've selected in the filters. If you're filtering on a relative time range, each action also shows the percentage change from the prior, equivalent-length time range. For example, if you've chosen 1 day as the time range, the percentage change reflects the difference between 48-24 hours ago and 24-0 hours ago.
-      </Typography>
+    {# Chunk and insert test results in batches #}
+    {% for i in range(0, test_results | length, batch) %}
+        {% set chunk_items = test_results[i:i+batch] %}
+        INSERT INTO {{ log_tbl }}
+        SELECT
+            {{ log("Storing results batch.", true) if execute }}
+            _timestamp as check_timestamp,
+            table_name,
+            ref_table,
+            column_name,
+            ref_column,
+            dq_issue_type,
+            {{ dbt_utils.get_test_metadata(result) }} -- Fetch reusable test metadata
+        FROM unnest({{ chunk_items }});
+    {% endfor %}
+{% endmacro %}
 
-      {/* Data Cards */}
-      <Grid container spacing={2} style={{ marginTop: "16px" }}>
-        {data.map((item, index) => (
-          <Grid item xs={12} sm={6} md={2.4} key={index}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="h6" align="center">
-                  {item.label}
-                </Typography>
-                <Typography variant="h4" align="center" style={{ margin: "8px 0" }}>
-                  {item.value}
-                </Typography>
-                <Typography variant="subtitle1" align="center" color="textSecondary">
-                  {item.percentage}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
-  );
-};
 
-export default ActionTotalsCard;
+{% macro _select_test_result(result) %}
+    {# Metadata assignment #}
+    {% set metadata = {
+        "type": db_dq_tools.get_test_type(result.node),
+        "model": db_dq_tools.get_test_model(result.node),
+        "relation": db_dq_tools.get_relation(result.node)
+    } %}
+
+    SELECT
+        {{ result.node.unique_id }} AS test_unique_id,
+        {{ metadata.type }} AS test_type,
+        {{ metadata.model.schema }} AS schema_name,
+        {{ metadata.model.name }} AS model_name,
+        {{ db_dq_tools.get_criticality(result) }} AS criticality,
+        {{ metadata.relation }} AS target_relation,
+        result.status AS test_status,
+        {{ db_dq_tools.test_execution_metrics(result) }} -- Unified execution metrics
+    FROM {{ result.node }}
+    WHERE result.node IS NOT NULL;
+{% endmacro %}

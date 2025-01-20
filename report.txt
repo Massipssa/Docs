@@ -1,60 +1,33 @@
-{% macro store_test_results(results, log_tbl=ref('dp_dq_tools', 'dq_issue_log'), batch=1000) %}
-    {# Exit if storage is disabled #}
-    {% if var('dp_dq_tools.enable_store_test_results', false) == false %}
-        {{ log("Skipping store_test_results; feature not enabled.", true) if execute }}
-        {% return %}
-    {% endif %}
+{% macro insert_kpi_results(results, execute=false) %}
+    {%- set insert_statements = [] -%}
 
-    {# Filter out valid test results #}
-    {% set test_results = [] %}
-    {% for result in results if result.node.resource_type | lower == 'test' 
-        and result.status | lower not in ['error', 'skipped'] %}
-        {% do test_results.append(result) %}
-    {% endfor %}
-    
-    {% if test_results | length == 0 %}
-        {{ log("No test results to process.", true) if execute }}
-        {% return %}
-    {% endif %}
+    {# Check if results exist and are iterable #}
+    {%- if results is not none and results | length > 0 -%}
+        {%- for result in results if result.node.resource_type | lower == 'test' and result.status -%}
+            {# Construct the INSERT statement for each result #}
+            {%- set insert_statement = (
+                "INSERT INTO dbt_retail_ccf_sit_database.kpi "
+                "SELECT "
+                "'" ~ result.node.unique_id ~ "' AS test_unique_id, "
+                "'" ~ result.node.name ~ "' AS test_name, "
+                "'" ~ result.node.name ~ "' AS test_name_long, "
+                "'" ~ result.node.config.model ~ "' AS dq_model, "
+                "'" ~ result.status ~ "' AS test_result, "
+                "'" ~ result.node.config.severity ~ "' AS test_severity_config, "
+                "'" ~ result.node.config.schema ~ "' AS table_name"
+            ) -%}
+            {%- do insert_statements.append(insert_statement) -%}
+        {%- endfor -%}
 
-    {# Log total results for debugging #}
-    {{ log("Processing " ~ test_results | length ~ " test results.", true) if execute }}
+        {# Execute all INSERT statements as a single query #}
+        {%- if execute and insert_statements | length > 0 -%}
+            {%- set final_query = insert_statements | join('; ') ~ ';' -%}
+            {%- do run_query(final_query) -%}
+            {{ log("Inserted results into KPI table.", true) }}
+        {%- endif -%}
 
-    {# Chunk and insert test results in batches #}
-    {% for i in range(0, test_results | length, batch) %}
-        {% set chunk_items = test_results[i:i+batch] %}
-        INSERT INTO {{ log_tbl }}
-        SELECT
-            {{ log("Storing results batch.", true) if execute }}
-            _timestamp as check_timestamp,
-            table_name,
-            ref_table,
-            column_name,
-            ref_column,
-            dq_issue_type,
-            {{ dbt_utils.get_test_metadata(result) }} -- Fetch reusable test metadata
-        FROM unnest({{ chunk_items }});
-    {% endfor %}
-{% endmacro %}
-
-
-{% macro _select_test_result(result) %}
-    {# Metadata assignment #}
-    {% set metadata = {
-        "type": db_dq_tools.get_test_type(result.node),
-        "model": db_dq_tools.get_test_model(result.node),
-        "relation": db_dq_tools.get_relation(result.node)
-    } %}
-
-    SELECT
-        {{ result.node.unique_id }} AS test_unique_id,
-        {{ metadata.type }} AS test_type,
-        {{ metadata.model.schema }} AS schema_name,
-        {{ metadata.model.name }} AS model_name,
-        {{ db_dq_tools.get_criticality(result) }} AS criticality,
-        {{ metadata.relation }} AS target_relation,
-        result.status AS test_status,
-        {{ db_dq_tools.test_execution_metrics(result) }} -- Unified execution metrics
-    FROM {{ result.node }}
-    WHERE result.node IS NOT NULL;
+    {%- else -%}
+        {# Log if no results are available to process #}
+        {{ log("No results to process.", true) }}
+    {%- endif -%}
 {% endmacro %}

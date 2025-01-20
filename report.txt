@@ -2,17 +2,16 @@
     {# Check if results exist and are iterable #}
     {%- if results is not none and results | length > 0 -%}
         {%- for result in results if result.node.resource_type | lower == 'test' and result.status -%}
-            {# Construct the INSERT statement for each result #}
+            {# Dynamically build the SELECT clause with fields starting with "result" #}
+            {%- set select_fields = [] -%}
+            {%- for key, value in result.items() if key.startswith('result') -%}
+                {%- do select_fields.append("'" ~ value ~ "' AS " ~ key) -%}
+            {%- endfor -%}
+
+            {# Construct the INSERT statement dynamically #}
             {%- set insert_statement = (
                 "INSERT INTO dbt_retail_ccf_sit_database.kpi "
-                "SELECT "
-                "'" ~ result.node.unique_id ~ "' AS test_unique_id, "
-                "'" ~ result.node.name ~ "' AS test_name, "
-                "'" ~ result.node.name ~ "' AS test_name_long, "
-                "'" ~ result.node.config.model ~ "' AS dq_model, "
-                "'" ~ result.status ~ "' AS test_result, "
-                "'" ~ result.node.config.severity ~ "' AS test_severity_config, "
-                "'" ~ result.node.config.schema ~ "' AS table_name"
+                "SELECT " ~ select_fields | join(', ')
             ) -%}
 
             {# Execute each INSERT statement separately #}

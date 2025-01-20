@@ -1,25 +1,39 @@
 {% macro kpi(execute=false) %}
+    {%- set rows = [] -%}
+
     {# Check if results exist and are iterable #}
     {%- if results is not none and results | length > 0 -%}
         {%- for result in results if result.node.resource_type | lower == 'test' and result.status -%}
-            {# Dynamically build the SELECT clause with fields starting with "result" #}
-            {%- set select_fields = [] -%}
-            {%- for key, value in result.items() if key.startswith('result') -%}
-                {%- do select_fields.append("'" ~ value ~ "' AS " ~ key) -%}
-            {%- endfor -%}
+            {# Construct the row values dynamically #}
+            {%- set row = (
+                "(" ~
+                "'" ~ result.node.unique_id ~ "', " ~
+                "'" ~ result.node.name ~ "', " ~
+                "'" ~ result.node.name ~ "', " ~
+                "'" ~ result.node.config.model ~ "', " ~
+                "'" ~ result.status ~ "', " ~
+                "'" ~ result.node.config.severity ~ "', " ~
+                "'" ~ result.node.config.schema ~ "'" ~
+                ")"
+            ) -%}
+            {%- do rows.append(row) -%}
+        {%- endfor -%}
 
-            {# Construct the INSERT statement dynamically #}
-            {%- set insert_statement = (
-                "INSERT INTO dbt_retail_ccf_sit_database.kpi "
-                "SELECT " ~ select_fields | join(', ')
+        {# If there are rows, construct the INSERT statement #}
+        {%- if rows | length > 0 -%}
+            {%- set insert_query = (
+                "INSERT INTO dbt_retail_ccf_sit_database.kpi (test_unique_id, test_name, test_name_long, dq_model, test_result, test_severity_config, table_name) "
+                "VALUES " ~ rows | join(', ')
             ) -%}
 
-            {# Execute each INSERT statement separately #}
+            {# Execute the query if execute flag is true #}
             {%- if execute -%}
-                {%- do run_query(insert_statement) -%}
-                {{ log("Inserted result for: " ~ result.node.unique_id, true) }}
+                {%- do run_query(insert_query) -%}
+                {{ log("Inserted " ~ rows | length ~ " rows into KPI table.", true) }}
             {%- endif -%}
-        {%- endfor -%}
+        {%- else -%}
+            {{ log("No valid rows to insert.", true) }}
+        {%- endif -%}
     {%- else -%}
         {{ log("No results to process.", true) }}
     {%- endif -%}

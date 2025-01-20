@@ -1,6 +1,4 @@
-{% macro insert_kpi_results(results, execute=false) %}
-    {%- set insert_statements = [] -%}
-
+{% macro kpi(execute=false) %}
     {# Check if results exist and are iterable #}
     {%- if results is not none and results | length > 0 -%}
         {%- for result in results if result.node.resource_type | lower == 'test' and result.status -%}
@@ -16,18 +14,14 @@
                 "'" ~ result.node.config.severity ~ "' AS test_severity_config, "
                 "'" ~ result.node.config.schema ~ "' AS table_name"
             ) -%}
-            {%- do insert_statements.append(insert_statement) -%}
+
+            {# Execute each INSERT statement separately #}
+            {%- if execute -%}
+                {%- do run_query(insert_statement) -%}
+                {{ log("Inserted result for: " ~ result.node.unique_id, true) }}
+            {%- endif -%}
         {%- endfor -%}
-
-        {# Execute all INSERT statements as a single query #}
-        {%- if execute and insert_statements | length > 0 -%}
-            {%- set final_query = insert_statements | join('; ') ~ ';' -%}
-            {%- do run_query(final_query) -%}
-            {{ log("Inserted results into KPI table.", true) }}
-        {%- endif -%}
-
     {%- else -%}
-        {# Log if no results are available to process #}
         {{ log("No results to process.", true) }}
     {%- endif -%}
 {% endmacro %}

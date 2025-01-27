@@ -1,40 +1,9 @@
-{% macro kpi(execute=false) %}
-    {%- set rows = [] -%}
-
-    {# Check if results exist and are iterable #}
-    {%- if results is not none and results | length > 0 -%}
-        {%- for result in results if result.node.resource_type | lower == 'test' and result.status -%}
-            {# Construct the row values dynamically #}
-            {%- set row = (
-                "(" ~
-                "'" ~ result.node.unique_id ~ "', " ~
-                "'" ~ result.node.name ~ "', " ~
-                "'" ~ result.node.name ~ "', " ~
-                "'" ~ result.node.config.model ~ "', " ~
-                "'" ~ result.status ~ "', " ~
-                "'" ~ result.node.config.severity ~ "', " ~
-                "'" ~ result.node.config.schema ~ "'" ~
-                ")"
-            ) -%}
-            {%- do rows.append(row) -%}
-        {%- endfor -%}
-
-        {# If there are rows, construct the INSERT statement #}
-        {%- if rows | length > 0 -%}
-            {%- set insert_query = (
-                "INSERT INTO dbt_retail_ccf_sit_database.kpi (test_unique_id, test_name, test_name_long, dq_model, test_result, test_severity_config, table_name) "
-                "VALUES " ~ rows | join(', ')
-            ) -%}
-
-            {# Execute the query if execute flag is true #}
-            {%- if execute -%}
-                {%- do run_query(insert_query) -%}
-                {{ log("Inserted " ~ rows | length ~ " rows into KPI table.", true) }}
-            {%- endif -%}
-        {%- else -%}
-            {{ log("No valid rows to insert.", true) }}
-        {%- endif -%}
-    {%- else -%}
-        {{ log("No results to process.", true) }}
-    {%- endif -%}
-{% endmacro %}
+val spark = SparkSession.builder()
+  .appName("Spark with MinIO")
+  .master("local[*]")
+  .config("spark.hadoop.fs.s3a.endpoint", "http://127.0.0.1:9000") // Replace with your endpoint
+  .config("spark.hadoop.fs.s3a.access.key", "your-access-key")
+  .config("spark.hadoop.fs.s3a.secret.key", "your-secret-key")
+  .config("spark.hadoop.fs.s3a.path.style.access", "true") // Required for MinIO
+  .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false") // If not using HTTPS
+  .getOrCreate()

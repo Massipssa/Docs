@@ -51,5 +51,5 @@
 
 ## Anti-Pattern
 
-- Highly formatted reports / visualization => That's whet **QuickSight** is for
+- Highly formatted reports / visualization => That's what **QuickSight** is for
 - ETL (not suitable for ETL actions) => use Gue instead

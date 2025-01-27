@@ -7,3 +7,7 @@ val spark = SparkSession.builder()
   .config("spark.hadoop.fs.s3a.path.style.access", "true") // Required for MinIO
   .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false") // If not using HTTPS
   .getOrCreate()
+
+.config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.profile.ProfileCredentialProvider")
+.config("spark.hadoop.fs.s3a.profile", "your-profile-name") // Replace with the profile name
+

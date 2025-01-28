@@ -6,44 +6,51 @@ import scala.util.matching.Regex
 
 object CreCsvFilenameParser {
 
+  private val creCsvFilenameRegExWithTimestamp: Regex = "(.*)-(.*)-(\\d+)-(\\d+)-(\\d+)\\.csv".r
+  private val creCsvFilenameRegExNoTimestamp: Regex = "(.*)-(\\d+)-(\\d+)-(\\d+)\\.csv".r
+
   def parseFilename(filename: String): CreCsvFilenameDto = {
-    if (filename == null || filename.isEmpty) {
-      val exceptionMsg = "Provided filename for parsing is either null or empty."
-      throw new IllegalArgumentException(exceptionMsg)
+    if (Option(filename).forall(_.isEmpty)) {
+      throw new IllegalArgumentException("Provided filename for parsing is either null or empty.")
     }
 
-    val creCsvFilenameRegExWithTimestamp: Regex = "(.*)-(\\d+)-(\\d+)-(\\d+)\\.csv".r
-    val creCsvFilenameRegExNoTimestamp: Regex = "(.*)-(\\d+)-(\\d+)\\.csv".r
-
     val result = filename match {
-      case creCsvFilenameRegExWithTimestamp(creType, timestamp, dateArreteStr, dateOpStr) =>
-        Some(creType, Some(timestamp), dateArreteStr, dateOpStr)
-      case creCsvFilenameRegExNoTimestamp(creType, dateArreteStr, dateOpStr) =>
-        Some(creType, None, dateArreteStr, dateOpStr)
-      case _ =>
+      case creCsvFilenameRegExWithTimestamp(creType, genTimestamp, dateArreteStr, dateTraitementStr, vacation) =>
+        Some(creType, Some(genTimestamp), dateArreteStr, dateTraitementStr, vacation.toInt)
+
+      case creCsvFilenameRegExNoTimestamp(creType, dateArreteStr, dateTraitementStr, vacation) =>
+        Some(creType, None, dateArreteStr, dateTraitementStr, vacation.toInt)
+
+      case _ => 
         throw new Exception(s"CRE CSV Filename $filename does not match any of the predefined patterns.")
     }
 
     result match {
-      case Some((creType, genTimestampStr, dateArreteStr, dateOpStr)) =>
+      case Some((creType, genTimestampStr, dateArreteStr, dateTraitementStr, vacation)) =>
         val dateArrete = parseDate(dateArreteStr)
-        val dateOp = parseDate(dateOpStr)
-        val genTimestamp = genTimestampStr.map(parseDate)
-        CreCsvFilenameDto(creType, genTimestamp, dateArrete, dateOp)
-      case None => throw new Exception("Unexpected parsing failure.")
+        val dateTraitement = parseDate(dateTraitementStr)
+        val genTimestamp = genTimestampStr.flatMap(parseGenerationTimestamp)
+        CreCsvFilenameDto(creType, genTimestamp, dateArrete, dateTraitement, vacation)
+
+      case None =>
+        throw new Exception("Unexpected parsing failure.")
     }
   }
 
-  private def getDateFormatter(): DateTimeFormatter =
+  private def getDateFormatter: DateTimeFormatter =
     DateTimeFormatter.ofPattern(GeneralConstants.YY_MM_DD_FORMAT)
 
   private def parseDate(dateStr: String): LocalDate =
-    LocalDate.parse(dateStr, getDateFormatter())
+    LocalDate.parse(dateStr, getDateFormatter)
+
+  private def parseGenerationTimestamp(genTimestampStr: String): Option[LocalDate] =
+    Option(genTimestampStr).map(LocalDate.parse(_, GeneralConstants.CRE_CSV_FILENAME_GENERATION_FILENAME_FORMATTER))
 }
 
 case class CreCsvFilenameDto(
   creType: String,
-  generationTimestampDateTime: Option[LocalDate],
-  dateArreteDate: LocalDate,
-  dateOpcDate: LocalDate
+  generationTimestamp: Option[LocalDate],
+  dateArrete: LocalDate,
+  dateTraitement: LocalDate,
+  vacationNumber: Int
 )

@@ -1,13 +1,49 @@
-val spark = SparkSession.builder()
-  .appName("Spark with MinIO")
-  .master("local[*]")
-  .config("spark.hadoop.fs.s3a.endpoint", "http://127.0.0.1:9000") // Replace with your endpoint
-  .config("spark.hadoop.fs.s3a.access.key", "your-access-key")
-  .config("spark.hadoop.fs.s3a.secret.key", "your-secret-key")
-  .config("spark.hadoop.fs.s3a.path.style.access", "true") // Required for MinIO
-  .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false") // If not using HTTPS
-  .getOrCreate()
+package commons.parsers
 
-.config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.profile.ProfileCredentialProvider")
-.config("spark.hadoop.fs.s3a.profile", "your-profile-name") // Replace with the profile name
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import scala.util.matching.Regex
 
+object CreCsvFilenameParser {
+
+  def parseFilename(filename: String): CreCsvFilenameDto = {
+    if (filename == null || filename.isEmpty) {
+      val exceptionMsg = "Provided filename for parsing is either null or empty."
+      throw new IllegalArgumentException(exceptionMsg)
+    }
+
+    val creCsvFilenameRegExWithTimestamp: Regex = "(.*)-(\\d+)-(\\d+)-(\\d+)\\.csv".r
+    val creCsvFilenameRegExNoTimestamp: Regex = "(.*)-(\\d+)-(\\d+)\\.csv".r
+
+    val result = filename match {
+      case creCsvFilenameRegExWithTimestamp(creType, timestamp, dateArreteStr, dateOpStr) =>
+        Some(creType, Some(timestamp), dateArreteStr, dateOpStr)
+      case creCsvFilenameRegExNoTimestamp(creType, dateArreteStr, dateOpStr) =>
+        Some(creType, None, dateArreteStr, dateOpStr)
+      case _ =>
+        throw new Exception(s"CRE CSV Filename $filename does not match any of the predefined patterns.")
+    }
+
+    result match {
+      case Some((creType, genTimestampStr, dateArreteStr, dateOpStr)) =>
+        val dateArrete = parseDate(dateArreteStr)
+        val dateOp = parseDate(dateOpStr)
+        val genTimestamp = genTimestampStr.map(parseDate)
+        CreCsvFilenameDto(creType, genTimestamp, dateArrete, dateOp)
+      case None => throw new Exception("Unexpected parsing failure.")
+    }
+  }
+
+  private def getDateFormatter(): DateTimeFormatter =
+    DateTimeFormatter.ofPattern(GeneralConstants.YY_MM_DD_FORMAT)
+
+  private def parseDate(dateStr: String): LocalDate =
+    LocalDate.parse(dateStr, getDateFormatter())
+}
+
+case class CreCsvFilenameDto(
+  creType: String,
+  generationTimestampDateTime: Option[LocalDate],
+  dateArreteDate: LocalDate,
+  dateOpcDate: LocalDate
+)

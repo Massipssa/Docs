@@ -1,56 +1,48 @@
-package commons.parsers
+#!/bin/bash
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import scala.util.matching.Regex
+set -euo pipefail  # Sécurise le script contre les erreurs
 
-object CreCsvFilenameParser {
+# Transform arguments: ignore empty args and split concatenated arg name and value into separated items
+TRANSFORMED_ARGS=()  # ✅ Initialisation correcte du tableau
 
-  private val creCsvFilenameRegExWithTimestamp: Regex = "(.*)-(.*)-(\\d+)-(\\d+)-(\\d+)\\.csv".r
-  private val creCsvFilenameRegExNoTimestamp: Regex = "(.*)-(\\d+)-(\\d+)-(\\d+)\\.csv".r
+for ARG in "$@"; do
+    [[ -z "$ARG" ]] && continue  # Ignore les arguments vides
+    IFS=' ' read -r -a SPLIT_ARG <<< "$ARG"  # Sépare les arguments correctement
+    TRANSFORMED_ARGS+=("${SPLIT_ARG[@]}")
+done
 
-  def parseFilename(filename: String): CreCsvFilenameDto = {
-    if (Option(filename).forall(_.isEmpty)) {
-      throw new IllegalArgumentException("Provided filename for parsing is either null or empty.")
-    }
+# Extract target environment from dbt command args
+ENV=""
 
-    val result = filename match {
-      case creCsvFilenameRegExWithTimestamp(creType, genTimestamp, dateArreteStr, dateTraitementStr, vacation) =>
-        Some(creType, Some(genTimestamp), dateArreteStr, dateTraitementStr, vacation.toInt)
+i=0
+while [[ $i -lt ${#TRANSFORMED_ARGS[@]} ]]; do
+    if [[ "${TRANSFORMED_ARGS[i]}" == "--target" ]] && [[ $((i+1)) -lt ${#TRANSFORMED_ARGS[@]} ]]; then
+        ENV="${TRANSFORMED_ARGS[i+1]}"
+        break  # ✅ Optimisation : pas besoin de continuer après avoir trouvé "--target"
+    fi
+    ((i++))
+done
 
-      case creCsvFilenameRegExNoTimestamp(creType, dateArreteStr, dateTraitementStr, vacation) =>
-        Some(creType, None, dateArreteStr, dateTraitementStr, vacation.toInt)
+SUFFIX=$(echo "$ENV" | tr '[:upper:]' '[:lower:]')  # Convert to lowercase
+echo "Target env is ${ENV} (role suffix ${SUFFIX})"
 
-      case _ => 
-        throw new Exception(s"CRE CSV Filename $filename does not match any of the predefined patterns.")
-    }
+# shellcheck disable=SC2155
+export suffix=$(date "+%Y%m%d")
+echo "Using suffix: $suffix"
 
-    result match {
-      case Some((creType, genTimestampStr, dateArreteStr, dateTraitementStr, vacation)) =>
-        val dateArrete = parseDate(dateArreteStr)
-        val dateTraitement = parseDate(dateTraitementStr)
-        val genTimestamp = genTimestampStr.flatMap(parseGenerationTimestamp)
-        CreCsvFilenameDto(creType, genTimestamp, dateArrete, dateTraitement, vacation)
+# Assume client principal execute role
+if [[ -n "${CLIENT_IAM_ROLE:-}" ]]; then
+    echo "Assuming role ${CLIENT_IAM_ROLE}"
+    read -r AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN < <(
+        aws sts assume-role --role-arn "${CLIENT_IAM_ROLE}" \
+        --role-session-name dbt-client \
+        --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
+        --output text
+    )
 
-      case None =>
-        throw new Exception("Unexpected parsing failure.")
-    }
-  }
+    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+fi
 
-  private def getDateFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofPattern(GeneralConstants.YY_MM_DD_FORMAT)
-
-  private def parseDate(dateStr: String): LocalDate =
-    LocalDate.parse(dateStr, getDateFormatter)
-
-  private def parseGenerationTimestamp(genTimestampStr: String): Option[LocalDate] =
-    Option(genTimestampStr).map(LocalDate.parse(_, GeneralConstants.CRE_CSV_FILENAME_GENERATION_FILENAME_FORMATTER))
-}
-
-case class CreCsvFilenameDto(
-  creType: String,
-  generationTimestamp: Option[LocalDate],
-  dateArrete: LocalDate,
-  dateTraitement: LocalDate,
-  vacationNumber: Int
-)
+# Run dbt
+echo "Running dbt with role $(aws sts get-caller-identity | jq -r .Arn) and args '${TRANSFORMED_ARGS[*]}'"
+dbt "${TRANSFORMED_ARGS[@]}"

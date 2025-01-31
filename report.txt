@@ -1,50 +1,34 @@
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.mockito.MockitoSugar
-import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers._
-import java.time.LocalDate
+def existAnyContentInCsv(): Option[CheckErrorDto] = {
+  try {
+    val delimiter: Char = dataCheckResources.creDelimiter.charAt(0)
+    val credDf = createDfFromCsv(key, delimiter)
 
-class GetOverriddenDateTest extends AnyFunSuite with Matchers with MockitoSugar {
-
-  test("should throw IllegalArgumentException when creType is empty") {
-    val jobConfigMock = mock[JobConfigDto]
-    
-    assertThrows[IllegalArgumentException] {
-      getOverriddenDate("", LocalDate.now())(jobConfigMock)
+    // Check if DataFrame has any non-empty values
+    if (!existAnyContentInCsv(credDf)) {
+      return Some(CheckErrorDto(
+        Option.empty,
+        Option.empty,
+        getDescription,
+        Option.empty,
+        Some("CSV with empty data content"),
+        Some("CSV with non-empty data content")
+      ))
     }
-  }
 
-  test("should throw IllegalArgumentException when dateToOverride is null") {
-    val jobConfigMock = mock[JobConfigDto]
-    
-    assertThrows[IllegalArgumentException] {
-      getOverriddenDate("validType", null)(jobConfigMock)
-    }
-  }
+    // If no issue found, CSV is valid
+    dataCheckResources.creDf = Some(credDf)
+    dataCheckResources.creDfNumLines = SparkUtility.getDataFrameRowCount(credDf)
+    None
 
-  test("should return dateToOverride when creRuleDto.cre_id is null") {
-    val jobConfigMock = mock[JobConfigDto]
-    val mockCreRuleDto = mock[CreRuleDto]
-    
-    when(mockCreRuleDto.cre_id).thenReturn(null)
-    when(getCreRuleDto(anyString(), anyString())).thenReturn(mockCreRuleDto)
-
-    val result = getOverriddenDate("someType", LocalDate.of(2024, 1, 1))(jobConfigMock)
-    result shouldBe LocalDate.of(2024, 1, 1)
-  }
-
-  test("should call applyOverrideRules when creRuleDto.cre_id is not null") {
-    val jobConfigMock = mock[JobConfigDto]
-    val mockCreRuleDto = mock[CreRuleDto]
-
-    when(mockCreRuleDto.cre_id).thenReturn("123")
-    when(getCreRuleDto(anyString(), anyString())).thenReturn(mockCreRuleDto)
-
-    val dateToOverride = LocalDate.of(2024, 1, 1)
-
-    val result = getOverriddenDate("someType", dateToOverride)(jobConfigMock)
-
-    verify(applyOverrideRules(mockCreRuleDto, dateToOverride))
+  } catch {
+    case _: Throwable =>
+      Some(CheckErrorDto(
+        Option.empty,
+        Option.empty,
+        getDescription,
+        Option.empty,
+        Some("An invalid CSV file"),
+        Some("A valid CSV file")
+      ))
   }
 }

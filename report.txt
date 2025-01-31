@@ -1,48 +1,50 @@
-#!/bin/bash
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers._
+import java.time.LocalDate
 
-set -euo pipefail  # Sécurise le script contre les erreurs
+class GetOverriddenDateTest extends AnyFunSuite with Matchers with MockitoSugar {
 
-# Transform arguments: ignore empty args and split concatenated arg name and value into separated items
-TRANSFORMED_ARGS=()  # ✅ Initialisation correcte du tableau
+  test("should throw IllegalArgumentException when creType is empty") {
+    val jobConfigMock = mock[JobConfigDto]
+    
+    assertThrows[IllegalArgumentException] {
+      getOverriddenDate("", LocalDate.now())(jobConfigMock)
+    }
+  }
 
-for ARG in "$@"; do
-    [[ -z "$ARG" ]] && continue  # Ignore les arguments vides
-    IFS=' ' read -r -a SPLIT_ARG <<< "$ARG"  # Sépare les arguments correctement
-    TRANSFORMED_ARGS+=("${SPLIT_ARG[@]}")
-done
+  test("should throw IllegalArgumentException when dateToOverride is null") {
+    val jobConfigMock = mock[JobConfigDto]
+    
+    assertThrows[IllegalArgumentException] {
+      getOverriddenDate("validType", null)(jobConfigMock)
+    }
+  }
 
-# Extract target environment from dbt command args
-ENV=""
+  test("should return dateToOverride when creRuleDto.cre_id is null") {
+    val jobConfigMock = mock[JobConfigDto]
+    val mockCreRuleDto = mock[CreRuleDto]
+    
+    when(mockCreRuleDto.cre_id).thenReturn(null)
+    when(getCreRuleDto(anyString(), anyString())).thenReturn(mockCreRuleDto)
 
-i=0
-while [[ $i -lt ${#TRANSFORMED_ARGS[@]} ]]; do
-    if [[ "${TRANSFORMED_ARGS[i]}" == "--target" ]] && [[ $((i+1)) -lt ${#TRANSFORMED_ARGS[@]} ]]; then
-        ENV="${TRANSFORMED_ARGS[i+1]}"
-        break  # ✅ Optimisation : pas besoin de continuer après avoir trouvé "--target"
-    fi
-    ((i++))
-done
+    val result = getOverriddenDate("someType", LocalDate.of(2024, 1, 1))(jobConfigMock)
+    result shouldBe LocalDate.of(2024, 1, 1)
+  }
 
-SUFFIX=$(echo "$ENV" | tr '[:upper:]' '[:lower:]')  # Convert to lowercase
-echo "Target env is ${ENV} (role suffix ${SUFFIX})"
+  test("should call applyOverrideRules when creRuleDto.cre_id is not null") {
+    val jobConfigMock = mock[JobConfigDto]
+    val mockCreRuleDto = mock[CreRuleDto]
 
-# shellcheck disable=SC2155
-export suffix=$(date "+%Y%m%d")
-echo "Using suffix: $suffix"
+    when(mockCreRuleDto.cre_id).thenReturn("123")
+    when(getCreRuleDto(anyString(), anyString())).thenReturn(mockCreRuleDto)
 
-# Assume client principal execute role
-if [[ -n "${CLIENT_IAM_ROLE:-}" ]]; then
-    echo "Assuming role ${CLIENT_IAM_ROLE}"
-    read -r AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN < <(
-        aws sts assume-role --role-arn "${CLIENT_IAM_ROLE}" \
-        --role-session-name dbt-client \
-        --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
-        --output text
-    )
+    val dateToOverride = LocalDate.of(2024, 1, 1)
 
-    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
-fi
+    val result = getOverriddenDate("someType", dateToOverride)(jobConfigMock)
 
-# Run dbt
-echo "Running dbt with role $(aws sts get-caller-identity | jq -r .Arn) and args '${TRANSFORMED_ARGS[*]}'"
-dbt "${TRANSFORMED_ARGS[@]}"
+    verify(applyOverrideRules(mockCreRuleDto, dateToOverride))
+  }
+}

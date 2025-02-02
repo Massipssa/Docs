@@ -1,49 +1,29 @@
-import org.apache.spark.sql.{SparkSession, Encoders}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types._
+import fr.ccf.job.commons.dtos.metadata.CheckErrorDto
 
-case class GesparamDto(
-  nomTable: String,
-  codeBoite: String,
-  dateGeneration: String,
-  environnement: String,
-  donneesTable: List[Map[String, String]]
-)
-
-object GesparamParser {
-  def main(args: Array[String]): Unit = {
-    val spark = SparkSession.builder()
-      .appName("GesparamDto Parser")
-      .master("local[*]") // Run locally
-      .getOrCreate()
+object CsvMinimalColumnCountCheck {
+  def check(dataFileDF: DataFrame, directiveColumnCount: Int)(implicit spark: SparkSession): Option[CheckErrorDto] = {
 
     import spark.implicits._
 
-    // ✅ Load the text file (Modify path)
-    val rawData = spark.read.text("path/to/your/file.txt")
+    if (dataFileDF.isEmpty) {
+      throw new RuntimeException("DATA file content DataFrame is empty.")
+    }
 
-    // ✅ Extract JSON part after first comma
-    val jsonData = rawData.withColumn("splitData", split(col("value"), ",", 2))
-      .select(
-        col("splitData").getItem(1).alias("jsonData")
-      )
+    // ✅ Count the number of columns in the DataFrame
+    val numberOfColumns: Int = dataFileDF.columns.length
 
-    // ✅ Define Schema for GesparamDto
-    val gesparamSchema = Encoders.product[GesparamDto].schema
+    // ✅ Check if the number of columns exceeds the allowed limit
+    if (numberOfColumns <= directiveColumnCount) {
+      return None // ✅ No error, return empty
+    }
 
-    // ✅ Convert JSON string to structured GesparamDto
-    val parsedDF = jsonData.withColumn(
-      "parsedData",
-      from_json(col("jsonData"), gesparamSchema)
-    ).select("parsedData.*")
+    // ✅ Construct error message
+    val checkError = CheckErrorDto(
+      message = s"CSV file has more than the allowed number of directive columns ($directiveColumnCount), found $numberOfColumns columns."
+    )
 
-    // ✅ Convert DataFrame to Dataset[GesparamDto]
-    val gesparamDataset = parsedDF.as[GesparamDto]
-
-    // ✅ Show parsed data
-    gesparamDataset.show(truncate = false)
-
-    // ✅ Stop Spark session
-    spark.stop()
+    Some(checkError) // ✅ Return error
   }
 }

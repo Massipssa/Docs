@@ -1,70 +1,49 @@
-import org.apache.spark.sql.{SparkSession, Row}
+import org.apache.spark.sql.{SparkSession, Encoders}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
-case class StructureInterfaceDto(
-  famille: String,
-  identifiant: String,
-  libelleLong: String,
-  nomDonnee: String,
-  obligatoire: String,
-  propagation: String,
-  definition: String,
-  position: Int
-)
-
-case class InterfaceDto(
-  codeEvenement: String,
+case class GesparamDto(
+  nomTable: String,
   codeBoite: String,
-  libelleLong: String,
-  dateMaj: String,
-  profondeur: String,
-  description: String,
-  structureInterface: Seq[StructureInterfaceDto] // Ensure it's a Seq/List
+  dateGeneration: String,
+  environnement: String,
+  donneesTable: List[Map[String, String]]
 )
 
-case class MetadataLineDto(
-  creId: String,
-  env: String,
-  interfaceDto: InterfaceDto
-)
-
-object MetadataParser {
+object GesparamParser {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .appName("MetadataLineDto Parser")
+      .appName("GesparamDto Parser")
       .master("local[*]") // Run locally
       .getOrCreate()
 
     import spark.implicits._
 
-    // Load the text file using read.text()
+    // ✅ Load the text file (Modify path)
     val rawData = spark.read.text("path/to/your/file.txt")
 
-    // Split each line into three parts: creId, env, JSON Data
-    val jsonData = rawData.withColumn("splitData", split(col("value"), ",", 3))
+    // ✅ Extract JSON part after first comma
+    val jsonData = rawData.withColumn("splitData", split(col("value"), ",", 2))
       .select(
-        col("splitData").getItem(0).alias("creId"),
-        col("splitData").getItem(1).alias("env"),
-        col("splitData").getItem(2).alias("jsonData")
+        col("splitData").getItem(1).alias("jsonData")
       )
 
-    // Define schema for InterfaceDto
-    val interfaceDtoSchema = Encoders.product[InterfaceDto].schema
+    // ✅ Define Schema for GesparamDto
+    val gesparamSchema = Encoders.product[GesparamDto].schema
 
-    // ✅ Convert jsonData (String) into StructType (InterfaceDto)
+    // ✅ Convert JSON string to structured GesparamDto
     val parsedDF = jsonData.withColumn(
-      "interfaceDto",
-      from_json(col("jsonData"), interfaceDtoSchema) // Ensures correct structure
-    ).drop("jsonData") // Drop the raw JSON string after conversion
+      "parsedData",
+      from_json(col("jsonData"), gesparamSchema)
+    ).select("parsedData.*")
 
-    // ✅ Convert DataFrame to Dataset[MetadataLineDto]
-    val metadataDataset = parsedDF.as[MetadataLineDto]
+    // ✅ Convert DataFrame to Dataset[GesparamDto]
+    val gesparamDataset = parsedDF.as[GesparamDto]
 
-    // Show parsed data
-    metadataDataset.show(truncate = false)
+    // ✅ Show parsed data
+    gesparamDataset.show(truncate = false)
 
-    // Stop Spark session
+    // ✅ Stop Spark session
     spark.stop()
   }
 }

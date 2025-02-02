@@ -37,14 +37,16 @@ object MetadataParser {
 
     import spark.implicits._
 
-    // Load the text file
-    val rawData = spark.read.textFile("path/to/your/file.txt")
+    // Load the text file using read.text()
+    val rawData = spark.read.text("path/to/your/file.txt")
 
     // Split each line into three parts: creId, env, JSON Data
-    val jsonData = rawData.map { line =>
-      val parts = line.split(",", 3) // Split into three parts
-      (parts(0).trim, parts(1).trim, parts(2).trim)
-    }.toDF("creId", "env", "jsonData")
+    val jsonData = rawData.withColumn("splitData", split(col("value"), ",", 3))
+      .select(
+        col("splitData").getItem(0).alias("creId"),
+        col("splitData").getItem(1).alias("env"),
+        col("splitData").getItem(2).alias("jsonData")
+      )
 
     // Parse JSON column into `InterfaceDto`
     val interfaceDataset = jsonData.select(

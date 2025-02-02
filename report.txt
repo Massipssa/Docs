@@ -38,7 +38,7 @@ object MetadataParser {
 
     import spark.implicits._
 
-    // Load the text file
+    // Load the text file using read.text()
     val rawData = spark.read.text("path/to/your/file.txt")
 
     // Split each line into three parts: creId, env, JSON Data
@@ -49,7 +49,7 @@ object MetadataParser {
         col("splitData").getItem(2).alias("jsonData")
       )
 
-    // Define schema for InterfaceDto (Ensuring correct parsing)
+    // Define schema for InterfaceDto
     val interfaceDtoSchema = Encoders.product[InterfaceDto].schema
 
     // Parse JSON column into `Row` first, then extract
@@ -60,7 +60,7 @@ object MetadataParser {
       MetadataLineDto(
         creId = row.getString(0),
         env = row.getString(1),
-        interfaceDto = row.getAs[Row]("interfaceDto").as[InterfaceDto] // ✅ FIXED: Explicit conversion
+        interfaceDto = row.getAs[Row]("interfaceDto").toSeq.map(_.asInstanceOf[InterfaceDto]).head
       )
     )
 

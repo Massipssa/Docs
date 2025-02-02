@@ -20,7 +20,7 @@ case class InterfaceDto(
   dateMaj: String,
   profondeur: String,
   description: String,
-  structureInterface: List[StructureInterfaceDto]
+  structureInterface: Seq[StructureInterfaceDto] // Ensure it's a Seq/List
 )
 
 case class MetadataLineDto(
@@ -52,17 +52,14 @@ object MetadataParser {
     // Define schema for InterfaceDto
     val interfaceDtoSchema = Encoders.product[InterfaceDto].schema
 
-    // Parse JSON column into `Row` first, then extract
-    val parsedDF = jsonData.withColumn("interfaceDto", from_json(col("jsonData"), interfaceDtoSchema))
+    // ✅ Convert jsonData (String) into StructType (InterfaceDto)
+    val parsedDF = jsonData.withColumn(
+      "interfaceDto",
+      from_json(col("jsonData"), interfaceDtoSchema) // Ensures correct structure
+    ).drop("jsonData") // Drop the raw JSON string after conversion
 
-    // Convert DataFrame to Dataset[MetadataLineDto] manually
-    val metadataDataset = parsedDF.map(row =>
-      MetadataLineDto(
-        creId = row.getString(0),
-        env = row.getString(1),
-        interfaceDto = row.getAs[Row]("interfaceDto").toSeq.map(_.asInstanceOf[InterfaceDto]).head
-      )
-    )
+    // ✅ Convert DataFrame to Dataset[MetadataLineDto]
+    val metadataDataset = parsedDF.as[MetadataLineDto]
 
     // Show parsed data
     metadataDataset.show(truncate = false)

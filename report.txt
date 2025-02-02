@@ -1,5 +1,6 @@
-import org.apache.spark.sql.{SparkSession, Encoders}
+import org.apache.spark.sql.{SparkSession, Row}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types._
 
 case class StructureInterfaceDto(
   famille: String,
@@ -37,7 +38,7 @@ object MetadataParser {
 
     import spark.implicits._
 
-    // Load the text file using read.text()
+    // Load the text file
     val rawData = spark.read.text("path/to/your/file.txt")
 
     // Split each line into three parts: creId, env, JSON Data
@@ -48,19 +49,18 @@ object MetadataParser {
         col("splitData").getItem(2).alias("jsonData")
       )
 
-    // Parse JSON column into `InterfaceDto`
-    val interfaceDataset = jsonData.select(
-      col("creId"),
-      col("env"),
-      from_json(col("jsonData"), Encoders.product[InterfaceDto].schema).as("interfaceDto")
-    )
+    // Define schema for InterfaceDto (Ensuring correct parsing)
+    val interfaceDtoSchema = Encoders.product[InterfaceDto].schema
 
-    // Convert to `Dataset[MetadataLineDto]`
-    val metadataDataset = interfaceDataset.map(row =>
+    // Parse JSON column into `Row` first, then extract
+    val parsedDF = jsonData.withColumn("interfaceDto", from_json(col("jsonData"), interfaceDtoSchema))
+
+    // Convert DataFrame to Dataset[MetadataLineDto] manually
+    val metadataDataset = parsedDF.map(row =>
       MetadataLineDto(
-        creId = row.getAs[String]("creId"),
-        env = row.getAs[String]("env"),
-        interfaceDto = row.getAs[InterfaceDto]("interfaceDto")
+        creId = row.getString(0),
+        env = row.getString(1),
+        interfaceDto = row.getAs[Row]("interfaceDto").as[InterfaceDto] // ✅ FIXED: Explicit conversion
       )
     )
 

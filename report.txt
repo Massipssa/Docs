@@ -1,34 +1,71 @@
-def existAnyContentInCsv(): Option[CheckErrorDto] = {
-  try {
-    val delimiter: Char = dataCheckResources.creDelimiter.charAt(0)
-    val credDf = createDfFromCsv(key, delimiter)
+import org.apache.spark.sql.{SparkSession, Encoders}
+import org.apache.spark.sql.functions._
 
-    // Check if DataFrame has any non-empty values
-    if (!existAnyContentInCsv(credDf)) {
-      return Some(CheckErrorDto(
-        Option.empty,
-        Option.empty,
-        getDescription,
-        Option.empty,
-        Some("CSV with empty data content"),
-        Some("CSV with non-empty data content")
-      ))
-    }
+case class StructureInterfaceDto(
+  famille: String,
+  identifiant: String,
+  libelleLong: String,
+  nomDonnee: String,
+  obligatoire: String,
+  propagation: String,
+  definition: String,
+  position: Int
+)
 
-    // If no issue found, CSV is valid
-    dataCheckResources.creDf = Some(credDf)
-    dataCheckResources.creDfNumLines = SparkUtility.getDataFrameRowCount(credDf)
-    None
+case class InterfaceDto(
+  codeEvenement: String,
+  codeBoite: String,
+  libelleLong: String,
+  dateMaj: String,
+  profondeur: String,
+  description: String,
+  structureInterface: List[StructureInterfaceDto]
+)
 
-  } catch {
-    case _: Throwable =>
-      Some(CheckErrorDto(
-        Option.empty,
-        Option.empty,
-        getDescription,
-        Option.empty,
-        Some("An invalid CSV file"),
-        Some("A valid CSV file")
-      ))
+case class MetadataLineDto(
+  creId: String,
+  env: String,
+  interfaceDto: InterfaceDto
+)
+
+object MetadataParser {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder()
+      .appName("MetadataLineDto Parser")
+      .master("local[*]") // Run locally
+      .getOrCreate()
+
+    import spark.implicits._
+
+    // Load the text file
+    val rawData = spark.read.textFile("path/to/your/file.txt")
+
+    // Split each line into three parts: creId, env, JSON Data
+    val jsonData = rawData.map { line =>
+      val parts = line.split(",", 3) // Split into three parts
+      (parts(0).trim, parts(1).trim, parts(2).trim)
+    }.toDF("creId", "env", "jsonData")
+
+    // Parse JSON column into `InterfaceDto`
+    val interfaceDataset = jsonData.select(
+      col("creId"),
+      col("env"),
+      from_json(col("jsonData"), Encoders.product[InterfaceDto].schema).as("interfaceDto")
+    )
+
+    // Convert to `Dataset[MetadataLineDto]`
+    val metadataDataset = interfaceDataset.map(row =>
+      MetadataLineDto(
+        creId = row.getAs[String]("creId"),
+        env = row.getAs[String]("env"),
+        interfaceDto = row.getAs[InterfaceDto]("interfaceDto")
+      )
+    )
+
+    // Show parsed data
+    metadataDataset.show(truncate = false)
+
+    // Stop Spark session
+    spark.stop()
   }
 }

@@ -1,7 +1,7 @@
 # Redshift
 
 - Fully managed
-- It's OLAP engine (analytics and data warehousing)
+- It's OLAP engine (analytics and data warehousing), build on Postgres
 - Petabyte-scale data warehouse service
 
 ## Architecture
@@ -12,7 +12,7 @@
   - Massively Parallel Processing (MPP)
   - Columnar Data Storage
   - Column Compression (is column level operation, reduce space, reduce disc I/O)
-- Is a single AZ
+- Is a single AZ 
 - Block size of 1MB
 - Indexes are materialized but not required
 - Data is stored in three different places:
@@ -33,6 +33,16 @@
   - Compound (default)
   - Interleaved
 
+## Snapshots and DR
+- Redshift has **Multi-AZ** mode for some clusters
+- Snapshots are point-in-time backups of a cluster stored internally in S3
+- Snapshots are incremental (only what has changed is saved)
+- It can be restored into a **new cluster**
+- Can be
+  - **Manual**: snapshot is retained until you delete it
+  - **Automatic**: e.g every 8 hours, every 5 GB, or on schedule. You can set a retention for a automated snapshot
+- You can configure Redshift to copy snapshot either they are manual or automatic into another region
+  
 ## COPY command
 
 - From S3, EMR, DynamoDB, remote hosts to Redshift

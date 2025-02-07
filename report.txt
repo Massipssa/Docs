@@ -1,29 +1,58 @@
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
-import fr.ccf.job.commons.dtos.metadata.CheckErrorDto
+import boto3
+from airflow.sensors.base import BaseSensorOperator
+from airflow.utils.decorators import apply_defaults
 
-object CsvMinimalColumnCountCheck {
-  def check(dataFileDF: DataFrame, directiveColumnCount: Int)(implicit spark: SparkSession): Option[CheckErrorDto] = {
+class S3KeyWithSTSSensor(BaseSensorOperator):
+    """
+    Custom Airflow sensor that checks for an object in S3 using STS token.
+    
+    :param bucket_name: Name of the S3 bucket.
+    :param s3_key: Key (path) of the file in S3.
+    :param role_arn: IAM Role ARN to assume using STS.
+    :param aws_region: AWS region of the bucket.
+    """
 
-    import spark.implicits._
+    template_fields = ('bucket_name', 's3_key')
 
-    if (dataFileDF.isEmpty) {
-      throw new RuntimeException("DATA file content DataFrame is empty.")
-    }
+    @apply_defaults
+    def __init__(self, bucket_name, s3_key, role_arn, aws_region="us-east-1", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bucket_name = bucket_name
+        self.s3_key = s3_key
+        self.role_arn = role_arn
+        self.aws_region = aws_region
 
-    // ✅ Count the number of columns in the DataFrame
-    val numberOfColumns: Int = dataFileDF.columns.length
+    def assume_role(self):
+        """Assumes an IAM role using AWS STS and returns temporary credentials."""
+        sts_client = boto3.client('sts')
+        assumed_role = sts_client.assume_role(RoleArn=self.role_arn, RoleSessionName="AirflowS3SensorSession")
+        return assumed_role['Credentials']
 
-    // ✅ Check if the number of columns exceeds the allowed limit
-    if (numberOfColumns <= directiveColumnCount) {
-      return None // ✅ No error, return empty
-    }
+    def poke(self, context):
+        """Checks if the S3 object exists using assumed STS credentials."""
+        self.log.info(f"Checking for file {self.s3_key} in S3 bucket {self.bucket_name}")
 
-    // ✅ Construct error message
-    val checkError = CheckErrorDto(
-      message = s"CSV file has more than the allowed number of directive columns ($directiveColumnCount), found $numberOfColumns columns."
-    )
+        # Assume role and get temporary credentials
+        credentials = self.assume_role()
 
-    Some(checkError) // ✅ Return error
-  }
-}
+        # Create S3 client with temporary credentials
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=credentials['AccessKeyId'],
+            aws_secret_access_key=credentials['SecretAccessKey'],
+            aws_session_token=credentials['SessionToken'],
+            region_name=self.aws_region
+        )
+
+        # Check if object exists in S3
+        try:
+            s3_client.head_object(Bucket=self.bucket_name, Key=self.s3_key)
+            self.log.info(f"File {self.s3_key} found in S3 bucket {self.bucket_name}")
+            return True
+        except s3_client.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                self.log.info(f"File {self.s3_key} not found in S3 bucket {self.bucket_name}")
+                return False
+            else:
+                self.log.error(f"Error while checking S3: {e}")
+                raise

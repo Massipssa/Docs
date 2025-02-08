@@ -1,58 +1,97 @@
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 import boto3
-from airflow.sensors.base import BaseSensorOperator
-from airflow.utils.decorators import apply_defaults
 
-class S3KeyWithSTSSensor(BaseSensorOperator):
+class S3HookWithSTS(S3Hook):
     """
-    Custom Airflow sensor that checks for an object in S3 using STS token.
+    Custom S3 Hook that assumes an IAM role using STS before accessing S3.
     
-    :param bucket_name: Name of the S3 bucket.
-    :param s3_key: Key (path) of the file in S3.
-    :param role_arn: IAM Role ARN to assume using STS.
-    :param aws_region: AWS region of the bucket.
+    :param role_arn: IAM Role ARN to assume
+    :param region_name: AWS Region
     """
 
-    template_fields = ('bucket_name', 's3_key')
-
-    @apply_defaults
-    def __init__(self, bucket_name, s3_key, role_arn, aws_region="us-east-1", *args, **kwargs):
+    def __init__(self, role_arn: str, region_name: str = "us-east-1", *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.bucket_name = bucket_name
-        self.s3_key = s3_key
+        self.role_arn = role_arn
+        self.region_name = region_name
+
+    def _get_credentials(self):
+        """Override the default method to use STS for assuming a role."""
+        self.log.info(f"Assuming IAM role: {self.role_arn}")
+
+        sts_client = boto3.client("sts", region_name=self.region_name)
+        assumed_role = sts_client.assume_role(
+            RoleArn=self.role_arn,
+            RoleSessionName="AirflowS3HookSession"
+        )
+
+        credentials = assumed_role["Credentials"]
+        return {
+            "aws_access_key_id": credentials["AccessKeyId"],
+            "aws_secret_access_key": credentials["SecretAccessKey"],
+            "aws_session_token": credentials["SessionToken"],
+        }
+
+    def get_s3_client(self):
+        """Returns an S3 client using the assumed role credentials."""
+        credentials = self._get_credentials()
+
+        return boto3.client(
+            "s3",
+            aws_access_key_id=credentials["aws_access_key_id"],
+            aws_secret_access_key=credentials["aws_secret_access_key"],
+            aws_session_token=credentials["aws_session_token"],
+            region_name=self.region_name,
+        )
+
+from airflow.providers.amazon.aws.sensors.s3 import S3KeySensor
+from custom_hooks.S3HookWithSTS import S3HookWithSTS
+
+class S3KeySensorWithSTS(S3KeySensor):
+    """
+    Custom S3 Sensor that uses an STS-enabled S3 Hook to check for a file in S3.
+    
+    :param role_arn: IAM Role ARN to assume
+    :param aws_region: AWS region
+    """
+
+    def __init__(self, role_arn, aws_region="us-east-1", *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.role_arn = role_arn
         self.aws_region = aws_region
 
-    def assume_role(self):
-        """Assumes an IAM role using AWS STS and returns temporary credentials."""
-        sts_client = boto3.client('sts')
-        assumed_role = sts_client.assume_role(RoleArn=self.role_arn, RoleSessionName="AirflowS3SensorSession")
-        return assumed_role['Credentials']
+    @cached_property
+    def hook(self) -> S3HookWithSTS:
+        """Overrides the default hook to use S3HookWithSTS instead of S3Hook."""
+        return S3HookWithSTS(role_arn=self.role_arn, region_name=self.aws_region)
 
-    def poke(self, context):
-        """Checks if the S3 object exists using assumed STS credentials."""
-        self.log.info(f"Checking for file {self.s3_key} in S3 bucket {self.bucket_name}")
 
-        # Assume role and get temporary credentials
-        credentials = self.assume_role()
+from airflow import DAG
+from datetime import datetime, timedelta
+from custom_sensors.S3KeySensorWithSTS import S3KeySensorWithSTS
 
-        # Create S3 client with temporary credentials
-        s3_client = boto3.client(
-            's3',
-            aws_access_key_id=credentials['AccessKeyId'],
-            aws_secret_access_key=credentials['SecretAccessKey'],
-            aws_session_token=credentials['SessionToken'],
-            region_name=self.aws_region
-        )
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime(2024, 2, 8),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
 
-        # Check if object exists in S3
-        try:
-            s3_client.head_object(Bucket=self.bucket_name, Key=self.s3_key)
-            self.log.info(f"File {self.s3_key} found in S3 bucket {self.bucket_name}")
-            return True
-        except s3_client.exceptions.ClientError as e:
-            if e.response['Error']['Code'] == '404':
-                self.log.info(f"File {self.s3_key} not found in S3 bucket {self.bucket_name}")
-                return False
-            else:
-                self.log.error(f"Error while checking S3: {e}")
-                raise
+dag = DAG(
+    's3_sensor_with_sts',
+    default_args=default_args,
+    description='DAG using S3 Sensor with STS authentication',
+    schedule_interval=timedelta(days=1),
+    catchup=False,
+)
+
+s3_sensor_task = S3KeySensorWithSTS(
+    task_id='check_s3_file',
+    bucket_name='my-s3-bucket',
+    bucket_key='data/file.csv',
+    role_arn='arn:aws:iam::123456789012:role/MyAirflowRole',
+    aws_region='us-east-1',
+    poke_interval=60,  # Check every 60 seconds
+    timeout=600,  # Timeout after 10 minutes
+    dag=dag,
+)

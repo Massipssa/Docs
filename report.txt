@@ -80,3 +80,5 @@ object SparkUntarParallel {
     println(s"Saved extracted file: $outputPath")
   }
 }
+      .config("spark.hadoop.io.compression.codecs", "org.apache.hadoop.io.compress.BZip2Codec")
+      .config("spark.hadoop.io.native.lib.available", "true")

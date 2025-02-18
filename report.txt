@@ -1,65 +1,68 @@
-import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
-import java.util.concurrent.Executors
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import com.amazonaws.services.s3.model._
 
-// Custom ExecutionContext for parallel processing
-implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
+import java.io.InputStream
+import scala.collection.mutable.ListBuffer
 
-val batchToProcess: String = readBatchToProcess(batchName)
-val batchFileToUntar = S3Utility.read(batchToProcess)
+object S3MultipartUpload {
+  
+  val bucketName = "your-bucket-name"
+  val partSize = 5 * 1024 * 1024 // 5MB per part
 
-var inProgressEntries: mutable.Map[String, String] = new mutable.HashMap[String, String]()
+  def uploadInputStream(s3Client: AmazonS3, key: String, inputStream: InputStream, contentLength: Long): Unit = {
+    var uploadId: String = null
+    val partETags = ListBuffer[PartETag]()
+    
+    try {
+      // Step 1: Initiate Multipart Upload
+      val initRequest = new InitiateMultipartUploadRequest(bucketName, key)
+      val initResponse = s3Client.initiateMultipartUpload(initRequest)
+      uploadId = initResponse.getUploadId
 
-// Parallel Processing of Untar
-val futures = Unarchiver.open(batchFileToUntar)
-  .filterNot(_.isDirectory)
-  .filter(entry => hasEntryInProgressState(entry.getName, batchName, inProgressEntries))
-  .map { archiveEntry =>
-    Future {
-      processArchiveEntry(batchName, archiveEntry, inProgressEntries)
+      // Step 2: Upload parts
+      val buffer = new Array[Byte](partSize)
+      var bytesRead = 0
+      var partNumber = 1
+
+      while ({
+        bytesRead = inputStream.read(buffer)
+        bytesRead != -1
+      }) {
+        val partInputStream = new java.io.ByteArrayInputStream(buffer, 0, bytesRead)
+        val uploadPartRequest = new UploadPartRequest()
+          .withBucketName(bucketName)
+          .withKey(key)
+          .withUploadId(uploadId)
+          .withPartNumber(partNumber)
+          .withInputStream(partInputStream)
+          .withPartSize(bytesRead)
+
+        val uploadPartResult = s3Client.uploadPart(uploadPartRequest)
+        partETags.append(uploadPartResult.getPartETag)
+
+        println(s"Uploaded part $partNumber, size: $bytesRead bytes")
+        partNumber += 1
+      }
+
+      // Step 3: Complete Multipart Upload
+      val completeRequest = new CompleteMultipartUploadRequest(bucketName, key, uploadId, partETags.toList)
+      s3Client.completeMultipartUpload(completeRequest)
+
+      println(s"Upload of $key completed successfully!")
+
+    } catch {
+      case e: Exception =>
+        println(s"Upload failed: ${e.getMessage}")
+        if (uploadId != null) {
+          s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(bucketName, key, uploadId))
+          println("Aborted multipart upload due to error")
+        }
     }
   }
 
-// Await completion of all futures
-Future.sequence(futures).onComplete(_ => logger.info("Untar Process Completed"))
+  def main(args: Array[String]): Unit = {
+    val s3Client: AmazonS3 = AmazonS3ClientBuilder.standard().build()
+    val key = s"uploads/${java.util.UUID.randomUUID()}.txt"
 
-def processArchiveEntry(batchName: String, archiveEntry: ArchiveEntry, inProgressEntries: mutable.Map[String, String]): Unit = {
-  logger.info(s"START - Processing archive entry ${archiveEntry.getName}")
-
-  val startTimeFile = System.nanoTime()
-
-  try {
-    val uploadedBytes = saveObject(batchName, archiveEntry)
-    totalFiles += 1
-    totalBytes += uploadedBytes
-
-    logger.debug(s"Uploaded Bytes: $uploadedBytes")
-    logger.debug(s"Total Files: $totalFiles")
-  } catch {
-    case t: Throwable =>
-      logger.error(s"Exception during Untarring of ${archiveEntry.getName}: ${t.getMessage}")
-      StateUtility.saveArkeaObjectErrorState(archiveEntry.getName, inProgressEntries.toMap)
-  }
-
-  logger.info(s"END - Processing archive entry took ${TimeUtility.delay(startTimeFile)}")
-}
-
-private def saveObject(batchName: String, archiveEntry: ArchiveEntry)(implicit jobConfig: JobConfigDto): Long = {
-  val uploadLocation = StorageConstants.UNTARRED_APPL_ZONE_KEY +
-    GeneralConstants.S3_DELIMITER + batchName +
-    GeneralConstants.S3_DELIMITER + archiveEntry.getName
-
-  val archiveEntrySize = archiveEntry.getSize
-
-  if (archiveEntrySize == ArchiveEntry.SIZE_UNKNOWN) {
-    throw new RuntimeException(s"Unknown entry size for ${archiveEntry.getName}")
-  }
-
-  logger.info(s"Uploading archive entry ${archiveEntry.getName} to $uploadLocation")
-
-  // Stream upload for better performance
-  val inputStream = archiveEntry.getInputStream
-  S3Utility.put(uploadLocation, inputStream)
-
-  archiveEntrySize
-}
+    // Simulate an

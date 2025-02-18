@@ -1,158 +1,44 @@
-import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
-import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.s3.{S3Client, S3Utilities}
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import java.io._
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
+import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.hadoop.io.compress.BZip2Codec
 import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
-import scala.concurrent.{ExecutionContext, Future}
-import java.util.concurrent.Executors
+import java.io.{ByteArrayInputStream, InputStream}
+import scala.collection.mutable.ArrayBuffer
 
-object S3GlueUntar {
+// Spark Configuration
+val conf = new SparkConf().setAppName("DecompressTarBz2").setMaster("local[*]") // Change master for cluster mode
+val sc = new SparkContext(conf)
 
-  implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+// Function to Extract Tar Entries from InputStream
+def extractTarEntries(inputStream: InputStream): Seq[(String, Array[Byte])] = {
+  val tarInput = new TarArchiveInputStream(inputStream)
+  val extractedFiles = ArrayBuffer[(String, Array[Byte])]()
 
-  // Create S3 Client with credentials
-  def createS3Client(): S3Client = {
-    val accessKey = "your-access-key"
-    val secretKey = "your-secret-key"
-    val credentials = AwsBasicCredentials.create(accessKey, secretKey)
-    val credentialsProvider = StaticCredentialsProvider.create(credentials)
-
-    S3Client.builder()
-      .region(Region.US_EAST_1) // Set correct AWS region
-      .credentialsProvider(credentialsProvider)
-      .build()
-  }
-
-  val s3: S3Client = createS3Client()
-
-  // Stream .tar.bz2 from S3, untar, and upload extracted files back to S3
-  def untarFromS3(bucket: String, tarKey: String, outputPrefix: String): Future[Unit] = Future {
-    val request = GetObjectRequest.builder().bucket(bucket).key(tarKey).build()
-    val s3Object = s3.getObject(request)
-
-    val inputStream = new BZip2CompressorInputStream(new BufferedInputStream(s3Object))
-    val tarInputStream = new TarArchiveInputStream(inputStream)
-
-    // Collect all entries first
-    val entries = Iterator
-      .continually(tarInputStream.getNextTarEntry)
-      .takeWhile(_ != null)
-      .toList
-
-    // Process extraction in parallel using Future
-    val extractionFutures = entries.map { entry =>
-      Future {
-        if (!entry.isDirectory) {
-          val buffer = new Array(4096) // 4KB buffer for efficiency
-          val outputKey = s"$outputPrefix/${entry.getName}"
-          val outputStream = new ByteArrayOutputStream()
-          var bytesRead = 0
-
-          while ({ bytesRead = tarInputStream.read(buffer, 0, buffer.length); bytesRead != -1 }) {
-            outputStream.write(buffer, 0, bytesRead)
-          }
-
-          // Upload extracted file back to S3
-          uploadToS3(bucket, outputKey, outputStream.toByteArray)
-          outputStream.close()
-        }
-      }
+  var entry: TarArchiveEntry = tarInput.getNextTarEntry
+  while (entry != null) {
+    if (!entry.isDirectory) {
+      val fileBytes = new Array[Byte](entry.getSize.toInt)
+      tarInput.read(fileBytes)
+      extractedFiles.append((entry.getName, fileBytes))
     }
-
-    Future.sequence(extractionFutures).map(_ => tarInputStream.close())
+    entry = tarInput.getNextTarEntry
   }
-
-  // Upload extracted file to S3
-  def uploadToS3(bucket: String, key: String, data: Array[Byte]): Unit = {
-    val request = software.amazon.awssdk.services.s3.model.PutObjectRequest.builder()
-      .bucket(bucket)
-      .key(key)
-      .build()
-
-    val inputStream = new ByteArrayInputStream(data)
-    s3.putObject(request, software.amazon.awssdk.core.sync.RequestBody.fromInputStream(inputStream, data.length))
-
-    println(s"Uploaded extracted file: s3://$bucket/$key")
-  }
-
-  def main(args: Array[String]): Unit = {
-    val bucketName = "your-bucket-name"
-    val tarFileKey = "path/to/file.tar.bz2"
-    val outputS3Prefix = "extracted-files/"
-
-    // Start untar operation without downloading the tar file
-    untarFromS3(bucketName, tarFileKey, outputS3Prefix).onComplete { _ =>
-      println("Untar and upload to S3 complete!")
-    }
-  }
+  tarInput.close()
+  extractedFiles
 }
 
+// Read and Decompress .tar.bz2 File from S3 or HDFS
+val tarBz2RDD = sc.binaryFiles("s3://your-bucket/path/to/file.tar.bz2")
 
-import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
-import java.util.concurrent.Executors
-
-// Custom ExecutionContext for parallel processing
-implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
-
-val batchToProcess: String = readBatchToProcess(batchName)
-val batchFileToUntar = S3Utility.read(batchToProcess)
-
-var inProgressEntries: mutable.Map[String, String] = new mutable.HashMap[String, String]()
-
-// Parallel Processing of Untar
-val futures = Unarchiver.open(batchFileToUntar)
-  .filterNot(_.isDirectory)
-  .filter(entry => hasEntryInProgressState(entry.getName, batchName, inProgressEntries))
-  .map { archiveEntry =>
-    Future {
-      processArchiveEntry(batchName, archiveEntry, inProgressEntries)
-    }
-  }
-
-// Await completion of all futures
-Future.sequence(futures).onComplete(_ => logger.info("Untar Process Completed"))
-
-def processArchiveEntry(batchName: String, archiveEntry: ArchiveEntry, inProgressEntries: mutable.Map[String, String]): Unit = {
-  logger.info(s"START - Processing archive entry ${archiveEntry.getName}")
-
-  val startTimeFile = System.nanoTime()
-
-  try {
-    val uploadedBytes = saveObject(batchName, archiveEntry)
-    totalFiles += 1
-    totalBytes += uploadedBytes
-
-    logger.debug(s"Uploaded Bytes: $uploadedBytes")
-    logger.debug(s"Total Files: $totalFiles")
-  } catch {
-    case t: Throwable =>
-      logger.error(s"Exception during Untarring of ${archiveEntry.getName}: ${t.getMessage}")
-      StateUtility.saveArkeaObjectErrorState(archiveEntry.getName, inProgressEntries.toMap)
-  }
-
-  logger.info(s"END - Processing archive entry took ${TimeUtility.delay(startTimeFile)}")
+// Decompress and Extract Files
+val extractedFilesRDD = tarBz2RDD.flatMap { case (path, content) =>
+  val bz2InputStream = new BZip2Codec().createInputStream(content.open())
+  extractTarEntries(bz2InputStream)
 }
 
-private def saveObject(batchName: String, archiveEntry: ArchiveEntry)(implicit jobConfig: JobConfigDto): Long = {
-  val uploadLocation = StorageConstants.UNTARRED_APPL_ZONE_KEY +
-    GeneralConstants.S3_DELIMITER + batchName +
-    GeneralConstants.S3_DELIMITER + archiveEntry.getName
-
-  val archiveEntrySize = archiveEntry.getSize
-
-  if (archiveEntrySize == ArchiveEntry.SIZE_UNKNOWN) {
-    throw new RuntimeException(s"Unknown entry size for ${archiveEntry.getName}")
-  }
-
-  logger.info(s"Uploading archive entry ${archiveEntry.getName} to $uploadLocation")
-
-  // Stream upload for better performance
-  val inputStream = archiveEntry.getInputStream
-  S3Utility.put(uploadLocation, inputStream)
-
-  archiveEntrySize
+// Save Extracted Files to HDFS (Optional)
+extractedFilesRDD.foreach { case (fileName, fileData) =>
+  val outputPath = s"hdfs://your-hdfs-path/extracted/$fileName"
+  sc.parallelize(fileData.toSeq).saveAsTextFile(outputPath) // Save files in parallel
 }
 
+println("Decompression and Extraction of .tar.bz2 completed successfully!")

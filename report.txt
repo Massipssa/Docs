@@ -1,44 +1,82 @@
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql.SparkSession
 import org.apache.hadoop.io.compress.BZip2Codec
 import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
 import java.io.{ByteArrayInputStream, InputStream}
 import scala.collection.mutable.ArrayBuffer
 
-// Spark Configuration
-val conf = new SparkConf().setAppName("DecompressTarBz2").setMaster("local[*]") // Change master for cluster mode
-val sc = new SparkContext(conf)
+object SparkUntarParallel {
+  
+  def main(args: Array[String]): Unit = {
+    // Initialize SparkSession
+    val spark = SparkSession.builder()
+      .appName("SparkTarBz2Decompressor")
+      .master("local[*]") // Change to cluster mode if running on a Spark cluster
+      .getOrCreate()
 
-// Function to Extract Tar Entries from InputStream
-def extractTarEntries(inputStream: InputStream): Seq[(String, Array[Byte])] = {
-  val tarInput = new TarArchiveInputStream(inputStream)
-  val extractedFiles = ArrayBuffer[(String, Array[Byte])]()
+    val sc = spark.sparkContext
 
-  var entry: TarArchiveEntry = tarInput.getNextTarEntry
-  while (entry != null) {
-    if (!entry.isDirectory) {
-      val fileBytes = new Array[Byte](entry.getSize.toInt)
-      tarInput.read(fileBytes)
-      extractedFiles.append((entry.getName, fileBytes))
+    // Input and Output Paths
+    val tarBz2Path = "s3://your-bucket/path/to/file.tar.bz2" // Replace with HDFS/S3 path
+    val outputPrefix = "s3://your-output-bucket/extracted-files" // Change for your output storage
+
+    // Read the .tar.bz2 file from S3 or HDFS
+    val tarBz2RDD = sc.binaryFiles(tarBz2Path)
+
+    // Decompress and Extract Files in Parallel
+    val extractedFilesRDD = tarBz2RDD.flatMap { case (_, content) =>
+      val bz2InputStream = new BZip2Codec().createInputStream(content.open())
+      extractTarEntries(bz2InputStream)
     }
-    entry = tarInput.getNextTarEntry
+
+    // Save Extracted Files in Parallel
+    extractedFilesRDD.foreachPartition { partition =>
+      partition.foreach { case (fileName, fileData) =>
+        saveFile(spark, outputPrefix, fileName, fileData)
+      }
+    }
+
+    println("Decompression and Extraction of .tar.bz2 completed successfully!")
+    spark.stop()
   }
-  tarInput.close()
-  extractedFiles
+
+  /** 
+   * Extracts files from a tar archive stream.
+   * @param inputStream BZ2 decompressed input stream
+   * @return Sequence of extracted file names and their content as byte arrays
+   */
+  def extractTarEntries(inputStream: InputStream): Seq[(String, Array[Byte])] = {
+    val tarInput = new TarArchiveInputStream(inputStream)
+    val extractedFiles = ArrayBuffer[(String, Array[Byte])]()
+
+    var entry: TarArchiveEntry = tarInput.getNextTarEntry
+    while (entry != null) {
+      if (!entry.isDirectory) {
+        val fileBytes = new Array[Byte](entry.getSize.toInt)
+        tarInput.read(fileBytes)
+        extractedFiles.append((entry.getName, fileBytes))
+      }
+      entry = tarInput.getNextTarEntry
+    }
+    tarInput.close()
+    extractedFiles
+  }
+
+  /** 
+   * Saves extracted file data to HDFS or S3.
+   * @param spark SparkSession instance
+   * @param outputPrefix Output directory
+   * @param fileName Name of extracted file
+   * @param fileData Extracted file data as bytes
+   */
+  def saveFile(spark: SparkSession, outputPrefix: String, fileName: String, fileData: Array[Byte]): Unit = {
+    val outputPath = s"$outputPrefix/$fileName"
+    val fileContent = new String(fileData) // Convert Byte Array to String
+    val rdd = spark.sparkContext.parallelize(fileContent.split("\n"))
+
+    // Save to S3/HDFS in distributed mode
+    rdd.saveAsTextFile(outputPath)
+    
+    println(s"Saved extracted file: $outputPath")
+  }
 }
-
-// Read and Decompress .tar.bz2 File from S3 or HDFS
-val tarBz2RDD = sc.binaryFiles("s3://your-bucket/path/to/file.tar.bz2")
-
-// Decompress and Extract Files
-val extractedFilesRDD = tarBz2RDD.flatMap { case (path, content) =>
-  val bz2InputStream = new BZip2Codec().createInputStream(content.open())
-  extractTarEntries(bz2InputStream)
-}
-
-// Save Extracted Files to HDFS (Optional)
-extractedFilesRDD.foreach { case (fileName, fileData) =>
-  val outputPath = s"hdfs://your-hdfs-path/extracted/$fileName"
-  sc.parallelize(fileData.toSeq).saveAsTextFile(outputPath) // Save files in parallel
-}
-
-println("Decompression and Extraction of .tar.bz2 completed successfully!")

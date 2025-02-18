@@ -50,10 +50,10 @@ object S3UntarBz2Future {
           if (!Files.exists(parentDir)) Files.createDirectories(parentDir)
 
           val outputStream = new BufferedOutputStream(new FileOutputStream(outputFile.toFile))
-          val buffer = new Array   // Fixed (4KB)
+          val buffer = new Array(4096) // ✅ Fixed buffer allocation
           var bytesRead = 0
 
-          while ({ bytesRead = tarInputStream.read(buffer); bytesRead != -1 }) {
+          while ({ bytesRead = tarInputStream.read(buffer, 0, buffer.length); bytesRead != -1 }) {
             outputStream.write(buffer, 0, bytesRead)
           }
 
@@ -76,8 +76,4 @@ object S3UntarBz2Future {
     val downloadFuture = downloadS3Object(bucketName, s3Key, localBz2File)
 
     // Step 2: Extract after download completes
-    downloadFuture.flatMap(_ => untarBz2Parallel(localBz2File, outputDir)).onComplete { _ =>
-      println("Extraction complete!")
-    }
-  }
-}
+    downloadFuture.flatMap(_ => untarBz2Parallel(localBz2File, output

@@ -9,16 +9,17 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scala.jdk.CollectionConverters._
+import java.util.concurrent.Executors
 
-object S3TarBz2ParallelUpload {
+object S3TarBz2ParallelThreadedUpload {
 
   val bucketName = "your-bucket-name"
   val inputKey = "input-folder/archive.tar.bz2"
   val outputPrefix = "extracted-folder/"
   val partSize = 100 * 1024 * 1024 // 100MB par partie
 
-  // Créer un contexte d'exécution pour l'upload parallèle (ThreadPool)
-  implicit val ec: ExecutionContext = ExecutionContext.global
+  // Créer un ThreadPool avec 5 threads pour les uploads
+  implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(5))
 
   def extractAndUploadParallel(s3Client: AmazonS3): Unit = {
     // 1️⃣ Lire le fichier `.tar.bz2` en streaming depuis S3
@@ -38,7 +39,7 @@ object S3TarBz2ParallelUpload {
         val fileName = entry.getName
         val s3TargetKey = outputPrefix + fileName
 
-        println(s"Extraction et Upload en parallèle: $fileName -> $s3TargetKey")
+        println(s"Extraction et Upload en parallèle (Thread) : $fileName -> $s3TargetKey")
 
         // Lire le fichier extrait en mémoire
         val outputStream = new ByteArrayOutputStream()
@@ -52,7 +53,7 @@ object S3TarBz2ParallelUpload {
         val fileData = outputStream.toByteArray
         outputStream.close()
 
-        // 3️⃣ Lancer l'upload en parallèle avec Future
+        // 3️⃣ Lancer l'upload en parallèle avec plusieurs threads
         val futureUpload = Future {
           multipartUpload(s3Client, bucketName, s3TargetKey, fileData)
         }
@@ -69,8 +70,8 @@ object S3TarBz2ParallelUpload {
 
     // 5️⃣ Attendre la fin de tous les uploads
     Future.sequence(uploadFutures).onComplete {
-      case Success(_) => println("Tous les fichiers ont été uploadés avec succès 🚀")
-      case Failure(ex) => println(s"Erreur lors de l'upload: ${ex.getMessage}")
+      case Success(_) => println("✅ Tous les fichiers ont été uploadés avec succès 🚀")
+      case Failure(ex) => println(s"❌ Erreur lors de l'upload: ${ex.getMessage}")
     }
   }
 
@@ -97,18 +98,6 @@ object S3TarBz2ParallelUpload {
       val partResult = s3Client.uploadPart(uploadPartRequest)
       partETags.append(partResult.getPartETag)
 
-      println(s"Partie $partNumber uploadée: ${partData.length} bytes")
+      println(s"Partie $partNumber uploadée avec Thread : ${partData.length} bytes")
       start = end
-      partNumber += 1
-    }
-
-    // ✅ Convertir Scala ListBuffer en Java List
-    s3Client.completeMultipartUpload(new CompleteMultipartUploadRequest(bucket, key, uploadId, partETags.asJava))
-    println(s"Upload terminé pour $key ✅")
-  }
-
-  def main(args: Array[String]): Unit = {
-    val s3Client = AmazonS3ClientBuilder.standard().build()
-    extractAndUploadParallel(s3Client)
-  }
-}
+      partNumber += 

@@ -1,24 +1,26 @@
+import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
+import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import org.apache.commons.compress.archivers.tar._
 import java.io._
 import scala.collection.parallel.CollectionConverters._
-import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.core.sync.RequestBody
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 
 val s3Client = S3Client.builder().build()
 
-// Function to stream tar file from S3
+// Function to stream and extract tar file
 def extractTar(bucket: String, tarKey: String): List[(String, Array[Byte])] = {
-  val s3Obj = s3Client.getObjectAsBytes(builder => builder.bucket(bucket).key(tarKey))
-  val tarInput = new ByteArrayInputStream(s3Obj.asByteArray())
-  val tarArchive = new TarArchiveInputStream(new BufferedInputStream(tarInput))
+  val request = GetObjectRequest.builder().bucket(bucket).key(tarKey).build()
+  val s3Stream = s3Client.getObject(request) // Returns an InputStream
+  
+  val tarArchive = new TarArchiveInputStream(new BufferedInputStream(s3Stream))
 
   Iterator.continually(tarArchive.getNextTarEntry)
     .takeWhile(_ != null)
     .filter(!_.isDirectory)
     .map { entry =>
       val byteArray = new ByteArrayOutputStream()
-      val buffer = new Array  // Read 8KB chunks
+      val buffer = new Array  // Buffer for efficient reading
       var bytesRead = tarArchive.read(buffer)
       while (bytesRead != -1) {
         byteArray.write(buffer, 0, bytesRead)
@@ -40,10 +42,11 @@ def uploadToS3(file: (String, Array[Byte])): Unit = {
   s3Client.putObject(uploadRequest, RequestBody.fromBytes(content))
 }
 
-// Processing the tar file
+// S3 Bucket & Tar File Path
 val bucketName = "your-bucket"
 val tarFileKey = "path/to/your_tar_file.tar"
 
+// Extract files from tar
 val extractedFiles = extractTar(bucketName, tarFileKey)
 
 // Convert to Parallel Collection and Upload in Parallel

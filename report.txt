@@ -1,37 +1,114 @@
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model._
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
+import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
+
+import java.io._
+import java.util.UUID
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import scala.jdk.CollectionConverters._
 
-def multipartUpload(s3Client: AmazonS3, bucket: String, key: String, data: Array[Byte]): Unit = {
-  val uploadId = s3Client.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucket, key)).getUploadId
-  val partETags = ListBuffer[PartETag]()
-  val partSize = 5 * 1024 * 1024 // 5MB
-  val totalSize = data.length
-  var start = 0
-  var partNumber = 1
+object S3TarBz2ParallelUpload {
 
-  while (start < totalSize) {
-    val end = Math.min(start + partSize, totalSize)
-    val partData = data.slice(start, end)
+  val bucketName = "your-bucket-name"
+  val inputKey = "input-folder/archive.tar.bz2"
+  val outputPrefix = "extracted-folder/"
+  val partSize = 100 * 1024 * 1024 // 100MB par partie
 
-    val inputStream = new ByteArrayInputStream(partData)
-    val uploadPartRequest = new UploadPartRequest()
-      .withBucketName(bucket)
-      .withKey(key)
-      .withUploadId(uploadId)
-      .withPartNumber(partNumber)
-      .withInputStream(inputStream)
-      .withPartSize(partData.length)
+  // Créer un contexte d'exécution pour l'upload parallèle (ThreadPool)
+  implicit val ec: ExecutionContext = ExecutionContext.global
 
-    val partResult = s3Client.uploadPart(uploadPartRequest)
-    partETags.append(partResult.getPartETag)
+  def extractAndUploadParallel(s3Client: AmazonS3): Unit = {
+    // 1️⃣ Lire le fichier `.tar.bz2` en streaming depuis S3
+    val s3Object = s3Client.getObject(new GetObjectRequest(bucketName, inputKey))
+    val s3InputStream = s3Object.getObjectContent
 
-    println(s"Partie $partNumber uploadée: ${partData.length} bytes")
-    start = end
-    partNumber += 1
+    // 2️⃣ Décompresser le fichier en mémoire
+    val bz2Stream = new BZip2CompressorInputStream(s3InputStream)
+    val tarInput = new TarArchiveInputStream(bz2Stream)
+
+    var entry: TarArchiveEntry = tarInput.getNextTarEntry
+
+    val uploadFutures = ListBuffer[Future[Unit]]()
+
+    while (entry != null) {
+      if (!entry.isDirectory) {
+        val fileName = entry.getName
+        val s3TargetKey = outputPrefix + fileName
+
+        println(s"Extraction et Upload en parallèle: $fileName -> $s3TargetKey")
+
+        // Lire le fichier extrait en mémoire
+        val outputStream = new ByteArrayOutputStream()
+        val buffer = new Array[Byte](16 * 1024) // 16KB buffer
+        var bytesRead = 0
+
+        while ({ bytesRead = tarInput.read(buffer); bytesRead != -1 }) {
+          outputStream.write(buffer, 0, bytesRead)
+        }
+
+        val fileData = outputStream.toByteArray
+        outputStream.close()
+
+        // 3️⃣ Lancer l'upload en parallèle avec Future
+        val futureUpload = Future {
+          multipartUpload(s3Client, bucketName, s3TargetKey, fileData)
+        }
+
+        uploadFutures.append(futureUpload)
+      }
+      entry = tarInput.getNextTarEntry
+    }
+
+    // 4️⃣ Fermer les flux
+    tarInput.close()
+    bz2Stream.close()
+    s3InputStream.close()
+
+    // 5️⃣ Attendre la fin de tous les uploads
+    Future.sequence(uploadFutures).onComplete {
+      case Success(_) => println("Tous les fichiers ont été uploadés avec succès 🚀")
+      case Failure(ex) => println(s"Erreur lors de l'upload: ${ex.getMessage}")
+    }
   }
 
-  // ✅ Convert Scala ListBuffer to Java List
-  s3Client.completeMultipartUpload(new CompleteMultipartUploadRequest(bucket, key, uploadId, partETags.asJava))
-  println(s"Upload terminé pour $key ✅")
+  def multipartUpload(s3Client: AmazonS3, bucket: String, key: String, data: Array[Byte]): Unit = {
+    val uploadId = s3Client.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucket, key)).getUploadId
+    val partETags = ListBuffer[PartETag]()
+    val totalSize = data.length
+    var start = 0
+    var partNumber = 1
+
+    while (start < totalSize) {
+      val end = Math.min(start + partSize, totalSize)
+      val partData = data.slice(start, end)
+
+      val inputStream = new ByteArrayInputStream(partData)
+      val uploadPartRequest = new UploadPartRequest()
+        .withBucketName(bucket)
+        .withKey(key)
+        .withUploadId(uploadId)
+        .withPartNumber(partNumber)
+        .withInputStream(inputStream)
+        .withPartSize(partData.length)
+
+      val partResult = s3Client.uploadPart(uploadPartRequest)
+      partETags.append(partResult.getPartETag)
+
+      println(s"Partie $partNumber uploadée: ${partData.length} bytes")
+      start = end
+      partNumber += 1
+    }
+
+    // ✅ Convertir Scala ListBuffer en Java List
+    s3Client.completeMultipartUpload(new CompleteMultipartUploadRequest(bucket, key, uploadId, partETags.asJava))
+    println(s"Upload terminé pour $key ✅")
+  }
+
+  def main(args: Array[String]): Unit = {
+    val s3Client = AmazonS3ClientBuilder.standard().build()
+    extractAndUploadParallel(s3Client)
+  }
 }

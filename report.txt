@@ -1,84 +1,65 @@
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.SparkSession
-import org.apache.hadoop.io.compress.BZip2Codec
-import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
-import java.io.{ByteArrayInputStream, InputStream}
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future}
+import java.util.concurrent.Executors
 
-object SparkUntarParallel {
-  
-  def main(args: Array[String]): Unit = {
-    // Initialize SparkSession
-    val spark = SparkSession.builder()
-      .appName("SparkTarBz2Decompressor")
-      .master("local[*]") // Change to cluster mode if running on a Spark cluster
-      .getOrCreate()
+// Custom ExecutionContext for parallel processing
+implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
 
-    val sc = spark.sparkContext
+val batchToProcess: String = readBatchToProcess(batchName)
+val batchFileToUntar = S3Utility.read(batchToProcess)
 
-    // Input and Output Paths
-    val tarBz2Path = "s3://your-bucket/path/to/file.tar.bz2" // Replace with HDFS/S3 path
-    val outputPrefix = "s3://your-output-bucket/extracted-files" // Change for your output storage
+var inProgressEntries: mutable.Map[String, String] = new mutable.HashMap[String, String]()
 
-    // Read the .tar.bz2 file from S3 or HDFS
-    val tarBz2RDD = sc.binaryFiles(tarBz2Path)
-
-    // Decompress and Extract Files in Parallel
-    val extractedFilesRDD = tarBz2RDD.flatMap { case (_, content) =>
-      val bz2InputStream = new BZip2Codec().createInputStream(content.open())
-      extractTarEntries(bz2InputStream)
+// Parallel Processing of Untar
+val futures = Unarchiver.open(batchFileToUntar)
+  .filterNot(_.isDirectory)
+  .filter(entry => hasEntryInProgressState(entry.getName, batchName, inProgressEntries))
+  .map { archiveEntry =>
+    Future {
+      processArchiveEntry(batchName, archiveEntry, inProgressEntries)
     }
-
-    // Save Extracted Files in Parallel
-    extractedFilesRDD.foreachPartition { partition =>
-      partition.foreach { case (fileName, fileData) =>
-        saveFile(spark, outputPrefix, fileName, fileData)
-      }
-    }
-
-    println("Decompression and Extraction of .tar.bz2 completed successfully!")
-    spark.stop()
   }
 
-  /** 
-   * Extracts files from a tar archive stream.
-   * @param inputStream BZ2 decompressed input stream
-   * @return Sequence of extracted file names and their content as byte arrays
-   */
-  def extractTarEntries(inputStream: InputStream): Seq[(String, Array[Byte])] = {
-    val tarInput = new TarArchiveInputStream(inputStream)
-    val extractedFiles = ArrayBuffer[(String, Array[Byte])]()
+// Await completion of all futures
+Future.sequence(futures).onComplete(_ => logger.info("Untar Process Completed"))
 
-    var entry: TarArchiveEntry = tarInput.getNextTarEntry
-    while (entry != null) {
-      if (!entry.isDirectory) {
-        val fileBytes = new Array[Byte](entry.getSize.toInt)
-        tarInput.read(fileBytes)
-        extractedFiles.append((entry.getName, fileBytes))
-      }
-      entry = tarInput.getNextTarEntry
-    }
-    tarInput.close()
-    extractedFiles
+def processArchiveEntry(batchName: String, archiveEntry: ArchiveEntry, inProgressEntries: mutable.Map[String, String]): Unit = {
+  logger.info(s"START - Processing archive entry ${archiveEntry.getName}")
+
+  val startTimeFile = System.nanoTime()
+
+  try {
+    val uploadedBytes = saveObject(batchName, archiveEntry)
+    totalFiles += 1
+    totalBytes += uploadedBytes
+
+    logger.debug(s"Uploaded Bytes: $uploadedBytes")
+    logger.debug(s"Total Files: $totalFiles")
+  } catch {
+    case t: Throwable =>
+      logger.error(s"Exception during Untarring of ${archiveEntry.getName}: ${t.getMessage}")
+      StateUtility.saveArkeaObjectErrorState(archiveEntry.getName, inProgressEntries.toMap)
   }
 
-  /** 
-   * Saves extracted file data to HDFS or S3.
-   * @param spark SparkSession instance
-   * @param outputPrefix Output directory
-   * @param fileName Name of extracted file
-   * @param fileData Extracted file data as bytes
-   */
-  def saveFile(spark: SparkSession, outputPrefix: String, fileName: String, fileData: Array[Byte]): Unit = {
-    val outputPath = s"$outputPrefix/$fileName"
-    val fileContent = new String(fileData) // Convert Byte Array to String
-    val rdd = spark.sparkContext.parallelize(fileContent.split("\n"))
-
-    // Save to S3/HDFS in distributed mode
-    rdd.saveAsTextFile(outputPath)
-    
-    println(s"Saved extracted file: $outputPath")
-  }
+  logger.info(s"END - Processing archive entry took ${TimeUtility.delay(startTimeFile)}")
 }
-      .config("spark.hadoop.io.compression.codecs", "org.apache.hadoop.io.compress.BZip2Codec")
-      .config("spark.hadoop.io.native.lib.available", "true")
+
+private def saveObject(batchName: String, archiveEntry: ArchiveEntry)(implicit jobConfig: JobConfigDto): Long = {
+  val uploadLocation = StorageConstants.UNTARRED_APPL_ZONE_KEY +
+    GeneralConstants.S3_DELIMITER + batchName +
+    GeneralConstants.S3_DELIMITER + archiveEntry.getName
+
+  val archiveEntrySize = archiveEntry.getSize
+
+  if (archiveEntrySize == ArchiveEntry.SIZE_UNKNOWN) {
+    throw new RuntimeException(s"Unknown entry size for ${archiveEntry.getName}")
+  }
+
+  logger.info(s"Uploading archive entry ${archiveEntry.getName} to $uploadLocation")
+
+  // Stream upload for better performance
+  val inputStream = archiveEntry.getInputStream
+  S3Utility.put(uploadLocation, inputStream)
+
+  archiveEntrySize
+}

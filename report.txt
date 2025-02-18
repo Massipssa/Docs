@@ -2,92 +2,21 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import java.io._
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.Executors
-import scala.concurrent.{ExecutionContext, Future}
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
 
-object S3UntarBz2 {
+import scala.concurrent.{ExecutionContext, Future}
+import java.util.concurrent.Executors
 
+object S3UntarBz2Future {
+
+  // ExecutionContext for parallel execution
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   val s3: S3Client = S3Client.create()
 
-  def downloadS3Object(bucket: String, key: String, outputFile: String): Unit = {
-    val request = GetObjectRequest.builder().bucket(bucket).key(key).build()
-    val response = s3.getObject(request)
-
-    val outputStream = new FileOutputStream(outputFile)
-    response.transferTo(outputStream)
-    outputStream.close()
-
-    println(s"Downloaded $key from S3 to $outputFile")
-  }
-
-  def untarBz2Parallel(bz2File: String, outputDir: String): Future[Unit] = {
-    val inputStream = new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(bz2File)))
-    val tarInputStream = new TarArchiveInputStream(inputStream)
-
-    def extractEntry(entry: TarArchiveEntry): Future[Unit] = Future {
-      val outputFile = Paths.get(outputDir, entry.getName)
-
-      if (entry.isDirectory) {
-        Files.createDirectories(outputFile)
-      } else {
-        val parentDir = outputFile.getParent
-        if (!Files.exists(parentDir)) Files.createDirectories(parentDir)
-
-        val outputStream = new BufferedOutputStream(new FileOutputStream(outputFile.toFile))
-        val buffer = new Arrayr bytesRead = 0
-
-        while ({ bytesRead = tarInputStream.read(buffer); bytesRead != -1 }) {
-          outputStream.write(buffer, 0, bytesRead)
-        }
-
-        outputStream.close()
-      }
-    }
-
-    val extractionFutures = Iterator
-      .continually(tarInputStream.getNextTarEntry)
-      .takeWhile(_ != null)
-      .map(extractEntry)
-      .toList
-
-    Future.sequence(extractionFutures).map(_ => tarInputStream.close())
-  }
-
-  def main(args: Array[String]): Unit = {
-    val bucketName = "your-bucket-name"
-    val s3Key = "path/to/file.tar.bz2"
-    val localBz2File = "localfile.tar.bz2"
-    val outputDir = "output/"
-
-    // Step 1: Download from S3
-    downloadS3Object(bucketName, s3Key, localBz2File)
-
-    // Step 2: Extract in parallel
-    untarBz2Parallel(localBz2File, outputDir).onComplete { _ =>
-      println("Extraction complete!")
-    }
-  }
-}
-
-
-import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import java.io._
-import java.nio.file.{Files, Paths}
-import scala.collection.parallel.CollectionConverters._
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
-import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
-
-object S3UntarBz2Parallel {
-
-  val s3: S3Client = S3Client.create()
-
-  // Download .tar.bz2 file from S3
-  def downloadS3Object(bucket: String, key: String, outputFile: String): Unit = {
+  // Download file from S3
+  def downloadS3Object(bucket: String, key: String, outputFile: String): Future[Unit] = Future {
     val request = GetObjectRequest.builder().bucket(bucket).key(key).build()
     val response = s3.getObject(request)
 
@@ -99,7 +28,7 @@ object S3UntarBz2Parallel {
   }
 
   // Extract .tar.bz2 in parallel
-  def untarBz2Parallel(bz2File: String, outputDir: String): Unit = {
+  def untarBz2Parallel(bz2File: String, outputDir: String): Future[Unit] = Future {
     val inputStream = new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(bz2File)))
     val tarInputStream = new TarArchiveInputStream(inputStream)
 
@@ -109,30 +38,32 @@ object S3UntarBz2Parallel {
       .takeWhile(_ != null)
       .toList
 
-    // Process extraction in parallel
-    entries.par.foreach { entry =>
-      val outputFile = Paths.get(outputDir, entry.getName)
+    // Process extraction in parallel using Future
+    val extractionFutures = entries.map { entry =>
+      Future {
+        val outputFile = Paths.get(outputDir, entry.getName)
 
-      if (entry.isDirectory) {
-        Files.createDirectories(outputFile)
-      } else {
-        val parentDir = outputFile.getParent
-        if (!Files.exists(parentDir)) Files.createDirectories(parentDir)
+        if (entry.isDirectory) {
+          Files.createDirectories(outputFile)
+        } else {
+          val parentDir = outputFile.getParent
+          if (!Files.exists(parentDir)) Files.createDirectories(parentDir)
 
-        val outputStream = new BufferedOutputStream(new FileOutputStream(outputFile.toFile))
-        val buffer = new Array 
-        var bytesRead = 0
+          val outputStream = new BufferedOutputStream(new FileOutputStream(outputFile.toFile))
+          val buffer = new Array   // Fixed (4KB)
+          var bytesRead = 0
 
-        while ({ bytesRead = tarInputStream.read(buffer); bytesRead != -1 }) {
-          outputStream.write(buffer, 0, bytesRead)
+          while ({ bytesRead = tarInputStream.read(buffer); bytesRead != -1 }) {
+            outputStream.write(buffer, 0, bytesRead)
+          }
+
+          outputStream.close()
         }
-
-        outputStream.close()
       }
     }
 
-    tarInputStream.close()
-    println("Extraction completed successfully!")
+    // Wait for all files to extract before closing streams
+    Future.sequence(extractionFutures).map(_ => tarInputStream.close())
   }
 
   def main(args: Array[String]): Unit = {
@@ -142,9 +73,11 @@ object S3UntarBz2Parallel {
     val outputDir = "output/"
 
     // Step 1: Download from S3
-    downloadS3Object(bucketName, s3Key, localBz2File)
+    val downloadFuture = downloadS3Object(bucketName, s3Key, localBz2File)
 
-    // Step 2: Extract in parallel
-    untarBz2Parallel(localBz2File, outputDir)
+    // Step 2: Extract after download completes
+    downloadFuture.flatMap(_ => untarBz2Parallel(localBz2File, outputDir)).onComplete { _ =>
+      println("Extraction complete!")
+    }
   }
 }

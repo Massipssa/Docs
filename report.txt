@@ -1,35 +1,38 @@
-import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.{S3Client, S3Utilities}
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import java.io._
-import java.nio.file.{Files, Paths}
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
-
 import scala.concurrent.{ExecutionContext, Future}
 import java.util.concurrent.Executors
 
-object S3UntarBz2Future {
+object S3GlueUntar {
 
-  // ExecutionContext for parallel execution
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
-  val s3: S3Client = S3Client.create()
+  // Create S3 Client with credentials
+  def createS3Client(): S3Client = {
+    val accessKey = "your-access-key"
+    val secretKey = "your-secret-key"
+    val credentials = AwsBasicCredentials.create(accessKey, secretKey)
+    val credentialsProvider = StaticCredentialsProvider.create(credentials)
 
-  // Download file from S3
-  def downloadS3Object(bucket: String, key: String, outputFile: String): Future[Unit] = Future {
-    val request = GetObjectRequest.builder().bucket(bucket).key(key).build()
-    val response = s3.getObject(request)
-
-    val outputStream = new FileOutputStream(outputFile)
-    response.transferTo(outputStream)
-    outputStream.close()
-
-    println(s"Downloaded $key from S3 to $outputFile")
+    S3Client.builder()
+      .region(Region.US_EAST_1) // Set correct AWS region
+      .credentialsProvider(credentialsProvider)
+      .build()
   }
 
-  // Extract .tar.bz2 in parallel
-  def untarBz2Parallel(bz2File: String, outputDir: String): Future[Unit] = Future {
-    val inputStream = new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(bz2File)))
+  val s3: S3Client = createS3Client()
+
+  // Stream .tar.bz2 from S3, untar, and upload extracted files back to S3
+  def untarFromS3(bucket: String, tarKey: String, outputPrefix: String): Future[Unit] = Future {
+    val request = GetObjectRequest.builder().bucket(bucket).key(tarKey).build()
+    val s3Object = s3.getObject(request)
+
+    val inputStream = new BZip2CompressorInputStream(new BufferedInputStream(s3Object))
     val tarInputStream = new TarArchiveInputStream(inputStream)
 
     // Collect all entries first
@@ -41,39 +44,47 @@ object S3UntarBz2Future {
     // Process extraction in parallel using Future
     val extractionFutures = entries.map { entry =>
       Future {
-        val outputFile = Paths.get(outputDir, entry.getName)
-
-        if (entry.isDirectory) {
-          Files.createDirectories(outputFile)
-        } else {
-          val parentDir = outputFile.getParent
-          if (!Files.exists(parentDir)) Files.createDirectories(parentDir)
-
-          val outputStream = new BufferedOutputStream(new FileOutputStream(outputFile.toFile))
-          val buffer = new Array(4096) // ✅ Fixed buffer allocation
+        if (!entry.isDirectory) {
+          val buffer = new Array(4096) // 4KB buffer for efficiency
+          val outputKey = s"$outputPrefix/${entry.getName}"
+          val outputStream = new ByteArrayOutputStream()
           var bytesRead = 0
 
           while ({ bytesRead = tarInputStream.read(buffer, 0, buffer.length); bytesRead != -1 }) {
             outputStream.write(buffer, 0, bytesRead)
           }
 
+          // Upload extracted file back to S3
+          uploadToS3(bucket, outputKey, outputStream.toByteArray)
           outputStream.close()
         }
       }
     }
 
-    // Wait for all files to extract before closing streams
     Future.sequence(extractionFutures).map(_ => tarInputStream.close())
+  }
+
+  // Upload extracted file to S3
+  def uploadToS3(bucket: String, key: String, data: Array[Byte]): Unit = {
+    val request = software.amazon.awssdk.services.s3.model.PutObjectRequest.builder()
+      .bucket(bucket)
+      .key(key)
+      .build()
+
+    val inputStream = new ByteArrayInputStream(data)
+    s3.putObject(request, software.amazon.awssdk.core.sync.RequestBody.fromInputStream(inputStream, data.length))
+
+    println(s"Uploaded extracted file: s3://$bucket/$key")
   }
 
   def main(args: Array[String]): Unit = {
     val bucketName = "your-bucket-name"
-    val s3Key = "path/to/file.tar.bz2"
-    val localBz2File = "localfile.tar.bz2"
-    val outputDir = "output/"
+    val tarFileKey = "path/to/file.tar.bz2"
+    val outputS3Prefix = "extracted-files/"
 
-    // Step 1: Download from S3
-    val downloadFuture = downloadS3Object(bucketName, s3Key, localBz2File)
-
-    // Step 2: Extract after download completes
-    downloadFuture.flatMap(_ => untarBz2Parallel(localBz2File, output
+    // Start untar operation without downloading the tar file
+    untarFromS3(bucketName, tarFileKey, outputS3Prefix).onComplete { _ =>
+      println("Untar and upload to S3 complete!")
+    }
+  }
+}

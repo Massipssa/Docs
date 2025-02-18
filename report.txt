@@ -20,7 +20,8 @@ def extractTar(bucket: String, tarKey: String): List[(String, Array[Byte])] = {
     .filter(!_.isDirectory)
     .map { entry =>
       val byteArray = new ByteArrayOutputStream()
-      val buffer = new Array   // 8 KB       var bytesRead = tarArchive.read(buffer)
+      val buffer = new Array  // ✅ 8 KBefficient streaming
+      var bytesRead = tarArchive.read(buffer)
       while (bytesRead != -1) {
         byteArray.write(buffer, 0, bytesRead)
         bytesRead = tarArchive.read(buffer)

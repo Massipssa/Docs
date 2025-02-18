@@ -88,3 +88,71 @@ object S3GlueUntar {
     }
   }
 }
+
+
+import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future}
+import java.util.concurrent.Executors
+
+// Custom ExecutionContext for parallel processing
+implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(8))
+
+val batchToProcess: String = readBatchToProcess(batchName)
+val batchFileToUntar = S3Utility.read(batchToProcess)
+
+var inProgressEntries: mutable.Map[String, String] = new mutable.HashMap[String, String]()
+
+// Parallel Processing of Untar
+val futures = Unarchiver.open(batchFileToUntar)
+  .filterNot(_.isDirectory)
+  .filter(entry => hasEntryInProgressState(entry.getName, batchName, inProgressEntries))
+  .map { archiveEntry =>
+    Future {
+      processArchiveEntry(batchName, archiveEntry, inProgressEntries)
+    }
+  }
+
+// Await completion of all futures
+Future.sequence(futures).onComplete(_ => logger.info("Untar Process Completed"))
+
+def processArchiveEntry(batchName: String, archiveEntry: ArchiveEntry, inProgressEntries: mutable.Map[String, String]): Unit = {
+  logger.info(s"START - Processing archive entry ${archiveEntry.getName}")
+
+  val startTimeFile = System.nanoTime()
+
+  try {
+    val uploadedBytes = saveObject(batchName, archiveEntry)
+    totalFiles += 1
+    totalBytes += uploadedBytes
+
+    logger.debug(s"Uploaded Bytes: $uploadedBytes")
+    logger.debug(s"Total Files: $totalFiles")
+  } catch {
+    case t: Throwable =>
+      logger.error(s"Exception during Untarring of ${archiveEntry.getName}: ${t.getMessage}")
+      StateUtility.saveArkeaObjectErrorState(archiveEntry.getName, inProgressEntries.toMap)
+  }
+
+  logger.info(s"END - Processing archive entry took ${TimeUtility.delay(startTimeFile)}")
+}
+
+private def saveObject(batchName: String, archiveEntry: ArchiveEntry)(implicit jobConfig: JobConfigDto): Long = {
+  val uploadLocation = StorageConstants.UNTARRED_APPL_ZONE_KEY +
+    GeneralConstants.S3_DELIMITER + batchName +
+    GeneralConstants.S3_DELIMITER + archiveEntry.getName
+
+  val archiveEntrySize = archiveEntry.getSize
+
+  if (archiveEntrySize == ArchiveEntry.SIZE_UNKNOWN) {
+    throw new RuntimeException(s"Unknown entry size for ${archiveEntry.getName}")
+  }
+
+  logger.info(s"Uploading archive entry ${archiveEntry.getName} to $uploadLocation")
+
+  // Stream upload for better performance
+  val inputStream = archiveEntry.getInputStream
+  S3Utility.put(uploadLocation, inputStream)
+
+  archiveEntrySize
+}
+

@@ -2,40 +2,48 @@ import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.sql.functions._
 
 val spark = SparkSession.builder()
-  .appName("Check Multiple Columns Uniformity")
+  .appName("Detect Invalid Cases in DataFrame")
   .master("local[*]") // Exécution locale
   .getOrCreate()
 
 import spark.implicits._
 
-// Générer dynamiquement la liste des colonnes c0 à c6
-val columns = (0 to 6).map(i => s"c$i").toList
+// Liste des colonnes de données
+val columns = List("c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8")
 
-// Exemple de DataFrame avec les colonnes c0 à c6
+// Création d'un DataFrame de test
 val data = Seq(
-  (1, "A", "X", 100, 10.5, "2024-02-19", "Yes"),
-  (1, "A", "Y", 100, 10.5, "2024-02-19", "Yes"),  // Différence dans c2
-  (1, "A", "X", 100, 10.5, "2024-02-19", "Yes")
+  ("AB", "1234", "ABCDEF", "19/02/2025", "01/01/2023", "2024-02-19-12.30.45.123456", "123456", "test@example.com"), // ✅ Tout bon
+  ("X1", "9999", "ZZZZZZ", "31/12/2020", "25/05/2022", "2023-07-15-18.45.30.654321", "987654", "valid.email@domain.net"), // ✅ Tout bon
+  ("Y2", "A234", "12345",  "15/10/2023", "07/07/2021", "2022-01-01-23.59.59.999999", "1A3456", "wrong_email.com"), // ❌ c3, c7, c8 invalides
+  ("C3", "5678", "12ABCD", "invalid_date", "12/12/2012", "2019-05-20-10.15.30.111111", "1234A6", "another@bad_email"), // ❌ c4, c7, c8 invalides
+  ("AA", "567",  "ABCD12", "30-12-2022", "31/02/2020", "2019-05-20-10:15:30.123456", "99999B", "user@valid.com") // ❌ c2, c4, c5, c6, c7 invalides
 ).toDF(columns: _*)
 
-// Vérifier l'uniformité avec countDistinct()
-val countDistinctExprs = columns.map(c => countDistinct(col(c)).as(s"unique_$c"))
+// Définition des expressions de validation
+val validations = Map(
+  "c1" -> (length(col("c1")) === 2),
+  "c2" -> (length(col("c2")) === 4),
+  "c3" -> (length(col("c3")) === 6),
+  "c4" -> col("c4").rlike("^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$"),
+  "c5" -> col("c5").rlike("^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$"),
+  "c6" -> col("c6").rlike("^\\d{4}-\\d{2}-\\d{2}-\\d{2}\\.\\d{2}\\.\\d{2}\\.\\d{6}$"),
+  "c7" -> col("c7").rlike("^\\d+$"),
+  "c8" -> col("c8").rlike("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
+)
 
-// Appliquer `countDistinct` aux colonnes sélectionnées
-val checkUniformity = data.agg(countDistinctExprs.head, countDistinctExprs.tail: _*)
+// Générer dynamiquement les colonnes de validation
+val validColumns = validations.keys.map(c => s"${c}_valid").toList
 
-// Ajouter des colonnes booléennes pour indiquer l’uniformité
-val result = columns.foldLeft(checkUniformity) { (df, colName) =>
-  df.withColumn(s"${colName}_uniform", col(s"unique_$colName") === 1)
-}
+// Appliquer les validations et ajouter `is_valid`
+val validatedData = validations.foldLeft(data) { case (df, (colName, condition)) =>
+  df.withColumn(s"${colName}_valid", condition)
+}.withColumn("is_valid", validations.keys.map(c => col(s"${c}_valid")).reduce(_ && _))
 
-// Afficher le résultat final
-result.show()
+// Filtrer uniquement les cas **non valides**
+val invalidCases = validatedData
+  .filter(!col("is_valid"))
+  .select((columns ++ validColumns).map(col): _*) // Sélection dynamique
 
-// Récupérer les index des colonnes non uniformes
-val nonUniformColumns = result.head().toSeq
-  .zipWithIndex
-  .collect { case (v: Long, idx) if v > 1 => idx }
-
-// Afficher la liste des index des colonnes non uniformes
-println(s"Colonnes non uniformes (index) : ${nonUniformColumns.mkString(", ")}")
+// Affichage des cas invalides
+invalidCases.show(truncate = false)

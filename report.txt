@@ -1,104 +1,42 @@
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.services.s3.model._
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
-import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
+import org.apache.spark.sql.{SparkSession, DataFrame}
+import org.apache.spark.sql.functions._
 
-import java.io._
-import scala.collection.parallel.CollectionConverters._
-import scala.collection.mutable.ListBuffer
-import scala.collection.JavaConverters._
+val spark = SparkSession.builder()
+  .appName("Check Multiple Columns Uniformity")
+  .master("local[*]") // Pour exécution locale
+  .getOrCreate()
 
-object S3TarBz2ParallelUpload {
+import spark.implicits._
 
-  val bucketName = "your-bucket-name"
-  val inputKey = "input-folder/archive.tar.bz2"
-  val outputPrefix = "extracted-folder/"
-  val partSize = 100 * 1024 * 1024 // 100MB par partie
+// Générer dynamiquement la liste des colonnes de c0 à c6
+val columns = (0 to 6).map(i => s"c$i").toList
 
-  def extractAndUploadParallel(s3Client: AmazonS3): Unit = {
-    // 1️⃣ Lire le fichier `.tar.bz2` en streaming depuis S3
-    val s3Object = s3Client.getObject(new GetObjectRequest(bucketName, inputKey))
-    val s3InputStream = s3Object.getObjectContent
+// Exemple de DataFrame avec les colonnes c0 à c6
+val data = Seq(
+  (1, "A", "X", 100, 10.5, "2024-02-19", "Yes"),
+  (1, "A", "Y", 100, 10.5, "2024-02-19", "Yes"),  // Différence dans c2
+  (1, "A", "X", 100, 10.5, "2024-02-19", "Yes")
+).toDF(columns: _*)
 
-    // 2️⃣ Décompresser le fichier en mémoire
-    val bz2Stream = new BZip2CompressorInputStream(s3InputStream)
-    val tarInput = new TarArchiveInputStream(bz2Stream)
+// Vérifier l'uniformité avec countDistinct()
+val checkUniformity = data.agg(
+  columns.map(c => countDistinct(col(c)).as(s"unique_$c")): _*
+)
 
-    var entry: TarArchiveEntry = tarInput.getNextTarEntry
-    val extractedFiles = ListBuffer[(String, Array[Byte])]()
+// Ajouter des colonnes booléennes pour indiquer l’uniformité
+val result = columns.foldLeft(checkUniformity) { (df, colName) =>
+  df.withColumn(s"${colName}_uniform", col(s"unique_$colName") === 1)
+}
 
-    while (entry != null) {
-      if (!entry.isDirectory) {
-        val fileName = entry.getName
-        val s3TargetKey = outputPrefix + fileName
-
-        println(s"Extraction: $fileName -> $s3TargetKey")
-
-        // Lire le fichier extrait en mémoire
-        val outputStream = new ByteArrayOutputStream()
-        val buffer = new Array[Byte](16 * 1024) // 16KB buffer
-        var bytesRead = 0
-
-        while ({ bytesRead = tarInput.read(buffer); bytesRead != -1 }) {
-          outputStream.write(buffer, 0, bytesRead)
-        }
-
-        extractedFiles.append((s3TargetKey, outputStream.toByteArray))
-        outputStream.close()
-      }
-      entry = tarInput.getNextTarEntry
-    }
-
-    // 3️⃣ Fermer les flux
-    tarInput.close()
-    bz2Stream.close()
-    s3InputStream.close()
-
-    println(s"Nombre de fichiers extraits: ${extractedFiles.size}, début de l'upload parallèle...")
-
-    // 4️⃣ Transformer la liste en collection parallèle et lancer les uploads en parallèle
-    extractedFiles.par.foreach { case (s3Key, fileData) =>
-      multipartUpload(s3Client, bucketName, s3Key, fileData)
-    }
-
-    println("✅ Tous les fichiers ont été uploadés avec succès 🚀")
-  }
-
-  def multipartUpload(s3Client: AmazonS3, bucket: String, key: String, data: Array[Byte]): Unit = {
-    val uploadId = s3Client.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucket, key)).getUploadId
-    val partETags = ListBuffer[PartETag]()
-    val totalSize = data.length
-    var start = 0
-    var partNumber = 1
-
-    while (start < totalSize) {
-      val end = Math.min(start + partSize, totalSize)
-      val partData = data.slice(start, end)
-
-      val inputStream = new ByteArrayInputStream(partData)
-      val uploadPartRequest = new UploadPartRequest()
-        .withBucketName(bucket)
-        .withKey(key)
-        .withUploadId(uploadId)
-        .withPartNumber(partNumber)
-        .withInputStream(inputStream)
-        .withPartSize(partData.length)
-
-      val partResult = s3Client.uploadPart(uploadPartRequest)
-      partETags.append(partResult.getPartETag)
-
-      println(s"Partie $partNumber uploadée : ${partData.length} bytes")
-      start = end
-      partNumber += 1
-    }
-
-    // ✅ Convertir Scala ListBuffer en Java List (compatible Scala 2.12)
-    s3Client.completeMultipartUpload(new CompleteMultipartUploadRequest(bucket, key, uploadId, partETags.asJava))
-    println(s"✅ Upload terminé pour $key")
-  }
-
-  def main(args: Array[String]): Unit = {
-    val s3Client = AmazonS3ClientBuilder.standard().build()
-    extractAndUploadParallel(s3Client)
+// Récupérer les index des colonnes où les valeurs sont différentes (non uniformes)
+val nonUniformColumns = result.collect().flatMap { row =>
+  columns.zipWithIndex.collect {
+    case (colName, idx) if row.getAs[Long](s"unique_$colName") > 1 => idx
   }
 }
+
+// Afficher le résultat
+result.show()
+
+// Afficher la liste des index des colonnes non uniformes
+println(s"Colonnes non uniformes (index) : ${nonUniformColumns.mkString(", ")}")

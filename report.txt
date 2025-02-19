@@ -3,7 +3,7 @@ import org.apache.spark.sql.functions._
 
 val spark = SparkSession.builder()
   .appName("Check Multiple Columns Uniformity")
-  .master("local[*]") // Pour exécution locale
+  .master("local[*]") // Exécution locale
   .getOrCreate()
 
 import spark.implicits._
@@ -19,9 +19,10 @@ val data = Seq(
 ).toDF(columns: _*)
 
 // Vérifier l'uniformité avec countDistinct()
-val checkUniformity = data.agg(
-  columns.map(c => countDistinct(col(c)).cast("long").as(s"unique_$c")): _*
-)
+val countDistinctExprs = columns.map(c => countDistinct(col(c)).as(s"unique_$c"))
+
+// Appliquer `countDistinct` aux colonnes sélectionnées
+val checkUniformity = data.agg(countDistinctExprs.head, countDistinctExprs.tail: _*)
 
 // Ajouter des colonnes booléennes pour indiquer l’uniformité
 val result = columns.foldLeft(checkUniformity) { (df, colName) =>
@@ -32,9 +33,9 @@ val result = columns.foldLeft(checkUniformity) { (df, colName) =>
 result.show()
 
 // Récupérer les index des colonnes non uniformes
-val nonUniformColumns = result.head() // Récupérer la première ligne des résultats
-  .getValuesMap[Long](columns.map(c => s"unique_$c")) // Récupérer les valeurs
-  .collect { case (colName, count) if count > 1 => columns.indexOf(colName.stripPrefix("unique_")) } // Filtrer les non-uniformes
+val nonUniformColumns = result.head().toSeq
+  .zipWithIndex
+  .collect { case (v: Long, idx) if v > 1 => idx }
 
 // Afficher la liste des index des colonnes non uniformes
 println(s"Colonnes non uniformes (index) : ${nonUniformColumns.mkString(", ")}")

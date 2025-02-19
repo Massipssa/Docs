@@ -8,7 +8,7 @@ val spark = SparkSession.builder()
 
 import spark.implicits._
 
-// Générer dynamiquement la liste des colonnes de c0 à c6
+// Générer dynamiquement la liste des colonnes c0 à c6
 val columns = (0 to 6).map(i => s"c$i").toList
 
 // Exemple de DataFrame avec les colonnes c0 à c6
@@ -20,7 +20,7 @@ val data = Seq(
 
 // Vérifier l'uniformité avec countDistinct()
 val checkUniformity = data.agg(
-  columns.map(c => countDistinct(col(c)).as(s"unique_$c")): _*
+  columns.map(c => countDistinct(col(c)).cast("long").as(s"unique_$c")): _*
 )
 
 // Ajouter des colonnes booléennes pour indiquer l’uniformité
@@ -28,15 +28,13 @@ val result = columns.foldLeft(checkUniformity) { (df, colName) =>
   df.withColumn(s"${colName}_uniform", col(s"unique_$colName") === 1)
 }
 
-// Récupérer les index des colonnes où les valeurs sont différentes (non uniformes)
-val nonUniformColumns = result.collect().flatMap { row =>
-  columns.zipWithIndex.collect {
-    case (colName, idx) if row.getAs[Long](s"unique_$colName") > 1 => idx
-  }
-}
-
-// Afficher le résultat
+// Afficher le résultat final
 result.show()
+
+// Récupérer les index des colonnes non uniformes
+val nonUniformColumns = result.head() // Récupérer la première ligne des résultats
+  .getValuesMap[Long](columns.map(c => s"unique_$c")) // Récupérer les valeurs
+  .collect { case (colName, count) if count > 1 => columns.indexOf(colName.stripPrefix("unique_")) } // Filtrer les non-uniformes
 
 // Afficher la liste des index des colonnes non uniformes
 println(s"Colonnes non uniformes (index) : ${nonUniformColumns.mkString(", ")}")

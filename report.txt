@@ -18,17 +18,18 @@ val df = Seq(
 ).toDF("_c0", "_c1", "_c2", "_c3", "_c4", "_c5", "_c6")
 
 // 📌 2️⃣ Appliquer `first()` sur chaque colonne pour récupérer la première valeur
-val firstValuesDf = df.select(df.columns.map(c => first(col(c)).over() as s"${c}_first"): _*)
+val firstValuesExprs = df.columns.map(c => first(col(c)).over() as s"${c}_first")
 
-// 📌 3️⃣ Ajouter une colonne indiquant si la ligne est différente de la première
-val dfWithFirstValues = df.withColumns(
-  df.columns.map(c => s"${c}_diff" -> (col(c) =!= first(col(c)).over()))
+// 📌 3️⃣ Sélectionner toutes les colonnes originales + leurs valeurs de référence
+val dfWithFirstValues = df.select(
+  df.columns.map(col) ++ firstValuesExprs: _*
 )
 
-// 📌 4️⃣ Filtrer les lignes où au moins une colonne est différente
-val diffDf = dfWithFirstValues.filter(
-  df.columns.map(c => col(s"${c}_diff")).reduce(_ || _)
-).select(df.columns.map(col): _*) // On garde uniquement les colonnes originales
+// 📌 4️⃣ Comparer chaque colonne avec sa première valeur
+val diffCondition = df.columns.map(c => col(c) =!= col(s"${c}_first")).reduce(_ || _)
 
-// 📌 5️⃣ Afficher les lignes qui diffèrent de la première ligne
+// 📌 5️⃣ Filtrer uniquement les lignes différentes de la première
+val diffDf = dfWithFirstValues.filter(diffCondition).select(df.columns.map(col): _*)
+
+// 📌 6️⃣ Afficher les lignes qui diffèrent de la première ligne
 diffDf.show(false)

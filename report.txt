@@ -27,16 +27,16 @@ val dfWithFirstValues = df.select(
 
 // 📌 4️⃣ Comparer chaque colonne avec sa première valeur et stocker les colonnes différentes
 val diffColumnsExpr = df.columns.foldLeft(lit(null).cast("string")) { (acc, c) =>
-  when(col(c) =!= col(s"${c}_first"),
-    when(acc.isNull, lit(c)).otherwise(concat(acc, lit(", "), lit(c)))
-  ).otherwise(acc)
+  when(acc.isNull, when(col(c) =!= col(s"${c}_first"), lit(c)))
+    .otherwise(when(col(c) =!= col(s"${c}_first"), concat(acc, lit(", "), lit(c))))
+    .otherwise(acc)
 }.alias("diff_columns")
 
 // 📌 5️⃣ Ajouter les valeurs de référence dans une seule colonne
 val referenceValuesExpr = df.columns.foldLeft(lit(null).cast("string")) { (acc, c) =>
-  when(col(c) =!= col(s"${c}_first"),
-    when(acc.isNull, col(s"${c}_first")).otherwise(concat(acc, lit(", "), col(s"${c}_first")))
-  ).otherwise(acc)
+  when(acc.isNull, when(col(c) =!= col(s"${c}_first"), col(s"${c}_first")))
+    .otherwise(when(col(c) =!= col(s"${c}_first"), concat(acc, lit(", "), col(s"${c}_first"))))
+    .otherwise(acc)
 }.alias("reference_values")
 
 // 📌 6️⃣ Ajouter les colonnes de comparaison au DataFrame

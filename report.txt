@@ -1,59 +1,25 @@
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.expressions.UserDefinedFunction
 
-// Création de la session Spark
-val spark = SparkSession.builder()
-  .appName("Data Quality Check")
-  .master("local[*]")
-  .getOrCreate()
+// Ajouter une colonne "cNumber" qui correspond à `_c(position-1)`
+val metadataWithColumnDf = metadataWithConfigDf
+  .withColumn("cNumber", concat(lit("_c"), (col("position") - 1).cast("string")))
 
-import spark.implicits._
+// Vérifier que la colonne `_cNumber` existe bien dans `dataFileDf`
+val validColumns = dataFileDf.columns.toSet
+val filteredMetadataDf = metadataWithColumnDf.filter(col("cNumber").isin(validColumns.toSeq: _*))
 
-// Simuler `metadataDf` (données de métadonnées)
-val metadataDf = Seq(
-  ("id1", "familleA", "colonne1", 1),
-  ("id2", "familleB", "colonne2", 2),
-  ("id3", "familleX", "colonne3", 3) // Famille non existante dans la config
-).toDF("id", "famille", "colonne", "position")
 
-// Simuler `dataFileDf` (fichier de données)
-val dataFileDf = Seq(
-  ("valeur1", "ABC123"),
-  ("valeur2", "XYZ-456"),
-  ("valeur3", "2024-02-21")
-).toDF("colonne1", "colonne2")
-
-// Configuration regex (Familles et leurs règles de validation)
-val configFamilleAttributRegex: Map[String, FamilleFormatConfigLineDto] = Map(
-  "familleA" -> FamilleFormatConfigLineDto("familleA", """\d{4}-\d{2}-\d{2}""", "Date format YYYY-MM-DD"),
-  "familleB" -> FamilleFormatConfigLineDto("familleB", """[A-Z]{3}\d+""", "Alphanumeric Code")
-)
-
-// Convertir la configuration en DataFrame pour la jointure
-val configDf = configFamilleAttributRegex.toSeq.toDF("famille", "config")
-
-// Vérifier si la famille existe dans la configuration via une jointure
-val metadataWithConfigDf = metadataDf
-  .join(configDf, Seq("famille"), "left")
-  .withColumn("familleExiste", when(col("config").isNotNull, lit("Oui")).otherwise(lit("Non")))
-
-// Définir une UDF pour valider les formats des colonnes
-def validateFormatUDF(regex: String): UserDefinedFunction = udf((value: String) => {
-  if (value == null || value.matches(regex)) None else Some(s"Format invalide : $value")
-})
-
-// Appliquer la validation sur les colonnes concernées
+// Appliquer la validation avec rlike
 var checkedDf = dataFileDf
-metadataWithConfigDf.collect().foreach { row =>
-  val famille = row.getAs[String]("famille")
-  val columnName = row.getAs[String]("colonne")
-  val config = row.getAs[Option[FamilleFormatConfigLineDto]]("config")
+filteredMetadataDf.collect().foreach { row =>
+  val columnName = row.getAs[String]("cNumber")  // Ex: "_c12"
+  val regex = row.getAs[org.apache.spark.sql.Row]("config").getAs[String]("regex")
 
-  if (config.isDefined) {
-    val regex = config.get.regex
-    checkedDf = checkedDf.withColumn(s"${columnName}_check", validateFormatUDF(regex)(col(columnName)))
-  }
+  checkedDf = checkedDf.withColumn(
+    s"${columnName}_check",
+    when(col(columnName).rlike(regex), lit("Valide"))
+      .otherwise(lit(s"Format invalide"))
+  )
 }
 
 // Afficher les résultats

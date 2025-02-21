@@ -17,9 +17,9 @@ val metadataDf = Seq(
 
 // 📌 2️⃣ Simuler `dataFileDf` avec des valeurs à vérifier
 val dataFileDf = Seq(
-  ("2024-02-21", "ABC123", "dummy"),
-  ("2024/02/21", "XYZ-456", "dummy"),
-  ("2019-07-15", "DEF789", "dummy")
+  ("2024-02-21", "ABC123", "dummy"),  // ✅ Correct
+  ("2024/02/21", "XYZ-456", "dummy"), // ❌ Mauvais format
+  ("2019-07-15", "DEF789", "dummy")   // ✅ Correct
 ).toDF("colonne1", "colonne2", "colonne3")
 
 // 📌 3️⃣ Configuration regex (Familles et leurs règles de validation)
@@ -33,16 +33,19 @@ val configDf = configFamilleAttributRegex.toSeq.toDF("famille", "regex")
 
 // 📌 5️⃣ Joindre `metadataDf` avec `configDf` pour récupérer les regex associées
 val metadataWithConfigDf = metadataDf
-  .join(configDf, Seq("famille"), "left") // Jointure pour associer regex à chaque colonne
-  .filter(col("regex").isNotNull) // Ne garder que les familles présentes dans la config
+  .join(configDf, Seq("famille"), "left") // Associer regex à chaque colonne
+  .filter(col("regex").isNotNull) // Ne garder que les familles avec une regex
 
-// 📌 6️⃣ Appliquer les validations avec `rlike` (sans UDF)
+// 📌 6️⃣ Appliquer les validations avec `rlike` et filtrer immédiatement les lignes invalides
 val checkedDf = metadataWithConfigDf.collect().foldLeft(dataFileDf) { (df, row) =>
   val columnName = row.getAs[String]("colonne")
   val regex = row.getAs[String]("regex")
 
   df.withColumn(s"${columnName}_check", when(col(columnName).rlike(regex), lit(null)).otherwise(lit(s"Format invalide: $columnName")))
 }
+.filter(
+  metadataWithConfigDf.collect().map(row => col(s"${row.getAs[String]("colonne")}_check").isNotNull).reduce(_ || _)
+)
 
-// 📌 7️⃣ Afficher le résultat
+// 📌 7️⃣ Afficher uniquement les lignes avec erreurs
 checkedDf.show(false)

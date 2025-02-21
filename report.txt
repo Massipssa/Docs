@@ -1,5 +1,6 @@
 import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.expressions.Window
 
 val spark = SparkSession.builder()
   .appName("Compare with First Row")
@@ -8,49 +9,61 @@ val spark = SparkSession.builder()
 
 import spark.implicits._
 
-// 📌 1️⃣ Création du DataFrame avec des colonnes _c0 à _c6
+// 📌 1️⃣ Création du DataFrame avec des colonnes _c0 à _c6 + row_number
 val df = Seq(
-  ("A", "X", "1", "P", "Red", "100", "Yes"),  // 🔹 Référence (1ère ligne)
-  ("A", "X", "2", "Q", "Blue", "200", "No"),  // ❌ Différences dans _c2, _c3, _c4, _c5, _c6
-  ("A", "Y", "1", "P", "Red", "100", "Yes"),  // ❌ Différence dans _c1
-  ("C", "Z", "3", "P", "Red", "100", "Yes"),  // ❌ Différences dans _c0, _c1, _c2
-  ("A", "X", "1", "P", "Red", "100", "Yes")   // ✅ Identique à la 1ère ligne
-).toDF("_c0", "_c1", "_c2", "_c3", "_c4", "_c5", "_c6")
+  ("A", "X", "1", "P", "Red", "100", "Yes", 1),  // 🔹 Référence (1ère ligne)
+  ("A", "X", "2", "Q", "Blue", "200", "No", 2),  // ❌ Différences dans _c2, _c3, _c4, _c5, _c6
+  ("A", "Y", "1", "P", "Red", "100", "Yes", 3),  // ❌ Différence dans _c1
+  ("C", "Z", "3", "P", "Red", "100", "Yes", 4),  // ❌ Différences dans _c0, _c1, _c2
+  ("A", "X", "1", "P", "Red", "100", "Yes", 5)   // ✅ Identique à la 1ère ligne
+).toDF("_c0", "_c1", "_c2", "_c3", "_c4", "_c5", "_c6", "row_number")
 
-// 📌 2️⃣ Appliquer `first()` sur chaque colonne pour récupérer la première valeur
-val firstValuesExprs = df.columns.map(c => first(col(c)).over() as s"${c}_first")
+// 📌 2️⃣ Exclure la colonne `row_number` de la comparaison
+val columnsToCheck = df.columns.filter(_ != "row_number")
 
-// 📌 3️⃣ Sélectionner toutes les colonnes originales + leurs valeurs de référence
+// 📌 3️⃣ Appliquer `first()` sur chaque colonne à comparer pour récupérer la première valeur
+val firstValuesExprs = columnsToCheck.map(c => first(col(c)).over() as s"${c}_first")
+
+// 📌 4️⃣ Ajouter les colonnes originales + leurs valeurs de référence
 val dfWithFirstValues = df.select(
   df.columns.map(col) ++ firstValuesExprs: _*
 )
 
-// 📌 4️⃣ Comparer chaque colonne avec sa première valeur et stocker les colonnes différentes
-val diffColumnsExpr = df.columns.foldLeft(lit(null).cast("string")) { (acc, c) =>
+// 📌 5️⃣ Comparer chaque colonne avec sa première valeur et stocker les colonnes différentes
+val diffColumnsExpr = columnsToCheck.foldLeft(lit(null).cast("string")) { (acc, c) =>
   when(col(c) =!= col(s"${c}_first"),
     when(acc.isNull, lit(c))
       .otherwise(concat(acc, lit(", "), lit(c)))
   ).otherwise(acc)
 }.as("diff_columns")
 
-// 📌 5️⃣ Ajouter les valeurs de référence dans une seule colonne
-val referenceValuesExpr = df.columns.foldLeft(lit(null).cast("string")) { (acc, c) =>
+// 📌 6️⃣ Ajouter les valeurs de référence dans une seule colonne
+val referenceValuesExpr = columnsToCheck.foldLeft(lit(null).cast("string")) { (acc, c) =>
   when(col(c) =!= col(s"${c}_first"),
     when(acc.isNull, col(s"${c}_first"))
       .otherwise(concat(acc, lit(", "), col(s"${c}_first")))
   ).otherwise(acc)
 }.as("reference_values")
 
-// 📌 6️⃣ Ajouter les colonnes de comparaison au DataFrame
+// 📌 7️⃣ Ajouter les valeurs différentes dans une seule colonne `notmatched_values`
+val notMatchedValuesExpr = columnsToCheck.foldLeft(lit(null).cast("string")) { (acc, c) =>
+  when(col(c) =!= col(s"${c}_first"),
+    when(acc.isNull, col(c))
+      .otherwise(concat(acc, lit(", "), col(c)))
+  ).otherwise(acc)
+}.as("notmatched_values")
+
+// 📌 8️⃣ Ajouter les colonnes de comparaison au DataFrame
 val dfWithDifferences = dfWithFirstValues
   .withColumn("diff_columns", diffColumnsExpr)
   .withColumn("reference_values", referenceValuesExpr)
+  .withColumn("notmatched_values", notMatchedValuesExpr)
 
-// 📌 7️⃣ Filtrer uniquement les lignes différentes de la première
+// 📌 9️⃣ Filtrer uniquement les lignes différentes de la première
 val diffDf = dfWithDifferences.filter(col("diff_columns").isNotNull)
 
-// 📌 8️⃣ Sélectionner uniquement les colonnes originales + les différences et valeurs de référence
-val finalDf = diffDf.select(df.columns.map(col) ++ Seq(col("diff_columns"), col("reference_values")): _*)
+// 📌 🔟 Sélectionner uniquement les colonnes originales + les différences et valeurs de référence
+val finalDf = diffDf.select(df.columns.map(col) ++ Seq(col("diff_columns"), col("reference_values"), col("notmatched_values")): _*)
 
-// 📌 9️⃣ Affichage des lignes qui diffèrent de la première ligne
+// 📌 1️⃣1️⃣ Affichage des lignes qui diffèrent de la première ligne
 finalDf.show(false)

@@ -1,26 +1,26 @@
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.expressions.UserDefinedFunction
 
-// Ajouter une colonne "cNumber" qui correspond à `_c(position-1)`
-val metadataWithColumnDf = metadataWithConfigDf
-  .withColumn("cNumber", concat(lit("_c"), (col("position") - 1).cast("string")))
+// UDF pour valider le format d'une colonne
+def validateFormatUDF(regex: String): UserDefinedFunction = udf((value: String) => {
+  if (value == null || value.matches(regex)) None else Some(s"Format invalide : $value")
+})
 
-// Vérifier que la colonne `_cNumber` existe bien dans `dataFileDf`
-val validColumns = dataFileDf.columns.toSet
-val filteredMetadataDf = metadataWithColumnDf.filter(col("cNumber").isin(validColumns.toSeq: _*))
-
-
-// Appliquer la validation avec rlike
-var checkedDf = dataFileDf
-filteredMetadataDf.collect().foreach { row =>
-  val columnName = row.getAs[String]("cNumber")  // Ex: "_c12"
-  val regex = row.getAs[org.apache.spark.sql.Row]("config").getAs[String]("regex")
-
-  checkedDf = checkedDf.withColumn(
-    s"${columnName}_check",
-    when(col(columnName).rlike(regex), lit("Valide"))
-      .otherwise(lit(s"Format invalide"))
-  )
+// Fonction pour appliquer les règles de validation sans utiliser `var`
+def applyValidation(dataFileDf: DataFrame, metadataWithConfigDf: DataFrame): DataFrame = {
+  metadataWithConfigDf
+    .filter(col("config").isNotNull) // Filtrer les familles qui ont une config
+    .collect()
+    .foldLeft(dataFileDf) { (df, row) =>
+      val columnName = row.getAs[String]("colonne")
+      val regex = row.getAs[FamilleFormatConfigLineDto]("config").regex
+      df.withColumn(s"${columnName}_check", validateFormatUDF(regex)(col(columnName)))
+    }
 }
 
-// Afficher les résultats
+// Appliquer les validations sur le DataFrame
+val checkedDf = applyValidation(dataFileDf, metadataWithConfigDf)
+
+// Afficher le résultat
 checkedDf.show(false)

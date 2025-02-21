@@ -25,11 +25,27 @@ val dfWithFirstValues = df.select(
   df.columns.map(col) ++ firstValuesExprs: _*
 )
 
-// 📌 4️⃣ Comparer chaque colonne avec sa première valeur
-val diffCondition = df.columns.map(c => col(c) =!= col(s"${c}_first")).reduce(_ || _)
+// 📌 4️⃣ Comparer chaque colonne avec sa première valeur et stocker les colonnes différentes
+val diffColumnsExpr = concat_ws(
+  ", ",
+  df.columns.map(c => when(col(c) =!= col(s"${c}_first"), lit(c))).reduce(_ +: _)
+).alias("diff_columns")
 
-// 📌 5️⃣ Filtrer uniquement les lignes différentes de la première
-val diffDf = dfWithFirstValues.filter(diffCondition).select(df.columns.map(col): _*)
+// 📌 5️⃣ Ajouter les valeurs de référence dans une seule colonne
+val referenceValuesExpr = concat_ws(
+  ", ",
+  df.columns.map(c => when(col(c) =!= col(s"${c}_first"), col(s"${c}_first"))).reduce(_ +: _)
+).alias("reference_values")
 
-// 📌 6️⃣ Afficher les lignes qui diffèrent de la première ligne
-diffDf.show(false)
+// 📌 6️⃣ Ajouter les colonnes de comparaison au DataFrame
+val dfWithDifferences = dfWithFirstValues.withColumn("diff_columns", diffColumnsExpr)
+  .withColumn("reference_values", referenceValuesExpr)
+
+// 📌 7️⃣ Filtrer uniquement les lignes différentes de la première
+val diffDf = dfWithDifferences.filter(col("diff_columns") =!= "")
+
+// 📌 8️⃣ Sélectionner uniquement les colonnes originales + les différences et valeurs de référence
+val finalDf = diffDf.select(df.columns.map(col) ++ Seq(col("diff_columns"), col("reference_values")): _*)
+
+// 📌 9️⃣ Affichage des lignes qui diffèrent de la première ligne
+finalDf.show(false)

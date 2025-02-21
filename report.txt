@@ -1,26 +1,48 @@
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.expressions.UserDefinedFunction
 
-// UDF pour valider le format d'une colonne
-def validateFormatUDF(regex: String): UserDefinedFunction = udf((value: String) => {
-  if (value == null || value.matches(regex)) None else Some(s"Format invalide : $value")
-})
+val spark = SparkSession.builder()
+  .appName("Data Quality Check")
+  .master("local[*]")
+  .getOrCreate()
 
-// Fonction pour appliquer les règles de validation sans utiliser `var`
-def applyValidation(dataFileDf: DataFrame, metadataWithConfigDf: DataFrame): DataFrame = {
-  metadataWithConfigDf
-    .filter(col("config").isNotNull) // Filtrer les familles qui ont une config
-    .collect()
-    .foldLeft(dataFileDf) { (df, row) =>
-      val columnName = row.getAs[String]("colonne")
-      val regex = row.getAs[FamilleFormatConfigLineDto]("config").regex
-      df.withColumn(s"${columnName}_check", validateFormatUDF(regex)(col(columnName)))
-    }
+import spark.implicits._
+
+// 📌 1️⃣ Simuler `metadataDf` avec les colonnes et positions
+val metadataDf = Seq(
+  ("familleA", "colonne1"),
+  ("familleB", "colonne2"),
+  ("familleX", "colonne3") // Famille inexistante dans config
+).toDF("famille", "colonne")
+
+// 📌 2️⃣ Simuler `dataFileDf` avec des valeurs à vérifier
+val dataFileDf = Seq(
+  ("2024-02-21", "ABC123", "dummy"),
+  ("2024/02/21", "XYZ-456", "dummy"),
+  ("2019-07-15", "DEF789", "dummy")
+).toDF("colonne1", "colonne2", "colonne3")
+
+// 📌 3️⃣ Configuration regex (Familles et leurs règles de validation)
+val configFamilleAttributRegex: Map[String, String] = Map(
+  "familleA" -> """\d{4}-\d{2}-\d{2}""", // Date format YYYY-MM-DD
+  "familleB" -> """[A-Z]{3}\d+""" // Code alphanumérique
+)
+
+// 📌 4️⃣ Convertir `configFamilleAttributRegex` en DataFrame pour la jointure
+val configDf = configFamilleAttributRegex.toSeq.toDF("famille", "regex")
+
+// 📌 5️⃣ Joindre `metadataDf` avec `configDf` pour récupérer les regex associées
+val metadataWithConfigDf = metadataDf
+  .join(configDf, Seq("famille"), "left") // Jointure pour associer regex à chaque colonne
+  .filter(col("regex").isNotNull) // Ne garder que les familles présentes dans la config
+
+// 📌 6️⃣ Appliquer les validations avec `rlike` (sans UDF)
+val checkedDf = metadataWithConfigDf.collect().foldLeft(dataFileDf) { (df, row) =>
+  val columnName = row.getAs[String]("colonne")
+  val regex = row.getAs[String]("regex")
+
+  df.withColumn(s"${columnName}_check", when(col(columnName).rlike(regex), lit(null)).otherwise(lit(s"Format invalide: $columnName")))
 }
 
-// Appliquer les validations sur le DataFrame
-val checkedDf = applyValidation(dataFileDf, metadataWithConfigDf)
-
-// Afficher le résultat
+// 📌 7️⃣ Afficher le résultat
 checkedDf.show(false)

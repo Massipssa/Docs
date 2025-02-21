@@ -1,51 +1,34 @@
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.sql.functions._
 
 val spark = SparkSession.builder()
-  .appName("Data Quality Check")
-  .master("local[*]")
+  .appName("Compare with First Row")
+  .master("local[*]")  // Remplace par le mode cluster si nécessaire
   .getOrCreate()
 
 import spark.implicits._
 
-// 📌 1️⃣ Simuler `metadataDf` avec les colonnes et positions
-val metadataDf = Seq(
-  ("familleA", "colonne1"),
-  ("familleB", "colonne2"),
-  ("familleX", "colonne3") // Famille inexistante dans config
-).toDF("famille", "colonne")
+// 📌 1️⃣ Création du DataFrame avec des colonnes _c0 à _c6
+val df = Seq(
+  ("A", "X", "1", "P", "Red", "100", "Yes"),  // 🔹 Référence (1ère ligne)
+  ("A", "X", "2", "Q", "Blue", "200", "No"),  // ❌ Différences dans _c2, _c3, _c4, _c5, _c6
+  ("A", "Y", "1", "P", "Red", "100", "Yes"),  // ❌ Différence dans _c1
+  ("C", "Z", "3", "P", "Red", "100", "Yes"),  // ❌ Différences dans _c0, _c1, _c2
+  ("A", "X", "1", "P", "Red", "100", "Yes")   // ✅ Identique à la 1ère ligne
+).toDF("_c0", "_c1", "_c2", "_c3", "_c4", "_c5", "_c6")
 
-// 📌 2️⃣ Simuler `dataFileDf` avec des valeurs à vérifier
-val dataFileDf = Seq(
-  ("2024-02-21", "ABC123", "dummy"),  // ✅ Correct
-  ("2024/02/21", "XYZ-456", "dummy"), // ❌ Mauvais format
-  ("2019-07-15", "DEF789", "dummy")   // ✅ Correct
-).toDF("colonne1", "colonne2", "colonne3")
+// 📌 2️⃣ Appliquer `first()` sur chaque colonne pour récupérer la première valeur
+val firstValuesDf = df.select(df.columns.map(c => first(col(c)).over() as s"${c}_first"): _*)
 
-// 📌 3️⃣ Configuration regex (Familles et leurs règles de validation)
-val configFamilleAttributRegex: Map[String, String] = Map(
-  "familleA" -> """\d{4}-\d{2}-\d{2}""", // Date format YYYY-MM-DD
-  "familleB" -> """[A-Z]{3}\d+""" // Code alphanumérique
+// 📌 3️⃣ Ajouter une colonne indiquant si la ligne est différente de la première
+val dfWithFirstValues = df.withColumns(
+  df.columns.map(c => s"${c}_diff" -> (col(c) =!= first(col(c)).over()))
 )
 
-// 📌 4️⃣ Convertir `configFamilleAttributRegex` en DataFrame pour la jointure
-val configDf = configFamilleAttributRegex.toSeq.toDF("famille", "regex")
+// 📌 4️⃣ Filtrer les lignes où au moins une colonne est différente
+val diffDf = dfWithFirstValues.filter(
+  df.columns.map(c => col(s"${c}_diff")).reduce(_ || _)
+).select(df.columns.map(col): _*) // On garde uniquement les colonnes originales
 
-// 📌 5️⃣ Joindre `metadataDf` avec `configDf` pour récupérer les regex associées
-val metadataWithConfigDf = metadataDf
-  .join(configDf, Seq("famille"), "left") // Associer regex à chaque colonne
-  .filter(col("regex").isNotNull) // Ne garder que les familles avec une regex
-
-// 📌 6️⃣ Appliquer les validations avec `rlike` et filtrer immédiatement les lignes invalides
-val checkedDf = metadataWithConfigDf.collect().foldLeft(dataFileDf) { (df, row) =>
-  val columnName = row.getAs[String]("colonne")
-  val regex = row.getAs[String]("regex")
-
-  df.withColumn(s"${columnName}_check", when(col(columnName).rlike(regex), lit(null)).otherwise(lit(s"Format invalide: $columnName")))
-}
-.filter(
-  metadataWithConfigDf.collect().map(row => col(s"${row.getAs[String]("colonne")}_check").isNotNull).reduce(_ || _)
-)
-
-// 📌 7️⃣ Afficher uniquement les lignes avec erreurs
-checkedDf.show(false)
+// 📌 5️⃣ Afficher les lignes qui diffèrent de la première ligne
+diffDf.show(false)

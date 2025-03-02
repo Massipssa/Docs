@@ -12,7 +12,7 @@
   - Massively Parallel Processing (MPP)
   - Columnar Data Storage
   - Column Compression (is column level operation, reduce space, reduce disc I/O)
-- Is a single AZ 
+- Is a single AZ
 - Block size of 1MB
 - Indexes are materialized but not required
 - Data is stored in three different places:
@@ -34,6 +34,7 @@
   - Interleaved
 
 ## Snapshots and DR
+
 - Redshift has **Multi-AZ** mode for some clusters
 - Snapshots are point-in-time backups of a cluster stored internally in S3
 - Snapshots are incremental (only what has changed is saved)
@@ -49,3 +50,7 @@
 - S3 requires a manifest file and IAM role
 
 - **UNLOAD command:** unload from a table into files in S3
+
+## Redshift Spectrum
+
+- Query the data is already in S3 without loading it into Redshift

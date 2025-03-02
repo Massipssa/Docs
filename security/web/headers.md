@@ -4,5 +4,5 @@
   - Clickjacking
 
 - Browser has to implement the header
-- It's a contol client side 
-- If it doesn't recognize a header it igonre it
+- It's a control client side 
+- If it doesn't recognize a header it ignores it

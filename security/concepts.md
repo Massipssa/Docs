@@ -1,9 +1,6 @@
 # Concepts
 
-- CIA
-  - Confidentiality
-  - Integrity
-  - Availability
+
 
 - Threats
   - Internal

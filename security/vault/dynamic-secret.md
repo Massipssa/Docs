@@ -1,19 +1,27 @@
-To follow this tutorial, you need a running vault server on kubernetes. If not you can run the follwing helm commands 
+To follow this tutorial, you need a running vault server on kubernetes. If not you can run the following helm commands 
 to setup Vault. 
 
-is standard security practice to isolate secrets from code, and developers should not concern themselves with the origin of these secrets. This is where HashiCorp Vault comes in to centralize those secrets. In case one or multiple of these secrets get compromised, you'll need to revoke them and generate new ones to mitigate risks with minimal impact on the systems utilizing them.
+is standard security practice to isolate secrets from code, and developers should not concern themselves with the 
+origin of these secrets. This is where HashiCorp Vault comes in to centralize those secrets. In case one or multiple of
+these secrets get compromised, you'll need to revoke them and generate new ones to mitigate risks with minimal impact on the systems utilizing them.
 
-In this article, we'll cover how you can achieve that using Vault and to secure a PostgreSQL database. We will end by demonstrating how we can use these secrets with Python.
+In this article, we'll cover how you can achieve that using Vault and to secure a PostgreSQL database. We will end by
+demonstrating how we can use these secrets with Python.
 
 ## Why Dynamic Secrets
 
 Here are some leaks that lead us to consider using Dynamic Secrets instead of Static Secrets.
 
-Applications frequently log configurations, leaving them in log files or centralized logging systems like Elasticsearch, which can be accessed by unauthorized individuals viewing your credentials.
+Applications frequently log configurations, leaving them in log files or centralized logging systems like Elasticsearch,
+which can be accessed by unauthorized individuals viewing your credentials.
 
-Often, secrets are captured in exception tracebacks while attempting to access the database, for instance. These crash reports are sent to external monitoring systems, or they may be leaked via debugging endpoints and diagnostic pages after encountering an error.
+Often, secrets are captured in exception tracebacks while attempting to access the database, for instance.
+These crash reports are sent to external monitoring systems, or they may be leaked via debugging endpoints and 
+diagnostic pages after encountering an error.
 
-It's common within organizations for multiple applications to share the same credentials to access other systems, such as a database. This means that rotating those passwords will impact all applications using those credentials. Now, imagine one of these applications getting compromised. It will require you to rotate these credentials across all your applications.
+It's common within organizations for multiple applications to share the same credentials to access other systems,
+such as a database. This means that rotating those passwords will impact all applications using those credentials. 
+Now, imagine one of these applications getting compromised. It will require you to rotate these credentials across all your applications.
 
 All these challenges lead us to use a secret that can be generated and revoked on demand with less impact.
 
@@ -21,18 +29,22 @@ All these challenges lead us to use a secret that can be generated and revoked o
 
 From Harshicop Vault website:
 
-A dynamic secret is generated on demand and is unique to a client, instead of a static secret, which is defined ahead of time and shared. Vault associates each dynamic secret with a lease and automatically destroys the credentials when the lease expires.
+A dynamic secret is generated on demand and is unique to a client, instead of a static secret, which is defined ahead 
+of time and shared. Vault associates each dynamic secret with a lease and automatically destroys the credentials when 
+the lease expires.
 
 ## Postgresql
 
-In this section, we assume that you already have a PostgreSQL database server running. Alternatively, if you're a Kubernetes and Helm user, you can set up a PostgreSQL database server by executing the commands below.
+In this section, we assume that you already have a PostgreSQL database server running. Alternatively, if you're 
+a Kubernetes and Helm user, you can set up a PostgreSQL database server by executing the commands below.
 
 ```
 helm install postgres oci://registry-1.docker.io/bitnamicharts/postgresql
 kubectl get secret --namespace default postgres-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d
 ```
 
-The PostgreSQL server that we are using throughout this tutorial can be accessed using the information below. Please note that this information is temporary and local, and you cannot use it in your own environment.
+The PostgreSQL server that we are using throughout this tutorial can be accessed using the information below. 
+Please note that this information is temporary and local, and you cannot use it in your own environment.
 
 user: postgres
 port: 5432
@@ -45,7 +57,8 @@ Connect to the database and create a database named ***dbtest***.
 psql host=localhost port=5432 user=postgres password=SgOdV1ctSe
 CREATE DATABSE IF NOT EXISTS dbtest
 
-Above, we establish a connection to the database using the psql tool (alternatively, you can use any other PostgreSQL client tool). Subsequently, we execute the create database command to set up our schema.
+Above, we establish a connection to the database using the psql tool (alternatively, you can use any other 
+PostgreSQL client tool). Subsequently, we execute the create database command to set up our schema.
 
 ## Vault
 
@@ -66,7 +79,8 @@ vault write database/config/my-postgresql-database \
 
 ### Create a role
 
-Below, we create a role called **test-role** and then we mapped it to an SQL statement that will create a new database user with select permision granted to  
+Below, we create a role called **test-role** and then we mapped it to an SQL statement that will create a new database 
+user with select permision granted to  
 all tables inside the **public** schema.  
 
 vault write database/roles/test-role \

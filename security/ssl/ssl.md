@@ -14,7 +14,17 @@
   - public key
 - Use certificate to counter Man in middle attack
 
-- **Public Key Infrastructure (PKI)**
+## Public Key Infrastructure (PKI)
+
+Can prove validity of the public key owner
+
+- **CA (Certification Authority)**  
+- **CSR (Certificate Signing Request):** 
+  - Validate the identity of the certificate requester by the CA
+- **Digital Certificate**: once the identity is validated a digital Certificate is received. It's: 
+  - A file container for a public key
+  - Digital signature from a (trusted) CA
+  - Additional metadata/attributes
 
 ## Algo de chiffrement
   

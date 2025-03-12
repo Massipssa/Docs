@@ -1,85 +1,20 @@
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
-class DataObjectNameTest extends AnyFlatSpec with Matchers {
-
-  behavior of "createDataObjectName"
-
-  it should "return the expected object name when specificVersionForCreInit is empty" in {
-    // Mock inputs
-    val creCsvFilenameDto = CreCsvFilenameDto("CRE123")
-    val version = "PROD_V1"
-    val specificVersionForCreInit = None
-    implicit val jobConfig = JobConfig("CONTEXT")
-
-    // Expected Output
-    val expected = "CRE123_CONTEXT-PROD_V1"
-
-    // Assertion
-    val result = createDataObjectName(creCsvFilenameDto, version, specificVersionForCreInit)
-    result shouldBe expected
-  }
-
-  it should "return the expected object name when specificVersionForCreInit is provided" in {
-    // Mock inputs
-    val creCsvFilenameDto = CreCsvFilenameDto("CRE456")
-    val version = "PROD_V1"
-    val specificVersionForCreInit = Some("CUSTOM_V2")
-    implicit val jobConfig = JobConfig("CONTEXT")
-
-    // Expected Output
-    val expected = "CRE456_CONTEXT-CUSTOM_V2"
-
-    // Assertion
-    val result = createDataObjectName(creCsvFilenameDto, version, specificVersionForCreInit)
-    result shouldBe expected
-  }
-}
-
-
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-
-class PartitionValidatorTest extends AnyFunSuite with Matchers {
-
-  val validator = new PartitionValidator()
-
-  test("Should pass when dataObjectName and treeStructure are valid") {
-    noException should be thrownBy validator.validateNameAndStructure("ValidName", List("Node1", "Node2"))
-  }
-
-  test("Should throw an exception when dataObjectName is empty") {
-    val exception = intercept[Exception] {
-      validator.validateNameAndStructure("", List("Node1", "Node2"))
-    }
-    exception.getMessage shouldBe "Created Data Object name is invalid"
-  }
-
-  test("Should throw an exception when dataObjectName is null") {
-    val exception = intercept[Exception] {
-      validator.validateNameAndStructure(null, List("Node1", "Node2"))
-    }
-    exception.getMessage shouldBe "Created Data Object name is invalid"
-  }
-
-  test("Should throw an exception when treeStructure is null") {
-    val exception = intercept[Exception] {
-      validator.validateNameAndStructure("ValidName", null)
-    }
-    exception.getMessage shouldBe "Created Tree structure is invalid"
-  }
-
-  test("Should throw an exception when treeStructure is empty") {
-    val exception = intercept[Exception] {
-      validator.validateNameAndStructure("ValidName", List())
-    }
-    exception.getMessage shouldBe "Created Tree structure is invalid"
-  }
-
-  test("Should throw an exception when both dataObjectName and treeStructure are invalid") {
-    val exception = intercept[Exception] {
-      validator.validateNameAndStructure("", null)
-    }
-    exception.getMessage shouldBe "Created Data Object name and its Tree structure are invalid"
-  }
-}
+ <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.8.10</version> <!-- Check for latest version -->
+            <executions>
+                <execution>
+                    <id>prepare-agent</id>
+                    <goals>
+                        <goal>prepare-agent</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>report</id>
+                    <phase>verify</phase>
+                    <goals>
+                        <goal>report</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>

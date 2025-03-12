@@ -1,69 +1,85 @@
-import org.apache.spark.sql.{SparkSession, DataFrame}
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.expressions.Window
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-val spark = SparkSession.builder()
-  .appName("Compare with First Row")
-  .master("local[*]")  // Remplace par le mode cluster si nécessaire
-  .getOrCreate()
+class DataObjectNameTest extends AnyFlatSpec with Matchers {
 
-import spark.implicits._
+  behavior of "createDataObjectName"
 
-// 📌 1️⃣ Création du DataFrame avec des colonnes _c0 à _c6 + row_number
-val df = Seq(
-  ("A", "X", "1", "P", "Red", "100", "Yes", 1),  // 🔹 Référence (1ère ligne)
-  ("A", "X", "2", "Q", "Blue", "200", "No", 2),  // ❌ Différences dans _c2, _c3, _c4, _c5, _c6
-  ("A", "Y", "1", "P", "Red", "100", "Yes", 3),  // ❌ Différence dans _c1
-  ("C", "Z", "3", "P", "Red", "100", "Yes", 4),  // ❌ Différences dans _c0, _c1, _c2
-  ("A", "X", "1", "P", "Red", "100", "Yes", 5)   // ✅ Identique à la 1ère ligne
-).toDF("_c0", "_c1", "_c2", "_c3", "_c4", "_c5", "_c6", "row_number")
+  it should "return the expected object name when specificVersionForCreInit is empty" in {
+    // Mock inputs
+    val creCsvFilenameDto = CreCsvFilenameDto("CRE123")
+    val version = "PROD_V1"
+    val specificVersionForCreInit = None
+    implicit val jobConfig = JobConfig("CONTEXT")
 
-// 📌 2️⃣ Exclure la colonne `row_number` de la comparaison
-val columnsToCheck = df.columns.filter(_ != "row_number")
+    // Expected Output
+    val expected = "CRE123_CONTEXT-PROD_V1"
 
-// 📌 3️⃣ Appliquer `first()` sur chaque colonne à comparer pour récupérer la première valeur
-val firstValuesExprs = columnsToCheck.map(c => first(col(c)).over() as s"${c}_first")
+    // Assertion
+    val result = createDataObjectName(creCsvFilenameDto, version, specificVersionForCreInit)
+    result shouldBe expected
+  }
 
-// 📌 4️⃣ Ajouter les colonnes originales + leurs valeurs de référence
-val dfWithFirstValues = df.select(
-  df.columns.map(col) ++ firstValuesExprs: _*
-)
+  it should "return the expected object name when specificVersionForCreInit is provided" in {
+    // Mock inputs
+    val creCsvFilenameDto = CreCsvFilenameDto("CRE456")
+    val version = "PROD_V1"
+    val specificVersionForCreInit = Some("CUSTOM_V2")
+    implicit val jobConfig = JobConfig("CONTEXT")
 
-// 📌 5️⃣ Comparer chaque colonne avec sa première valeur et stocker les colonnes différentes
-val diffColumnsExpr = columnsToCheck.foldLeft(lit(null).cast("string")) { (acc, c) =>
-  when(col(c) =!= col(s"${c}_first"),
-    when(acc.isNull, lit(c))
-      .otherwise(concat(acc, lit(", "), lit(c)))
-  ).otherwise(acc)
-}.as("diff_columns")
+    // Expected Output
+    val expected = "CRE456_CONTEXT-CUSTOM_V2"
 
-// 📌 6️⃣ Ajouter les valeurs de référence dans une seule colonne
-val referenceValuesExpr = columnsToCheck.foldLeft(lit(null).cast("string")) { (acc, c) =>
-  when(col(c) =!= col(s"${c}_first"),
-    when(acc.isNull, col(s"${c}_first"))
-      .otherwise(concat(acc, lit(", "), col(s"${c}_first")))
-  ).otherwise(acc)
-}.as("reference_values")
+    // Assertion
+    val result = createDataObjectName(creCsvFilenameDto, version, specificVersionForCreInit)
+    result shouldBe expected
+  }
+}
 
-// 📌 7️⃣ Ajouter les valeurs différentes dans une seule colonne `notmatched_values`
-val notMatchedValuesExpr = columnsToCheck.foldLeft(lit(null).cast("string")) { (acc, c) =>
-  when(col(c) =!= col(s"${c}_first"),
-    when(acc.isNull, col(c))
-      .otherwise(concat(acc, lit(", "), col(c)))
-  ).otherwise(acc)
-}.as("notmatched_values")
 
-// 📌 8️⃣ Ajouter les colonnes de comparaison au DataFrame
-val dfWithDifferences = dfWithFirstValues
-  .withColumn("diff_columns", diffColumnsExpr)
-  .withColumn("reference_values", referenceValuesExpr)
-  .withColumn("notmatched_values", notMatchedValuesExpr)
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-// 📌 9️⃣ Filtrer uniquement les lignes différentes de la première
-val diffDf = dfWithDifferences.filter(col("diff_columns").isNotNull)
+class PartitionValidatorTest extends AnyFunSuite with Matchers {
 
-// 📌 🔟 Sélectionner uniquement les colonnes originales + les différences et valeurs de référence
-val finalDf = diffDf.select(df.columns.map(col) ++ Seq(col("diff_columns"), col("reference_values"), col("notmatched_values")): _*)
+  val validator = new PartitionValidator()
 
-// 📌 1️⃣1️⃣ Affichage des lignes qui diffèrent de la première ligne
-finalDf.show(false)
+  test("Should pass when dataObjectName and treeStructure are valid") {
+    noException should be thrownBy validator.validateNameAndStructure("ValidName", List("Node1", "Node2"))
+  }
+
+  test("Should throw an exception when dataObjectName is empty") {
+    val exception = intercept[Exception] {
+      validator.validateNameAndStructure("", List("Node1", "Node2"))
+    }
+    exception.getMessage shouldBe "Created Data Object name is invalid"
+  }
+
+  test("Should throw an exception when dataObjectName is null") {
+    val exception = intercept[Exception] {
+      validator.validateNameAndStructure(null, List("Node1", "Node2"))
+    }
+    exception.getMessage shouldBe "Created Data Object name is invalid"
+  }
+
+  test("Should throw an exception when treeStructure is null") {
+    val exception = intercept[Exception] {
+      validator.validateNameAndStructure("ValidName", null)
+    }
+    exception.getMessage shouldBe "Created Tree structure is invalid"
+  }
+
+  test("Should throw an exception when treeStructure is empty") {
+    val exception = intercept[Exception] {
+      validator.validateNameAndStructure("ValidName", List())
+    }
+    exception.getMessage shouldBe "Created Tree structure is invalid"
+  }
+
+  test("Should throw an exception when both dataObjectName and treeStructure are invalid") {
+    val exception = intercept[Exception] {
+      validator.validateNameAndStructure("", null)
+    }
+    exception.getMessage shouldBe "Created Data Object name and its Tree structure are invalid"
+  }
+}

@@ -1,20 +1,44 @@
- <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.10</version> <!-- Check for latest version -->
-            <executions>
-                <execution>
-                    <id>prepare-agent</id>
-                    <goals>
-                        <goal>prepare-agent</goal>
-                    </goals>
-                </execution>
-                <execution>
-                    <id>report</id>
-                    <phase>verify</phase>
-                    <goals>
-                        <goal>report</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
+#!/bin/bash
+
+# Define variables
+SFTP_HOST="your-sftp-server.com"
+SFTP_USER="your-username"
+REMOTE_DIR="/path/to/remote/directory"
+
+# Temporary file to store file paths
+FILE_LIST="files_to_delete.txt"
+BATCH_FILE="sftp_delete_batch.txt"
+
+# Fetch the file list recursively from SFTP
+echo "Fetching file list from $REMOTE_DIR recursively..."
+sftp -oBatchMode=no -oStrictHostKeyChecking=no "$SFTP_USER@$SFTP_HOST" <<EOF | awk '{print $NF}' | grep -v '^d' > "$FILE_LIST"
+ls -R $REMOTE_DIR
+bye
+EOF
+
+# Check if files exist
+if [ ! -s "$FILE_LIST" ]; then
+    echo "No files found in $REMOTE_DIR. Exiting."
+    rm -f "$FILE_LIST"
+    exit 0
+fi
+
+# Display files to be deleted
+echo "Files to be deleted:"
+cat "$FILE_LIST"
+
+# Create an SFTP batch file for deletion
+echo "cd $REMOTE_DIR" > "$BATCH_FILE"
+while read -r file; do
+    echo "rm \"$file\"" >> "$BATCH_FILE"
+done < "$FILE_LIST"
+echo "bye" >> "$BATCH_FILE"
+
+# Execute SFTP delete commands
+echo "Deleting files..."
+sftp -oBatchMode=no -oStrictHostKeyChecking=no "$SFTP_USER@$SFTP_HOST" < "$BATCH_FILE"
+
+# Cleanup
+rm -f "$FILE_LIST" "$BATCH_FILE"
+
+echo "Files deleted successfully from SFTP."

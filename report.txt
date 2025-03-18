@@ -5,16 +5,13 @@ SFTP_HOST="your-sftp-server.com"
 SFTP_USER="your-username"
 REMOTE_DIR="/path/to/remote/directory"
 
-# Temporary file to store file paths
+# Temporary files
 FILE_LIST="files_to_delete.txt"
 BATCH_FILE="sftp_delete_batch.txt"
 
-# Fetch the file list recursively from SFTP
-echo "Fetching file list from $REMOTE_DIR recursively..."
-sftp -oBatchMode=no -oStrictHostKeyChecking=no "$SFTP_USER@$SFTP_HOST" <<EOF | awk '{print $NF}' | grep -v '^d' > "$FILE_LIST"
-ls -R $REMOTE_DIR
-bye
-EOF
+# Fetch file list recursively using SSH
+echo "Fetching file list recursively from $REMOTE_DIR..."
+ssh "$SFTP_USER@$SFTP_HOST" "find $REMOTE_DIR -type f" > "$FILE_LIST"
 
 # Check if files exist
 if [ ! -s "$FILE_LIST" ]; then

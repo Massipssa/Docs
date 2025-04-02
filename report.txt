@@ -1,63 +1,70 @@
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types._
 import org.scalatest.funsuite.AnyFunSuite
-import java.time.LocalDate
+import org.scalatest.BeforeAndAfterAll
+import org.mockito.Mockito._
+import org.scalatestplus.mockito.MockitoSugar
 
-class ControlVersionUtilsTest extends AnyFunSuite {
+class ReferentialPlanningServiceTest extends AnyFunSuite with BeforeAndAfterAll with MockitoSugar {
 
-  case class ControlVersionRow(expectedDate: LocalDate)
+  private var spark: SparkSession = _
 
-  // Mock the method used in your code
-  implicit class RichControlVersionRow(row: ControlVersionRow) {
-    def getMetadataExpectedUpdateDate: LocalDate = row.expectedDate
+  override def beforeAll(): Unit = {
+    spark = SparkSession.builder()
+      .master("local[*]")
+      .appName("Test")
+      .getOrCreate()
   }
 
-  def compareControlVersionRowsOnExpectedUpdateDate(
-    controlVersionRow1: ControlVersionRow,
-    controlVersionRow2: ControlVersionRow
-  ): Boolean = {
-    val date1 = Option(controlVersionRow1.getMetadataExpectedUpdateDate)
-    val date2 = Option(controlVersionRow2.getMetadataExpectedUpdateDate)
+  override def afterAll(): Unit = {
+    spark.stop()
+  }
 
-    (date1, date2) match {
-      case (None, None)         => false
-      case (None, Some(_))      => false
-      case (Some(_), None)      => true
-      case (Some(d1), Some(d2)) => d1.isBefore(d2)
+  test("getMapFromReferentialPlanningDataFrame should correctly map rows when SparkUtility is mocked") {
+
+    // Mock data to return
+    val schema = StructType(Seq(
+      StructField("id", StringType, nullable = false),
+      StructField("type", StringType, nullable = false),
+      StructField("frequency", StringType, nullable = false)
+    ))
+
+    val data = Seq(
+      Row("P1", "TYPE1", "DAILY"),
+      Row("P2", "TYPE2", "WEEKLY")
+    )
+
+    val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
+
+    // Mock SparkUtility
+    val mockedSparkUtility = mock[SparkUtility.type]
+    when(mockedSparkUtility.loadCsvConfigurationFile("dummy_file")).thenReturn(df)
+
+    // Constants
+    val ID_COLUMN_PLANNING = "id"
+    val TYPE_COLUMN_PLANNING = "type"
+    val FREQUENCY_COLUMN_PLANNING = "frequency"
+
+    // Test method using the mock
+    def getMapFromReferentialPlanningDataFrame(sparkUtility: SparkUtility.type): Map[String, ReferentialPlanningDto] = {
+      val referentialPlanningFileDf = sparkUtility.loadCsvConfigurationFile("dummy_file")
+
+      referentialPlanningFileDf.collect()
+        .map { row =>
+          val id = row.getAs[String](ID_COLUMN_PLANNING)
+          val tpe = row.getAs[String](TYPE_COLUMN_PLANNING)
+          val freq = row.getAs[String](FREQUENCY_COLUMN_PLANNING)
+          id -> ReferentialPlanningDto(id, tpe, freq)
+        }.toMap
     }
-  }
 
-  test("Both dates are null") {
-    val row1 = ControlVersionRow(null)
-    val row2 = ControlVersionRow(null)
-    assert(compareControlVersionRowsOnExpectedUpdateDate(row1, row2) === false)
-  }
+    val result = getMapFromReferentialPlanningDataFrame(mockedSparkUtility)
 
-  test("First date is null, second is not") {
-    val row1 = ControlVersionRow(null)
-    val row2 = ControlVersionRow(LocalDate.of(2024, 1, 1))
-    assert(compareControlVersionRowsOnExpectedUpdateDate(row1, row2) === false)
-  }
+    val expected = Map(
+      "P1" -> ReferentialPlanningDto("P1", "TYPE1", "DAILY"),
+      "P2" -> ReferentialPlanningDto("P2", "TYPE2", "WEEKLY")
+    )
 
-  test("Second date is null, first is not") {
-    val row1 = ControlVersionRow(LocalDate.of(2024, 1, 1))
-    val row2 = ControlVersionRow(null)
-    assert(compareControlVersionRowsOnExpectedUpdateDate(row1, row2) === true)
-  }
-
-  test("First date is before second") {
-    val row1 = ControlVersionRow(LocalDate.of(2023, 1, 1))
-    val row2 = ControlVersionRow(LocalDate.of(2024, 1, 1))
-    assert(compareControlVersionRowsOnExpectedUpdateDate(row1, row2) === true)
-  }
-
-  test("First date is after second") {
-    val row1 = ControlVersionRow(LocalDate.of(2025, 1, 1))
-    val row2 = ControlVersionRow(LocalDate.of(2024, 1, 1))
-    assert(compareControlVersionRowsOnExpectedUpdateDate(row1, row2) === false)
-  }
-
-  test("Both dates are equal") {
-    val row1 = ControlVersionRow(LocalDate.of(2024, 1, 1))
-    val row2 = ControlVersionRow(LocalDate.of(2024, 1, 1))
-    assert(compareControlVersionRowsOnExpectedUpdateDate(row1, row2) === false)
+    assert(result == expected)
   }
 }

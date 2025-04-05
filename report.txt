@@ -1,97 +1,70 @@
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-import boto3
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types._
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.BeforeAndAfterAll
+import org.mockito.Mockito._
+import org.scalatestplus.mockito.MockitoSugar
 
-class S3HookWithSTS(S3Hook):
-    """
-    Custom S3 Hook that assumes an IAM role using STS before accessing S3.
-    
-    :param role_arn: IAM Role ARN to assume
-    :param region_name: AWS Region
-    """
+class ReferentialPlanningServiceTest extends AnyFunSuite with BeforeAndAfterAll with MockitoSugar {
 
-    def __init__(self, role_arn: str, region_name: str = "us-east-1", *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.role_arn = role_arn
-        self.region_name = region_name
+  private var spark: SparkSession = _
 
-    def _get_credentials(self):
-        """Override the default method to use STS for assuming a role."""
-        self.log.info(f"Assuming IAM role: {self.role_arn}")
+  override def beforeAll(): Unit = {
+    spark = SparkSession.builder()
+      .master("local[*]")
+      .appName("Test")
+      .getOrCreate()
+  }
 
-        sts_client = boto3.client("sts", region_name=self.region_name)
-        assumed_role = sts_client.assume_role(
-            RoleArn=self.role_arn,
-            RoleSessionName="AirflowS3HookSession"
-        )
+  override def afterAll(): Unit = {
+    spark.stop()
+  }
 
-        credentials = assumed_role["Credentials"]
-        return {
-            "aws_access_key_id": credentials["AccessKeyId"],
-            "aws_secret_access_key": credentials["SecretAccessKey"],
-            "aws_session_token": credentials["SessionToken"],
-        }
+  test("getMapFromReferentialPlanningDataFrame should correctly map rows when SparkUtility is mocked") {
 
-    def get_s3_client(self):
-        """Returns an S3 client using the assumed role credentials."""
-        credentials = self._get_credentials()
+    // Mock data to return
+    val schema = StructType(Seq(
+      StructField("id", StringType, nullable = false),
+      StructField("type", StringType, nullable = false),
+      StructField("frequency", StringType, nullable = false)
+    ))
 
-        return boto3.client(
-            "s3",
-            aws_access_key_id=credentials["aws_access_key_id"],
-            aws_secret_access_key=credentials["aws_secret_access_key"],
-            aws_session_token=credentials["aws_session_token"],
-            region_name=self.region_name,
-        )
+    val data = Seq(
+      Row("P1", "TYPE1", "DAILY"),
+      Row("P2", "TYPE2", "WEEKLY")
+    )
 
-from airflow.providers.amazon.aws.sensors.s3 import S3KeySensor
-from custom_hooks.S3HookWithSTS import S3HookWithSTS
+    val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
 
-class S3KeySensorWithSTS(S3KeySensor):
-    """
-    Custom S3 Sensor that uses an STS-enabled S3 Hook to check for a file in S3.
-    
-    :param role_arn: IAM Role ARN to assume
-    :param aws_region: AWS region
-    """
+    // Mock SparkUtility
+    val mockedSparkUtility = mock[SparkUtility.type]
+    when(mockedSparkUtility.loadCsvConfigurationFile("dummy_file")).thenReturn(df)
 
-    def __init__(self, role_arn, aws_region="us-east-1", *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.role_arn = role_arn
-        self.aws_region = aws_region
+    // Constants
+    val ID_COLUMN_PLANNING = "id"
+    val TYPE_COLUMN_PLANNING = "type"
+    val FREQUENCY_COLUMN_PLANNING = "frequency"
 
-    @cached_property
-    def hook(self) -> S3HookWithSTS:
-        """Overrides the default hook to use S3HookWithSTS instead of S3Hook."""
-        return S3HookWithSTS(role_arn=self.role_arn, region_name=self.aws_region)
+    // Test method using the mock
+    def getMapFromReferentialPlanningDataFrame(sparkUtility: SparkUtility.type): Map[String, ReferentialPlanningDto] = {
+      val referentialPlanningFileDf = sparkUtility.loadCsvConfigurationFile("dummy_file")
 
+      referentialPlanningFileDf.collect()
+        .map { row =>
+          val id = row.getAs[String](ID_COLUMN_PLANNING)
+          val tpe = row.getAs[String](TYPE_COLUMN_PLANNING)
+          val freq = row.getAs[String](FREQUENCY_COLUMN_PLANNING)
+          id -> ReferentialPlanningDto(id, tpe, freq)
+        }.toMap
+    }
 
-from airflow import DAG
-from datetime import datetime, timedelta
-from custom_sensors.S3KeySensorWithSTS import S3KeySensorWithSTS
+    val result = getMapFromReferentialPlanningDataFrame(mockedSparkUtility)
 
-default_args = {
-    'owner': 'airflow',
-    'depends_on_past': False,
-    'start_date': datetime(2024, 2, 8),
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    val expected = Map(
+      "P1" -> ReferentialPlanningDto("P1", "TYPE1", "DAILY"),
+      "P2" -> ReferentialPlanningDto("P2", "TYPE2", "WEEKLY")
+    )
+
+    assert(result == expected)
+  }
 }
-
-dag = DAG(
-    's3_sensor_with_sts',
-    default_args=default_args,
-    description='DAG using S3 Sensor with STS authentication',
-    schedule_interval=timedelta(days=1),
-    catchup=False,
-)
-
-s3_sensor_task = S3KeySensorWithSTS(
-    task_id='check_s3_file',
-    bucket_name='my-s3-bucket',
-    bucket_key='data/file.csv',
-    role_arn='arn:aws:iam::123456789012:role/MyAirflowRole',
-    aws_region='us-east-1',
-    poke_interval=60,  # Check every 60 seconds
-    timeout=600,  # Timeout after 10 minutes
-    dag=dag,
-)

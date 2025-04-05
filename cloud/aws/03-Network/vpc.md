@@ -107,14 +107,18 @@
 - Useful for high throughput workloads
 - Helpful when you need stable and reliable secure connection  
 
-## VPN connection
+## Site-To-Site (VPN Connection)
 
 - Utilizes IPSec to establish **encrypted** network connectivity between your intranet and Amazon VPC over the Internet
-- VPN Connections can be configured in minutes and are a good solution if you have an immediate need have low-to-modest bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity
+- VPN Connections can be configured in minutes and are a good solution if you have an immediate need have low-to-modest 
+ bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity
+- **Customer Gateways**: Created on-premise side
+- **Virtual Private Gateway**: Created on AWS side
 
 ## AWS Wavelength
 
-- AWS service embeds AWS compute and storage services within 5G networks, providing mobile edge computing infrastructure for developing, deploying, and scaling ultra-low-latency applications
+- AWS service embeds AWS compute and storage services within 5G networks, providing mobile edge computing infrastructure 
+ for developing, deploying, and scaling ultra-low-latency applications
 
 ## Bastion (Jumpbox)
 
@@ -137,11 +141,6 @@
 - Connect multiple sites
 - Low cost and easy to manage
 - It operates over public network, but all traffic between Customer Gateway and AWS VPN CloudHub is encrypted
-
-## Site-To-Site (VPN Connection)
-
-- **Customer Gateways**: Created on-premise side
-- **Vitual Private Gateway**: Created on AWS side
 
 ## Transit Gateway
 

@@ -2,7 +2,8 @@
 
 ## AWS Shield
 
-- Free DDOS protection
+- Network protection service
+- Offer free DDOS protection
 - Protect against layer 3 and layer 4 attacks only
 - Protects all AWS customers on ELB, CloudFront and Route S3
 - Protects against SYN/UDP floods, reflection attacks, and other Layer 3 and Layer 4 attacks
@@ -17,7 +18,7 @@
 - Notification with Amazon EventBridge
 - Integration with CloudFormation
 
-## Secret Manager
+## AWS Secret Manager
 
 - Store securely application secrets, database credentials, API Keys, SSH Keys, passwords, etc
 - Rotation can be used  
@@ -50,10 +51,10 @@
 
 - Uses machine learning and pattern matching to discover sensitive data stored in S3
 
-## Inspector
+## Amazon Inspector
 
 - Is an automated security assessment service that helps improve the security and compliance of application deployed on AWS
-- Inspects the **network**, **EC2 instances**, Amazon ECR and Lambda Functions
+- Inspects the **network**, **EC2 instances**, **Amazon ECR** and **Lambda Functions**
 - Two types of assessment
   - Network assessment
   - Host assessment

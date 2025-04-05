@@ -14,10 +14,16 @@
 - Default retention of messages: _**1 minutes, to 14 days**_ default 4 days
 - Long Polling
   - When a consumer requests messages from the queue, it can optionally **wait** for messages to arrive if there are none in the queue
-  - The **ReceiveMessageWaitTimeSeconds** is the queue attribute that determines whether you are using Short or Long polling. By default, its value is zero which means it is using Short polling. If it is set to a value greater than zero, then it is Long polling
+  - The **ReceiveMessageWaitTimeSeconds** is the queue attribute that determines whether you are using Short or Long polling.
+  By default, its value is zero which means it is using Short polling. If it is set to a value greater than zero, then it is Long polling
 
 ## Dead Letter Queues
 
 ## Standard and FIFO
 
-- FIFO doesn't have same performance then Standard
+- Standard: 
+  - at-least-one delivery
+  - Best effort ordering: occasionally messages may be delivered in order different from which they were sent
+- FIFO 
+  - Messages are processed exactly one in the exact order that they were sent
+  - Support only 300 messages per seconds

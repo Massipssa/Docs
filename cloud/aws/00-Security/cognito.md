@@ -3,19 +3,8 @@
 - Decentralized managed way for authentication
   - Sign-in, sing-up for you app
   - Social identity provider Facebook,..
-- Authentication process
-  1. Authenticate and get tokens
-  2. Exchange tokens and get AWS credentials
-  3. Access AWS service using credentials
 
-![cognito](../Other/Cognito/archi.PNG)
-
-- **Web Identity Provider**: exchange identity and security information between ***IdP*** and Application
-- **Identity Provider:** Facebook, GitHub,...
-- **Types**
-  - SAML is of type Single Sign On (SSO)
-  - OpenID
-  - OAuth
+## Components
 
 - **User pools**
   - Decentralized repository of users
@@ -28,6 +17,24 @@
 - **Identity pools**
   - Provides ***temporary AWS credentials*** to access services eg. S3, DynamoDB, ...
   - It is generated using SDK
+
+  
+## Cognito Workflow
+
+1. Authenticate and get tokens
+2. Exchange tokens and get AWS credentials
+3. Access AWS service using credentials
+
+![cognito](../Other/Cognito/archi.PNG)
+
+- **Web Identity Provider**: exchange identity and security information between ***IdP*** and Application
+- **Identity Provider:** Facebook, GitHub,...
+- **Types**
+  - SAML is of type Single Sign On (SSO)
+  - OpenID
+  - OAuth
+
+
 
   ![identity_pool](../Other/Cognito/identy_pool.png)
 

@@ -26,3 +26,9 @@ and reduces latency.
   - publish 
   - deploy 
 
+## Best practices 
+
+- Separate business logic 
+- Modular function
+- Treact function as stateless
+- Only include what you need

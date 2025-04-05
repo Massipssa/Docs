@@ -10,7 +10,7 @@
   - Aurora
 - Why to use RDS:
   - Automated provisioning and OS patching
-  - Continuous backups and restore to specific timestamp (Point in Time Restore)
+  - Continuous backups and restore to specific timestamp **(Point in Time Restore)**
   - Monitoring dashboards
   - Read replicas for improved read performance
   - Multi AZ setup for Disaster Recovery
@@ -50,6 +50,8 @@
 ## RDS Custom
 
 - Supported only by Oracle and SQL Server
+- Gives full access to underlining OS
+- Deactivate automation mode when performing task on the OS and before some action take a snapshot
 
 ## Encryption
 

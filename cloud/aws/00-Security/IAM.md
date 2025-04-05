@@ -25,6 +25,8 @@
 
 - **Policy**
   - To assign a permission to a users, group, or resource we create a policy, which is a document which explicitly lists permissions (the actions)
+  - Identity based policy: attached to IAM user, group or role
+  - Resource based policy: attached to a resource
 
 - **Policy Types**
   - ***Managed***
@@ -38,6 +40,8 @@
   - ***Inline***
     - Attached directly to the user
     - Useful for exception permissions
+
+- **Principal**: an entity that can perform action or access a service 
 
 ## Credentials
 
@@ -56,3 +60,18 @@
 
 - User to turn it on, administrator can not enable it
 - Administrator can restrict access for example to user that only have MFA
+
+
+## Monitoring
+
+- Access Analyzer: identify unintended access
+- Credential Report: for auditing and compliance
+
+## Best practices
+
+- Create a strong password for your AWS resources
+- Use a group email alias with your AWS account
+- Enable multi-factor authentication
+- Set up AWS IAM users, groups, and roles for daily account access
+- Delete your account’s access keys
+- Enable CloudTrail in all AWS regions

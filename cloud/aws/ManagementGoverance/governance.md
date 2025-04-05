@@ -40,12 +40,18 @@
 
 ## Trusted Advisor
 
-- Fully managed best-practice auditing too
+- Fully managed best-practice auditing
 - Provides realtime guidance to help you provision your resources following AWS best practices
-- Trust advisor checks help optimize your AWS infrastructure, increase security and performance, reduce your overall costs, 
+- Trusted advisor checks help optimize your AWS infrastructure, increase security and performance, reduce your overall costs, 
    and monitor service limits
 - It'll scan 5 different parts of your account and look for places where you could improve your adoption of the
   recommended best practices provided by AWS
+  - Cost Optimization
+  - Performance
+  - Security
+  - Fault Tolerance
+  - Service limits
+  - Operational Excellence
 
 ## AWS Control Tower
 
@@ -59,7 +65,7 @@
 ## AWS Service Catalog
 
 - Allow organization to create and manage catalogs of approved IT services
-- **Standardize**: restrict launching products to a specific list of preapproved solutions
+- **Standardize**: restrict launching products to a specific list of preapproval solutions
 - **Self-service**: end users can browse products and deploy approved service on their own
 - **Access control**: add constraints and grand access to products using AWS IAM
 - **Versionning**: update products to newer versions and propagate changes automatically

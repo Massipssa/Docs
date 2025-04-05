@@ -2,7 +2,7 @@
 
 - Amazon propriety database
 - MySql and Postgresql compatible database engine
-- 5x than Mysql and 3x than Postgresql in performance
+- *5x* than Mysql and *3x* than Postgresql in performance
 - Can have up to **15 replicas** and the replication process is faster than MySQL
 
 ## Basics
@@ -23,7 +23,7 @@
   - No capacity planning needed
   - Pay per second, can be more cost-effective
 - Aurora Multi-Master
-  - In case you can't continuous write availability for the writer nodes
+  - In case you can't continuously write availability for the writer nodes
   - Every node does R/W vs promoting as Read Replica as the new master
 - Global Aurora
   - **Aurora Cross Region Read Replicas**

@@ -18,11 +18,15 @@
 
 ## CloudWatch Logs
 
-- **Log Event:** the record of what happened. It contains a timestamp and the data 
+- **Log Group:** a collection of log steam
 - **Log Stream:** a collection of log events from the same source create a log stream
-- **Log Group:** a collection of log steam 
-
-
+- **Log Event:** the record of what happened. It contains a timestamp and the data
+- Logs can be streamed to 
+  - S3
+  - Kinesis Data Stream
+  - Kinesis Firehose
+  - AWS Lambda
+- Logs are encrypted by default and custom encryption keys can be applied
 
 
 

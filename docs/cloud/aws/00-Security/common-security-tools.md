@@ -4,7 +4,7 @@
 
 - Network protection service
 - Offer free DDOS protection
-- Protect against layer 3 and layer 4 attacks only
+- Protect against **layer 3** and **layer 4** attacks only
 - Protects all AWS customers on ELB, CloudFront and Route S3
 - Protects against SYN/UDP floods, reflection attacks, and other Layer 3 and Layer 4 attacks
 
@@ -79,7 +79,7 @@
 - You can use AWS CLI or AWS SDK to generate presigned urls
 - Used to share private buckets in S3
 
-## AWS Certificate Manager
+## AWS Certificate Manager (ACM)
 
 - Allows to create, manage, and deploy **public** and **private** SSL certificates for use with other AWS services
 - No more paying for SSL certificates. You pay for the resources that utilize your certificates (such as ELB)
@@ -88,7 +88,8 @@
 
 ## AWS Artifact
 
-- Single source you can visit to get the compliance-related information that matters to you, such as AWS security and compliance reports or select online agreements
+- Single source you can visit to get the compliance-related information that matters to you, such as AWS security and 
+ compliance reports or select online agreements
 - Free service
 
 ## Amazon Detective

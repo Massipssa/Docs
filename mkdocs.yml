@@ -1,0 +1,134 @@
+site_name: MasterData
+repo_url: https://github.com/Massipssa/Docs
+repo_name: GitHub
+
+nav:
+  - Home: index.md
+  - Data:
+      - Apache Spark:
+        - Concepts: big-data/spark/concepts.md
+      - Apache Airflow:
+        - Concepts: big-data/airflow/concepts.md
+      - Apache Kafka:
+        - Concepts: big-data/kafka/concepts.md
+      - Apache Beam:
+        - Concepts: big-data/airflow/concepts.md
+
+  - Cloud:
+      - AWS:
+        - Security:
+          - IAM: cloud/aws/00-Security/IAM.md
+          - CloudTrail: cloud/aws/00-Security/cloudTrail.md
+          - Cognito: cloud/aws/00-Security/cognito.md
+          - Encryption: cloud/aws/00-Security/encryption.md
+          - Identity Federation: cloud/aws/00-Security/identityFederation.md
+          - KMS: cloud/aws/00-Security/kms.md
+          - STS: cloud/aws/00-Security/sts.md
+          - WAF: cloud/aws/00-Security/waf.md
+        - Storage:
+          - s3: cloud/aws/01-Storage/s3.md
+          - EFS: cloud/aws/01-Storage/efs.md
+          - FSx: cloud/aws/01-Storage/FSx.md
+          - Storage Gateway: cloud/aws/01-Storage/storage-gateway.md
+        - Compute:
+          - API Gateway: cloud/aws/02-Compute/api-gateway.md
+        - Network:
+          - VPC: cloud/aws/03-Network/vpc.md
+        - Databases:
+          - Aurora: cloud/aws/04-Databases/aurora.md
+        - Monitoring:
+          - Cloud Watch: cloud/aws/Monitoring/cloudWatch.md
+  - Devops:
+      - Pandas Example: examples/pandas.md
+      - Spark Example: examples/spark.md
+  - Security:
+      - Home: security/index.md
+  - FAQ: faq.md
+  - Changelog: changelog.md
+
+
+#theme:
+#  name: material
+#  language: en
+#  features:
+#    - navigation.tabs
+#    - navigation.sections
+#    - content.code.copy
+#    - content.action.edit
+#    - toc.integrate
+#  palette:
+#    primary: blue
+#    accent: light blue
+
+theme:
+  name: material
+  custom_dir: overrides
+  palette:
+      scheme: default
+      primary: blue
+      accent: light blue
+  font:
+    text: Roboto
+    code: Roboto Mono
+  hide:
+    - toc
+#  logo: assets/ms_icon.png
+#  favicon: assets/ms_icon.png
+  features:
+    - navigation.instant
+    - content.tabs.link
+    - navigation.tabs
+    - navigation.tabs.sticky
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: sphinx
+            docstring_section_style: spacy
+            show_root_heading: true
+            show_submodules: false
+            show_bases: true
+            merge_init_into_class: false
+            group_by_category: false
+            inherited_members: true
+            members_order: source
+            show_signature: true
+            line_length: 80
+            separate_signature: true
+            show_signature_annotations: true
+            show_docstring_examples: true
+            summary:
+              attributes: false
+              functions: true
+              modules: false
+            filters:
+              - "!^_"
+  - mkdocs-jupyter:
+      ignore_h1_titles: True
+
+#extra:
+#  social:
+#    - icon: fontawesome/brands/github
+#      link: https://github.com/microsoft/presidio
+#    - icon: fontawesome/brands/docker
+#      link: https://hub.docker.com/_/microsoft-presidio
+#    - icon: fontawesome/solid/envelope
+#      link: mailto:presidio@microsoft.com
+#    - icon: fontawesome/solid/meteor
+#      link: https://huggingface.co/spaces/presidio/presidio_demo
+
+markdown_extensions:
+  - meta
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.pathconverter
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format

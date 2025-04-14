@@ -1,43 +1,64 @@
-site_name: MasterData
+site_name: The Best Data Engineer
 repo_url: https://github.com/Massipssa/Docs
 repo_name: GitHub
 
 nav:
   - Home: index.md
+  - Programming:
+      - Clean Code: programming/clean-code.md
+      - Code Smell: programming/code-smell.md
+      - Design Patterns: programming/design-patterns.md
+      - Functional Programming: programming/functional.md
+      - Principals:
+          - Solid: programming/solid.md
+          - Twelve Factors: programming/twelve-factor.md
   - Data:
       - Apache Spark:
-        - Concepts: big-data/spark/concepts.md
+          - Concepts: big-data/spark/concepts.md
       - Apache Airflow:
-        - Concepts: big-data/airflow/concepts.md
+          - Concepts: big-data/airflow/concepts.md
       - Apache Kafka:
-        - Concepts: big-data/kafka/concepts.md
+          - Concepts: big-data/kafka/concepts.md
       - Apache Beam:
-        - Concepts: big-data/airflow/concepts.md
+          - Concepts: big-data/airflow/concepts.md
 
   - Cloud:
       - AWS:
-        - Security:
-          - IAM: cloud/aws/00-Security/IAM.md
-          - CloudTrail: cloud/aws/00-Security/cloudTrail.md
-          - Cognito: cloud/aws/00-Security/cognito.md
-          - Encryption: cloud/aws/00-Security/encryption.md
-          - Identity Federation: cloud/aws/00-Security/identityFederation.md
-          - KMS: cloud/aws/00-Security/kms.md
-          - STS: cloud/aws/00-Security/sts.md
-          - WAF: cloud/aws/00-Security/waf.md
-        - Storage:
-          - s3: cloud/aws/01-Storage/s3.md
-          - EFS: cloud/aws/01-Storage/efs.md
-          - FSx: cloud/aws/01-Storage/FSx.md
-          - Storage Gateway: cloud/aws/01-Storage/storage-gateway.md
-        - Compute:
-          - API Gateway: cloud/aws/02-Compute/api-gateway.md
-        - Network:
-          - VPC: cloud/aws/03-Network/vpc.md
-        - Databases:
-          - Aurora: cloud/aws/04-Databases/aurora.md
-        - Monitoring:
-          - Cloud Watch: cloud/aws/Monitoring/cloudWatch.md
+          - Security:
+              - IAM: cloud/aws/00-Security/IAM.md
+              - CloudTrail: cloud/aws/00-Security/cloudTrail.md
+              - Cognito: cloud/aws/00-Security/cognito.md
+              - Encryption: cloud/aws/00-Security/encryption.md
+              - Identity Federation: cloud/aws/00-Security/identityFederation.md
+              - KMS: cloud/aws/00-Security/kms.md
+              - STS: cloud/aws/00-Security/sts.md
+              - WAF: cloud/aws/00-Security/waf.md
+          - Storage:
+              - s3: cloud/aws/01-Storage/s3.md
+              - EFS: cloud/aws/01-Storage/efs.md
+              - FSx: cloud/aws/01-Storage/FSx.md
+              - Storage Gateway: cloud/aws/01-Storage/storage-gateway.md
+          - Compute:
+              - API Gateway: cloud/aws/02-Compute/api-gateway.md
+          - Network:
+              - VPC: cloud/aws/03-Network/vpc.md
+          - Databases:
+              - Aurora: cloud/aws/04-Databases/aurora.md
+          - Monitoring:
+              - Cloud Watch: cloud/aws/Monitoring/cloudWatch.md
+      - GCP:
+          - Basics:
+              - Compute: cloud/gcp/basics/compute.md
+              - Storage: cloud/gcp/basics/storage.md
+          - Bigdata:
+              - BigQuery: cloud/gcp/bigdata/bigquery.md
+              - Cloud Storage: cloud/gcp/bigdata/cloud-storage.md
+              - Composer: cloud/gcp/bigdata/composer.md
+              - DataFlow: cloud/gcp/bigdata/dataflow.md
+              - Datafusion: cloud/gcp/bigdata/datafusion.md
+              - Dataprep: cloud/gcp/bigdata/dataprep.md
+              - Dataproc: cloud/gcp/bigdata/dataproc.md
+              - PubSub: cloud/gcp/bigdata/pubsub.md
   - Devops:
       - Pandas Example: examples/pandas.md
       - Spark Example: examples/spark.md
@@ -64,16 +85,16 @@ theme:
   name: material
   custom_dir: overrides
   palette:
-      scheme: default
-      primary: blue
-      accent: light blue
+    scheme: default
+    primary: blue
+    accent: light blue
   font:
     text: Roboto
     code: Roboto Mono
   hide:
     - toc
-#  logo: assets/ms_icon.png
-#  favicon: assets/ms_icon.png
+  #  logo: assets/ms_icon.png
+  #  favicon: assets/ms_icon.png
   features:
     - navigation.instant
     - content.tabs.link

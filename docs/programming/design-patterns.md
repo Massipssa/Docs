@@ -25,9 +25,6 @@ Used to create object
     - Allows resolving concurrency problem 
     - Deadlock: when concurrency is not managed 
 
-
-
-
 - **Data Access Object (DAO)**
   - Separate business layer from persistence layer
   - Permits both layer to evolve separately without knowing anything about each other

@@ -1,4 +1,5 @@
- ## Twelve Factor
+## Twelve Factor
+
 1. **Codebase**
     - Git repo per application
     - An app should have its own git repo and should not share this repo with any other apps
@@ -9,15 +10,15 @@
     - App should externalize all such configurations that vary between deployments 
     - Storage of configuration in environment
 4. **Backing services**
-   - Treat all such backing services as attached resources
-   - No code change is needed when the service change 
+    - Treat all such backing services as attached resources
+    - No code change is needed when the service change 
 5. **Build, Release, Run**
     - Separate the process of converting the codebase into running application
     - Build: compile the code and create docker image
     - Release: push the image to registry
     - Run: pull the image and run it in the container 
 6. **Process - Stateless Apps**
-   - Any data needs to persist must be ub backing services like database in order to allow the scaling out of 
+    - Any data needs to persist must be ub backing services like database in order to allow the scaling out of 
   the application 
 7. **Port binding**
 8. **Concurrency**

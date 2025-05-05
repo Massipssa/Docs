@@ -1,48 +1,32 @@
 import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.{SparkSession, DataFrame}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-import your.package.EnteteTmstpToFilenameEqualityCheck
-import your.package.CreCsvFilenameDto
-import your.package.CheckErrorDto
+import your.package.{EnteteCdEfsAllowedValueCheck, CreCsvFilenameDto, CheckErrorDto}
 
-class EnteteTmstpToFilenameEqualityCheckTest extends AnyFunSuite {
+class EnteteCdEfsAllowedValueCheckTest extends AnyFunSuite {
 
   val spark: SparkSession = SparkSession.builder()
-    .appName("EnteteTimestampCheckTest")
+    .appName("UnitTest")
     .master("local[*]")
     .getOrCreate()
 
   import spark.implicits._
 
-  // Mock DTO
-  case class CreCsvFilenameDtoStub(generationTimestamp: String) {
-    def getGenerationTimestamp(): String = generationTimestamp
-  }
-
-  test("should return empty list when timestamps match") {
-    val timestamp = "2025-05-05"
-
-    val df = Seq(
-      ("val1", "val2", "val3", "val4", "val5", timestamp)
-    ).toDF("_c0", "_c1", "_c2", "_c3", "_c4", "_c5")
-
-    val dto = CreCsvFilenameDtoStub(timestamp)
-
-    val result = EnteteTmstpToFilenameEqualityCheck.check(df, dto)
+  test("check should return empty list when all values are 'M6'") {
+    val df: DataFrame = Seq("M6", "M6", "M6").toDF("_c0")
+    val result: List[CheckErrorDto] = EnteteCdEfsAllowedValueCheck
+      .check(df, CreCsvFilenameDto("dummy.csv"))
 
     assert(result.isEmpty)
   }
 
-  test("should return CheckErrorDto when timestamps differ") {
-    val df = Seq(
-      ("val1", "val2", "val3", "val4", "val5", "2024-12-31")
-    ).toDF("_c0", "_c1", "_c2", "_c3", "_c4", "_c5")
+  test("check should return errors when values differ from 'M6'") {
+    val df: DataFrame = Seq("M6", "X1", "M6", "Y2").toDF("_c0")
+    val result: List[CheckErrorDto] = EnteteCdEfsAllowedValueCheck
+      .check(df, CreCsvFilenameDto("dummy.csv"))
 
-    val dto = CreCsvFilenameDtoStub("2025-05-05")
-
-    val result = EnteteTmstpToFilenameEqualityCheck.check(df, dto)
-
-    assert(result.nonEmpty)
-    assert(result.head.getMessage.contains("Expected"))
+    assert(result.size == 2)
+    assert(result.exists(_.value.contains("X1")))
+    assert(result.exists(_.value.contains("Y2")))
   }
 }

@@ -1,72 +1,48 @@
 import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.{SparkSession, Row}
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.sql.functions._
-import your.package.path.NumberOfColumnsToInterfaceEqualityCheck
-import your.package.path.CreCsvFilenameDto
-import your.package.path.CheckErrorDto
+import your.package.EnteteTmstpToFilenameEqualityCheck
+import your.package.CreCsvFilenameDto
+import your.package.CheckErrorDto
 
-class NumberOfColumnsToInterfaceEqualityCheckTest extends AnyFunSuite {
+class EnteteTmstpToFilenameEqualityCheckTest extends AnyFunSuite {
 
   val spark: SparkSession = SparkSession.builder()
-    .appName("TestSession")
+    .appName("EnteteTimestampCheckTest")
     .master("local[*]")
     .getOrCreate()
 
   import spark.implicits._
 
-  // Case class to simulate your DTO
-  case class CreCsvFilenameDto(creId: String)
+  // Mock DTO
+  case class CreCsvFilenameDtoStub(generationTimestamp: String) {
+    def getGenerationTimestamp(): String = generationTimestamp
+  }
 
-  test("should return empty list when column counts match") {
-    val dataDF = Seq(
-      ("val1", "val2", "val3")
-    ).toDF("col1", "col2", "col3")
+  test("should return empty list when timestamps match") {
+    val timestamp = "2025-05-05"
 
-    // Create nested structure: interface.structureInterface = Array("col1", "col2")
-    val metadataSchema = StructType(Seq(
-      StructField("creId", StringType, nullable = false),
-      StructField("interface", StructType(Seq(
-        StructField("structureInterface", ArrayType(StringType, containsNull = false), nullable = false)
-      )), nullable = false)
-    ))
+    val df = Seq(
+      ("val1", "val2", "val3", "val4", "val5", timestamp)
+    ).toDF("_c0", "_c1", "_c2", "_c3", "_c4", "_c5")
 
-    val metadataRow = Row("cre123", Row(Array("col1", "col2")))
-    val metadataDF = spark.createDataFrame(
-      spark.sparkContext.parallelize(Seq(metadataRow)),
-      metadataSchema
-    )
+    val dto = CreCsvFilenameDtoStub(timestamp)
 
-    val creDto = CreCsvFilenameDto("cre123")
-
-    val result = NumberOfColumnsToInterfaceEqualityCheck.check(dataDF, metadataDF, creDto)(spark)
+    val result = EnteteTmstpToFilenameEqualityCheck.check(df, dto)
 
     assert(result.isEmpty)
   }
 
-  test("should return CheckErrorDto when column counts mismatch") {
-    val dataDF = Seq(
-      ("val1", "val2", "val3", "extra")
-    ).toDF("col1", "col2", "col3", "extraCol")
+  test("should return CheckErrorDto when timestamps differ") {
+    val df = Seq(
+      ("val1", "val2", "val3", "val4", "val5", "2024-12-31")
+    ).toDF("_c0", "_c1", "_c2", "_c3", "_c4", "_c5")
 
-    val metadataSchema = StructType(Seq(
-      StructField("creId", StringType, nullable = false),
-      StructField("interface", StructType(Seq(
-        StructField("structureInterface", ArrayType(StringType, containsNull = false), nullable = false)
-      )), nullable = false)
-    ))
+    val dto = CreCsvFilenameDtoStub("2025-05-05")
 
-    val metadataRow = Row("cre123", Row(Array("col1", "col2", "col3")))
-    val metadataDF = spark.createDataFrame(
-      spark.sparkContext.parallelize(Seq(metadataRow)),
-      metadataSchema
-    )
-
-    val creDto = CreCsvFilenameDto("cre123")
-
-    val result = NumberOfColumnsToInterfaceEqualityCheck.check(dataDF, metadataDF, creDto)(spark)
+    val result = EnteteTmstpToFilenameEqualityCheck.check(df, dto)
 
     assert(result.nonEmpty)
-    assert(result.head.getMessage.contains("Expected number of columns"))
+    assert(result.head.getMessage.contains("Expected"))
   }
 }

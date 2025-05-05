@@ -1,70 +1,72 @@
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types._
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.BeforeAndAfterAll
-import org.mockito.Mockito._
-import org.scalatestplus.mockito.MockitoSugar
+import org.apache.spark.sql.{SparkSession, Row}
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.functions._
+import your.package.path.NumberOfColumnsToInterfaceEqualityCheck
+import your.package.path.CreCsvFilenameDto
+import your.package.path.CheckErrorDto
 
-class ReferentialPlanningServiceTest extends AnyFunSuite with BeforeAndAfterAll with MockitoSugar {
+class NumberOfColumnsToInterfaceEqualityCheckTest extends AnyFunSuite {
 
-  private var spark: SparkSession = _
+  val spark: SparkSession = SparkSession.builder()
+    .appName("TestSession")
+    .master("local[*]")
+    .getOrCreate()
 
-  override def beforeAll(): Unit = {
-    spark = SparkSession.builder()
-      .master("local[*]")
-      .appName("Test")
-      .getOrCreate()
-  }
+  import spark.implicits._
 
-  override def afterAll(): Unit = {
-    spark.stop()
-  }
+  // Case class to simulate your DTO
+  case class CreCsvFilenameDto(creId: String)
 
-  test("getMapFromReferentialPlanningDataFrame should correctly map rows when SparkUtility is mocked") {
+  test("should return empty list when column counts match") {
+    val dataDF = Seq(
+      ("val1", "val2", "val3")
+    ).toDF("col1", "col2", "col3")
 
-    // Mock data to return
-    val schema = StructType(Seq(
-      StructField("id", StringType, nullable = false),
-      StructField("type", StringType, nullable = false),
-      StructField("frequency", StringType, nullable = false)
+    // Create nested structure: interface.structureInterface = Array("col1", "col2")
+    val metadataSchema = StructType(Seq(
+      StructField("creId", StringType, nullable = false),
+      StructField("interface", StructType(Seq(
+        StructField("structureInterface", ArrayType(StringType, containsNull = false), nullable = false)
+      )), nullable = false)
     ))
 
-    val data = Seq(
-      Row("P1", "TYPE1", "DAILY"),
-      Row("P2", "TYPE2", "WEEKLY")
+    val metadataRow = Row("cre123", Row(Array("col1", "col2")))
+    val metadataDF = spark.createDataFrame(
+      spark.sparkContext.parallelize(Seq(metadataRow)),
+      metadataSchema
     )
 
-    val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
+    val creDto = CreCsvFilenameDto("cre123")
 
-    // Mock SparkUtility
-    val mockedSparkUtility = mock[SparkUtility.type]
-    when(mockedSparkUtility.loadCsvConfigurationFile("dummy_file")).thenReturn(df)
+    val result = NumberOfColumnsToInterfaceEqualityCheck.check(dataDF, metadataDF, creDto)(spark)
 
-    // Constants
-    val ID_COLUMN_PLANNING = "id"
-    val TYPE_COLUMN_PLANNING = "type"
-    val FREQUENCY_COLUMN_PLANNING = "frequency"
+    assert(result.isEmpty)
+  }
 
-    // Test method using the mock
-    def getMapFromReferentialPlanningDataFrame(sparkUtility: SparkUtility.type): Map[String, ReferentialPlanningDto] = {
-      val referentialPlanningFileDf = sparkUtility.loadCsvConfigurationFile("dummy_file")
+  test("should return CheckErrorDto when column counts mismatch") {
+    val dataDF = Seq(
+      ("val1", "val2", "val3", "extra")
+    ).toDF("col1", "col2", "col3", "extraCol")
 
-      referentialPlanningFileDf.collect()
-        .map { row =>
-          val id = row.getAs[String](ID_COLUMN_PLANNING)
-          val tpe = row.getAs[String](TYPE_COLUMN_PLANNING)
-          val freq = row.getAs[String](FREQUENCY_COLUMN_PLANNING)
-          id -> ReferentialPlanningDto(id, tpe, freq)
-        }.toMap
-    }
+    val metadataSchema = StructType(Seq(
+      StructField("creId", StringType, nullable = false),
+      StructField("interface", StructType(Seq(
+        StructField("structureInterface", ArrayType(StringType, containsNull = false), nullable = false)
+      )), nullable = false)
+    ))
 
-    val result = getMapFromReferentialPlanningDataFrame(mockedSparkUtility)
-
-    val expected = Map(
-      "P1" -> ReferentialPlanningDto("P1", "TYPE1", "DAILY"),
-      "P2" -> ReferentialPlanningDto("P2", "TYPE2", "WEEKLY")
+    val metadataRow = Row("cre123", Row(Array("col1", "col2", "col3")))
+    val metadataDF = spark.createDataFrame(
+      spark.sparkContext.parallelize(Seq(metadataRow)),
+      metadataSchema
     )
 
-    assert(result == expected)
+    val creDto = CreCsvFilenameDto("cre123")
+
+    val result = NumberOfColumnsToInterfaceEqualityCheck.check(dataDF, metadataDF, creDto)(spark)
+
+    assert(result.nonEmpty)
+    assert(result.head.getMessage.contains("Expected number of columns"))
   }
 }

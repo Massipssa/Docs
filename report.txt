@@ -1,42 +1,59 @@
-import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.{SparkSession, DataFrame}
-import org.apache.spark.sql.functions._
-import your.package.{EnteteCdBteToInterfaceEqualityCheck, CreCsvFilenameDto, CheckErrorDto}
+override def check(
+  creDf: DataFrame,
+  metadataDf: DataFrame,
+  creCsvFilenameDto: CreCsvFilenameDto
+)(implicit spark: SparkSession): List[CheckErrorDto] = {
 
-class EnteteCdBteToInterfaceEqualityCheckTest extends AnyFunSuite {
+  logger.info(s"Execute ${getCheckName}")
 
-  implicit val spark: SparkSession = SparkSession.builder()
-    .appName("EqualityCheckTest")
-    .master("local[*]")
-    .getOrCreate()
+  val creId: String = creCsvFilenameDto.getCreId
 
-  import spark.implicits._
-
-  test("should skip check for CRE ID 3A001") {
-    val creDf = Seq(("M6")).toDF("_c1")
-    val metadataDf = Seq(("3A001", "M6")).toDF("creId", "codeBoite")
-    val creCsvDto = CreCsvFilenameDto("file.csv", "3A001")
-
-    val result = EnteteCdBteToInterfaceEqualityCheck.check(creDf, metadataDf, creCsvDto)
-    assert(result.isEmpty)
+  // Skip check for specific CRE ID
+  if (creId == "3A001") {
+    logger.info(s"Check skipped for CRE ID: $creId")
+    return List.empty
   }
 
-  test("should return empty list when _c1 matches metadata value") {
-    val creDf = Seq(("M6")).toDF("_c1")
-    val metadataDf = Seq(("123456", "M6")).toDF("creId", "codeBoite")
-    val creCsvDto = CreCsvFilenameDto("file.csv", "123456")
+  // Extract expected codeBoite from metadata
+  val expectedCodeBoiteOpt = metadataDf
+    .filter(col("creId") === creId)
+    .select("interfaceDto.codeBoite")
+    .as[String]
+    .headOption
 
-    val result = EnteteCdBteToInterfaceEqualityCheck.check(creDf, metadataDf, creCsvDto)
-    assert(result.isEmpty)
-  }
+  expectedCodeBoiteOpt match {
+    case Some(expectedCodeBoite) =>
+      val differencesDf = allValuesAreEqual(creDf, "_c1", expectedCodeBoite)
 
-  test("should return error when _c1 is different from metadata value") {
-    val creDf = Seq(("M7")).toDF("_c1")
-    val metadataDf = Seq(("123456", "M6")).toDF("creId", "codeBoite")
-    val creCsvDto = CreCsvFilenameDto("file.csv", "123456")
+      if (differencesDf.isEmpty) {
+        List.empty
+      } else {
+        val columnName = CreConstants.DIRECTIVE_COLUMNS_MAP(CreConstants.ENTETE_CD_BTE_COLUMN_INDEX)
 
-    val result = EnteteCdBteToInterfaceEqualityCheck.check(creDf, metadataDf, creCsvDto)
-    assert(result.nonEmpty)
-    assert(result.head.value.contains("M7"))
+        logger.warn(s"CRE: $creId contains different code boite")
+
+        differencesDf
+          .select(col("_c1"), col("_c6"))
+          .withColumn("index", monotonically_increasing_id())
+          .collect()
+          .map { row =>
+            val index = row.getAs[Long]("index").toString
+            val actualValue = row.getAs[String]("_c1")
+            val enteteNoColum = row.getAs[String]("_c6")
+
+            CheckErrorDto(
+              Option(index),
+              Option(enteteNoColum),
+              None,
+              Option(CreConstants.ENTETE_CD_BTE_COLUMN_NAME),
+              Option(s"Expected (codeBoite) in Metadata Interface: $expectedCodeBoite"),
+              Option(s"Actual $columnName in CRE: $actualValue")
+            )
+          }.toList
+      }
+
+    case None =>
+      logger.warn(s"No metadata found for CRE ID: $creId")
+      List.empty
   }
 }

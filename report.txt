@@ -1,32 +1,42 @@
 import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.apache.spark.sql.functions._
-import your.package.{EnteteCdEfsAllowedValueCheck, CreCsvFilenameDto, CheckErrorDto}
+import your.package.{EnteteCdBteToInterfaceEqualityCheck, CreCsvFilenameDto, CheckErrorDto}
 
-class EnteteCdEfsAllowedValueCheckTest extends AnyFunSuite {
+class EnteteCdBteToInterfaceEqualityCheckTest extends AnyFunSuite {
 
-  val spark: SparkSession = SparkSession.builder()
-    .appName("UnitTest")
+  implicit val spark: SparkSession = SparkSession.builder()
+    .appName("EqualityCheckTest")
     .master("local[*]")
     .getOrCreate()
 
   import spark.implicits._
 
-  test("check should return empty list when all values are 'M6'") {
-    val df: DataFrame = Seq("M6", "M6", "M6").toDF("_c0")
-    val result: List[CheckErrorDto] = EnteteCdEfsAllowedValueCheck
-      .check(df, CreCsvFilenameDto("dummy.csv"))
+  test("should skip check for CRE ID 3A001") {
+    val creDf = Seq(("M6")).toDF("_c1")
+    val metadataDf = Seq(("3A001", "M6")).toDF("creId", "codeBoite")
+    val creCsvDto = CreCsvFilenameDto("file.csv", "3A001")
 
+    val result = EnteteCdBteToInterfaceEqualityCheck.check(creDf, metadataDf, creCsvDto)
     assert(result.isEmpty)
   }
 
-  test("check should return errors when values differ from 'M6'") {
-    val df: DataFrame = Seq("M6", "X1", "M6", "Y2").toDF("_c0")
-    val result: List[CheckErrorDto] = EnteteCdEfsAllowedValueCheck
-      .check(df, CreCsvFilenameDto("dummy.csv"))
+  test("should return empty list when _c1 matches metadata value") {
+    val creDf = Seq(("M6")).toDF("_c1")
+    val metadataDf = Seq(("123456", "M6")).toDF("creId", "codeBoite")
+    val creCsvDto = CreCsvFilenameDto("file.csv", "123456")
 
-    assert(result.size == 2)
-    assert(result.exists(_.value.contains("X1")))
-    assert(result.exists(_.value.contains("Y2")))
+    val result = EnteteCdBteToInterfaceEqualityCheck.check(creDf, metadataDf, creCsvDto)
+    assert(result.isEmpty)
+  }
+
+  test("should return error when _c1 is different from metadata value") {
+    val creDf = Seq(("M7")).toDF("_c1")
+    val metadataDf = Seq(("123456", "M6")).toDF("creId", "codeBoite")
+    val creCsvDto = CreCsvFilenameDto("file.csv", "123456")
+
+    val result = EnteteCdBteToInterfaceEqualityCheck.check(creDf, metadataDf, creCsvDto)
+    assert(result.nonEmpty)
+    assert(result.head.value.contains("M7"))
   }
 }

@@ -1,70 +1,59 @@
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types._
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.BeforeAndAfterAll
-import org.mockito.Mockito._
-import org.scalatestplus.mockito.MockitoSugar
+override def check(
+  creDf: DataFrame,
+  metadataDf: DataFrame,
+  creCsvFilenameDto: CreCsvFilenameDto
+)(implicit spark: SparkSession): List[CheckErrorDto] = {
 
-class ReferentialPlanningServiceTest extends AnyFunSuite with BeforeAndAfterAll with MockitoSugar {
+  logger.info(s"Execute ${getCheckName}")
 
-  private var spark: SparkSession = _
+  val creId: String = creCsvFilenameDto.getCreId
 
-  override def beforeAll(): Unit = {
-    spark = SparkSession.builder()
-      .master("local[*]")
-      .appName("Test")
-      .getOrCreate()
+  // Skip check for specific CRE ID
+  if (creId == "3A001") {
+    logger.info(s"Check skipped for CRE ID: $creId")
+    return List.empty
   }
 
-  override def afterAll(): Unit = {
-    spark.stop()
-  }
+  // Extract expected codeBoite from metadata
+  val expectedCodeBoiteOpt = metadataDf
+    .filter(col("creId") === creId)
+    .select("interfaceDto.codeBoite")
+    .as[String]
+    .headOption
 
-  test("getMapFromReferentialPlanningDataFrame should correctly map rows when SparkUtility is mocked") {
+  expectedCodeBoiteOpt match {
+    case Some(expectedCodeBoite) =>
+      val differencesDf = allValuesAreEqual(creDf, "_c1", expectedCodeBoite)
 
-    // Mock data to return
-    val schema = StructType(Seq(
-      StructField("id", StringType, nullable = false),
-      StructField("type", StringType, nullable = false),
-      StructField("frequency", StringType, nullable = false)
-    ))
+      if (differencesDf.isEmpty) {
+        List.empty
+      } else {
+        val columnName = CreConstants.DIRECTIVE_COLUMNS_MAP(CreConstants.ENTETE_CD_BTE_COLUMN_INDEX)
 
-    val data = Seq(
-      Row("P1", "TYPE1", "DAILY"),
-      Row("P2", "TYPE2", "WEEKLY")
-    )
+        logger.warn(s"CRE: $creId contains different code boite")
 
-    val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
+        differencesDf
+          .select(col("_c1"), col("_c6"))
+          .withColumn("index", monotonically_increasing_id())
+          .collect()
+          .map { row =>
+            val index = row.getAs[Long]("index").toString
+            val actualValue = row.getAs[String]("_c1")
+            val enteteNoColum = row.getAs[String]("_c6")
 
-    // Mock SparkUtility
-    val mockedSparkUtility = mock[SparkUtility.type]
-    when(mockedSparkUtility.loadCsvConfigurationFile("dummy_file")).thenReturn(df)
+            CheckErrorDto(
+              Option(index),
+              Option(enteteNoColum),
+              None,
+              Option(CreConstants.ENTETE_CD_BTE_COLUMN_NAME),
+              Option(s"Expected (codeBoite) in Metadata Interface: $expectedCodeBoite"),
+              Option(s"Actual $columnName in CRE: $actualValue")
+            )
+          }.toList
+      }
 
-    // Constants
-    val ID_COLUMN_PLANNING = "id"
-    val TYPE_COLUMN_PLANNING = "type"
-    val FREQUENCY_COLUMN_PLANNING = "frequency"
-
-    // Test method using the mock
-    def getMapFromReferentialPlanningDataFrame(sparkUtility: SparkUtility.type): Map[String, ReferentialPlanningDto] = {
-      val referentialPlanningFileDf = sparkUtility.loadCsvConfigurationFile("dummy_file")
-
-      referentialPlanningFileDf.collect()
-        .map { row =>
-          val id = row.getAs[String](ID_COLUMN_PLANNING)
-          val tpe = row.getAs[String](TYPE_COLUMN_PLANNING)
-          val freq = row.getAs[String](FREQUENCY_COLUMN_PLANNING)
-          id -> ReferentialPlanningDto(id, tpe, freq)
-        }.toMap
-    }
-
-    val result = getMapFromReferentialPlanningDataFrame(mockedSparkUtility)
-
-    val expected = Map(
-      "P1" -> ReferentialPlanningDto("P1", "TYPE1", "DAILY"),
-      "P2" -> ReferentialPlanningDto("P2", "TYPE2", "WEEKLY")
-    )
-
-    assert(result == expected)
+    case None =>
+      logger.warn(s"No metadata found for CRE ID: $creId")
+      List.empty
   }
 }

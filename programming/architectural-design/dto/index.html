@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../solid/">
+        <link rel="prev" href="../dao/">
       
       
-        <link rel="next" href="../../big-data/spark/concepts/">
+        <link rel="next" href="../../principals/solid/">
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
     
     
       
-        <title>Twelve Factors - The Best Data Engineer</title>
+        <title>DTO - The Best Data Engineer</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.4af4bdda.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.4af4bdda.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -46,9 +46,9 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
 <script type="text/javascript">
     (function(c,l,a,r,i,t,y){
@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#twelve-factor" class="md-skip">
+        <a href="#example" class="md-skip">
           Skip to content
         </a>
       
@@ -93,7 +93,7 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="The Best Data Engineer" class="md-header__button md-logo" aria-label="The Best Data Engineer" data-md-component="logo">
+    <a href="../../.." title="The Best Data Engineer" class="md-header__button md-logo" aria-label="The Best Data Engineer" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Twelve Factors
+              DTO
             
           </span>
         </div>
@@ -192,7 +192,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href="../../.." class="md-tabs__link">
         
   
   
@@ -215,7 +215,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../clean-code/" class="md-tabs__link">
+        <a href="../../clean-code/" class="md-tabs__link">
           
   
   
@@ -242,7 +242,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../big-data/spark/concepts/" class="md-tabs__link">
+        <a href="../../../big-data/spark/concepts/" class="md-tabs__link">
           
   
   
@@ -279,7 +279,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../cloud/aws/00-Security/IAM/" class="md-tabs__link">
+        <a href="../../../cloud/aws/00-Security/IAM/" class="md-tabs__link">
           
   
   
@@ -305,7 +305,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../examples/pandas.md" class="md-tabs__link">
+        <a href="../../../examples/pandas.md" class="md-tabs__link">
           
   
   
@@ -325,7 +325,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../security/index.md" class="md-tabs__link">
+        <a href="../../../security/index.md" class="md-tabs__link">
           
   
   
@@ -343,7 +343,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../faq.md" class="md-tabs__link">
+      <a href="../../../faq.md" class="md-tabs__link">
         
   
   
@@ -362,7 +362,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../changelog.md" class="md-tabs__link">
+      <a href="../../../changelog.md" class="md-tabs__link">
         
   
   
@@ -403,7 +403,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="The Best Data Engineer" class="md-nav__button md-logo" aria-label="The Best Data Engineer" data-md-component="logo">
+    <a href="../../.." title="The Best Data Engineer" class="md-nav__button md-logo" aria-label="The Best Data Engineer" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -433,7 +433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -501,7 +501,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../clean-code/" class="md-nav__link">
+      <a href="../../clean-code/" class="md-nav__link">
         
   
   
@@ -524,7 +524,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code-smell/" class="md-nav__link">
+      <a href="../../code-smell/" class="md-nav__link">
         
   
   
@@ -547,7 +547,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../design-patterns/" class="md-nav__link">
+      <a href="../../design-patterns/" class="md-nav__link">
         
   
   
@@ -570,7 +570,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../functional/" class="md-nav__link">
+      <a href="../../functional/" class="md-nav__link">
         
   
   
@@ -614,7 +614,7 @@
   
   
   <span class="md-ellipsis">
-    Principals
+    Architectural Patterns
     
   </span>
   
@@ -625,7 +625,7 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_5">
             <span class="md-nav__icon md-icon"></span>
-            Principals
+            Architectural Patterns
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -636,12 +636,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../solid/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Solid
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dao/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    DAO
     
   </span>
   
@@ -671,7 +694,7 @@
   
   
   <span class="md-ellipsis">
-    Twelve Factors
+    DTO
     
   </span>
   
@@ -684,7 +707,7 @@
   
   
   <span class="md-ellipsis">
-    Twelve Factors
+    DTO
     
   </span>
   
@@ -705,9 +728,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#twelve-factor" class="md-nav__link">
+  <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
-      Twelve Factor
+      Example
     </span>
   </a>
   
@@ -717,6 +740,170 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Principals
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            Principals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principals/solid/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solid
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principals/twelve-factor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Twelve Factors
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principals/dry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    DRY (Don't Repeat Yourself)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principals/kiss/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    KISS (Keep It Simple, Stupid)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principals/yagni/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    YAGNI
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -826,7 +1013,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../big-data/spark/concepts/" class="md-nav__link">
+      <a href="../../../big-data/spark/concepts/" class="md-nav__link">
         
   
   
@@ -898,7 +1085,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../big-data/airflow/concepts/" class="md-nav__link">
+      <a href="../../../big-data/airflow/concepts/" class="md-nav__link">
         
   
   
@@ -970,7 +1157,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../big-data/kafka/concepts/" class="md-nav__link">
+      <a href="../../../big-data/kafka/concepts/" class="md-nav__link">
         
   
   
@@ -1042,7 +1229,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../big-data/airflow/concepts/" class="md-nav__link">
+      <a href="../../../big-data/airflow/concepts/" class="md-nav__link">
         
   
   
@@ -1203,7 +1390,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/00-Security/IAM/" class="md-nav__link">
+      <a href="../../../cloud/aws/00-Security/IAM/" class="md-nav__link">
         
   
   
@@ -1226,7 +1413,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/00-Security/cloudTrail/" class="md-nav__link">
+      <a href="../../../cloud/aws/00-Security/cloudTrail/" class="md-nav__link">
         
   
   
@@ -1249,7 +1436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/00-Security/cognito/" class="md-nav__link">
+      <a href="../../../cloud/aws/00-Security/cognito/" class="md-nav__link">
         
   
   
@@ -1272,7 +1459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/00-Security/encryption/" class="md-nav__link">
+      <a href="../../../cloud/aws/00-Security/encryption/" class="md-nav__link">
         
   
   
@@ -1295,7 +1482,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/00-Security/identityFederation/" class="md-nav__link">
+      <a href="../../../cloud/aws/00-Security/identityFederation/" class="md-nav__link">
         
   
   
@@ -1318,7 +1505,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/00-Security/kms/" class="md-nav__link">
+      <a href="../../../cloud/aws/00-Security/kms/" class="md-nav__link">
         
   
   
@@ -1341,7 +1528,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/00-Security/sts/" class="md-nav__link">
+      <a href="../../../cloud/aws/00-Security/sts/" class="md-nav__link">
         
   
   
@@ -1364,7 +1551,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/00-Security/waf/" class="md-nav__link">
+      <a href="../../../cloud/aws/00-Security/waf/" class="md-nav__link">
         
   
   
@@ -1436,7 +1623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/01-Storage/s3/" class="md-nav__link">
+      <a href="../../../cloud/aws/01-Storage/s3/" class="md-nav__link">
         
   
   
@@ -1459,7 +1646,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/01-Storage/efs/" class="md-nav__link">
+      <a href="../../../cloud/aws/01-Storage/efs/" class="md-nav__link">
         
   
   
@@ -1482,7 +1669,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/01-Storage/FSx/" class="md-nav__link">
+      <a href="../../../cloud/aws/01-Storage/FSx/" class="md-nav__link">
         
   
   
@@ -1505,7 +1692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/01-Storage/storage-gateway/" class="md-nav__link">
+      <a href="../../../cloud/aws/01-Storage/storage-gateway/" class="md-nav__link">
         
   
   
@@ -1577,7 +1764,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/02-Compute/api-gateway/" class="md-nav__link">
+      <a href="../../../cloud/aws/02-Compute/api-gateway/" class="md-nav__link">
         
   
   
@@ -1649,7 +1836,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/03-Network/vpc/" class="md-nav__link">
+      <a href="../../../cloud/aws/03-Network/vpc/" class="md-nav__link">
         
   
   
@@ -1721,7 +1908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/04-Databases/aurora/" class="md-nav__link">
+      <a href="../../../cloud/aws/04-Databases/aurora/" class="md-nav__link">
         
   
   
@@ -1793,7 +1980,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/aws/Monitoring/cloudWatch/" class="md-nav__link">
+      <a href="../../../cloud/aws/Monitoring/cloudWatch/" class="md-nav__link">
         
   
   
@@ -1914,7 +2101,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/basics/compute/" class="md-nav__link">
+      <a href="../../../cloud/gcp/basics/compute/" class="md-nav__link">
         
   
   
@@ -1937,7 +2124,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/basics/storage/" class="md-nav__link">
+      <a href="../../../cloud/gcp/basics/storage/" class="md-nav__link">
         
   
   
@@ -2009,7 +2196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/bigdata/bigquery/" class="md-nav__link">
+      <a href="../../../cloud/gcp/bigdata/bigquery/" class="md-nav__link">
         
   
   
@@ -2032,7 +2219,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/bigdata/cloud-storage/" class="md-nav__link">
+      <a href="../../../cloud/gcp/bigdata/cloud-storage/" class="md-nav__link">
         
   
   
@@ -2055,7 +2242,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/bigdata/composer/" class="md-nav__link">
+      <a href="../../../cloud/gcp/bigdata/composer/" class="md-nav__link">
         
   
   
@@ -2078,7 +2265,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/bigdata/dataflow/" class="md-nav__link">
+      <a href="../../../cloud/gcp/bigdata/dataflow/" class="md-nav__link">
         
   
   
@@ -2101,7 +2288,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/bigdata/datafusion/" class="md-nav__link">
+      <a href="../../../cloud/gcp/bigdata/datafusion/" class="md-nav__link">
         
   
   
@@ -2124,7 +2311,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/bigdata/dataprep/" class="md-nav__link">
+      <a href="../../../cloud/gcp/bigdata/dataprep/" class="md-nav__link">
         
   
   
@@ -2147,7 +2334,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/bigdata/dataproc/" class="md-nav__link">
+      <a href="../../../cloud/gcp/bigdata/dataproc/" class="md-nav__link">
         
   
   
@@ -2170,7 +2357,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloud/gcp/bigdata/pubsub/" class="md-nav__link">
+      <a href="../../../cloud/gcp/bigdata/pubsub/" class="md-nav__link">
         
   
   
@@ -2257,7 +2444,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/pandas.md" class="md-nav__link">
+      <a href="../../../examples/pandas.md" class="md-nav__link">
         
   
   
@@ -2280,7 +2467,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/spark.md" class="md-nav__link">
+      <a href="../../../examples/spark.md" class="md-nav__link">
         
   
   
@@ -2351,7 +2538,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../security/index.md" class="md-nav__link">
+      <a href="../../../security/index.md" class="md-nav__link">
         
   
   
@@ -2381,7 +2568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../faq.md" class="md-nav__link">
+      <a href="../../../faq.md" class="md-nav__link">
         
   
   
@@ -2403,7 +2590,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../changelog.md" class="md-nav__link">
+      <a href="../../../changelog.md" class="md-nav__link">
         
   
   
@@ -2443,9 +2630,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#twelve-factor" class="md-nav__link">
+  <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
-      Twelve Factor
+      Example
     </span>
   </a>
   
@@ -2473,64 +2660,31 @@
   
 
 
-  <h1>Twelve Factors</h1>
+  <h1>DTO</h1>
 
-<h2 id="twelve-factor">Twelve Factor</h2>
-<ol>
-<li><strong>Codebase</strong><ul>
-<li>Git repo per application</li>
-<li>An app should have its own git repo and should not share this repo with any other apps</li>
+<p>A <strong>DTO – Data Transfer Object</strong> is a plain object used to transfer data between layers or systems, especially between:</p>
+<ul>
+<li>client and server</li>
+<li>API and service</li>
+<li>service and DAO</li>
 </ul>
-</li>
-<li><strong>Dependencies</strong><ul>
-<li>App should always explicitly declare all its dependencies (using tool like maven), it doesn't suppose
-that the dependencies will be available at system level </li>
-</ul>
-</li>
-<li><strong>Configurations</strong><ul>
-<li>App should externalize all such configurations that vary between deployments </li>
-<li>Storage of configuration in environment</li>
-</ul>
-</li>
-<li><strong>Backing services</strong><ul>
-<li>Treat all such backing services as attached resources</li>
-<li>No code change is needed when the service change </li>
-</ul>
-</li>
-<li><strong>Build, Release, Run</strong><ul>
-<li>Separate the process of converting the codebase into running application</li>
-<li>Build: compile the code and create docker image</li>
-<li>Release: push the image to registry</li>
-<li>Run: pull the image and run it in the container </li>
-</ul>
-</li>
-<li><strong>Process - Stateless Apps</strong><ul>
-<li>Any data needs to persist must be ub backing services like database in order to allow the scaling out of 
-  the application </li>
-</ul>
-</li>
-<li><strong>Port binding</strong></li>
-<li><strong>Concurrency</strong></li>
-<li><strong>Disposability</strong><ul>
-<li>Maximize robustness with fast startup and graceful shutdown</li>
-<li>If the application is under increasing load we should be able to start and stop the application
-rapidly to scale up and scale down </li>
-</ul>
-</li>
-<li><strong>Dev / Prod parity</strong><ul>
-<li>Keep the gap between environments as minimal as possible</li>
-<li>A containerized application is expected to behave the same, no matter where we run it (Use docker) </li>
-</ul>
-</li>
-<li><strong>Logs</strong><ul>
-<li>Publish logs as event streams</li>
-</ul>
-</li>
-<li><strong>Admin process</strong><ul>
-<li>Keep admin scripts together with app codebase</li>
-</ul>
-</li>
-</ol>
+<p>It usually contains no logic, only fields (and maybe some formatting/validation).</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>🧠 Think of it as: <strong><em>A suitcase full of data that travels across layers.</em></strong></p>
+</div>
+<h2 id="example">Example</h2>
+<div class="highlight"><pre><span></span><code><span class="c1">// DTO representing input from a web form or JSON</span>
+<span class="k">case</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">UserDTO</span><span class="p">(</span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">)</span>
+
+<span class="c1">// Service that converts DTO into a domain model</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserService</span><span class="p">(</span><span class="n">userDAO</span><span class="p">:</span><span class="w"> </span><span class="nc">UserDAO</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">createUser</span><span class="p">(</span><span class="n">dto</span><span class="p">:</span><span class="w"> </span><span class="nc">UserDTO</span><span class="p">):</span><span class="w"> </span><span class="nc">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">dto</span><span class="p">.</span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="c1">// Convert DTO to domain model</span>
+<span class="w">    </span><span class="n">userDAO</span><span class="p">.</span><span class="n">save</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
 
 
 
@@ -2582,10 +2736,10 @@ rapidly to scale up and scale down </li>
     
     
       
-      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "content.tabs.link", "navigation.tabs", "navigation.tabs.sticky"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "content.tabs.link", "navigation.tabs", "navigation.tabs.sticky"], "search": "../../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.c8b220af.min.js"></script>
       
     
   </body>

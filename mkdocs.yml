@@ -9,9 +9,16 @@ nav:
       - Code Smell: programming/code-smell.md
       - Design Patterns: programming/design-patterns.md
       - Functional Programming: programming/functional.md
+      - Architectural Patterns:
+          - Home: programming/architectural-design/index.md
+          - DAO: programming/architectural-design/dao.md
+          - DTO: programming/architectural-design/dto.md
       - Principals:
-          - Solid: programming/solid.md
-          - Twelve Factors: programming/twelve-factor.md
+          - Solid: programming/principals/solid.md
+          - Twelve Factors: programming/principals/twelve-factor.md
+          - DRY (Don't Repeat Yourself): programming/principals/dry.md
+          - KISS (Keep It Simple, Stupid): programming/principals/kiss.md
+          - YAGNI: programming/principals/yagni.md
   - Data:
       - Apache Spark:
           - Concepts: big-data/spark/concepts.md

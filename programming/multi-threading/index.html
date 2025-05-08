@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../design-patterns/">
-      
-      
-        <link rel="next" href="../solid/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +16,7 @@
     
     
       
-        <title>Functional Programming - The Best Data Engineer</title>
+        <title>Multi-threading - The Best Data Engineer</title>
       
     
     
@@ -77,7 +73,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#functional-programming" class="md-skip">
+        <a href="#multi-threading" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Functional Programming
+              Multi-threading
             
           </span>
         </div>
@@ -209,12 +205,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../clean-code/" class="md-tabs__link">
           
   
@@ -452,29 +446,24 @@
       
   
   
-    
   
   
-  
     
     
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
             
   
   
@@ -487,7 +476,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Programming
@@ -567,19 +556,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../functional/" class="md-nav__link">
         
   
   
@@ -590,7 +570,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -2419,22 +2398,22 @@
   
 
 
-<h1 id="functional-programming">Functional Programming</h1>
+<h1 id="multi-threading">Multi-threading</h1>
 <ul>
-<li>No state</li>
-<li>Pure function<ul>
-<li>Given the same inputs, always returns the same output, and</li>
-<li>Has no side-effects</li>
+<li>Deux sortes de thread<ul>
+<li><strong>Lourd (processus):</strong> lancé par le maain</li>
+<li><strong>Lègres:</strong>:lancés en parallèless, on retrouve deux types<ul>
+<li><strong>System thread</strong>: sont ceux lancés par la JVM (ex: GC)</li>
+<li><strong>Defined thread:</strong> sont ceux définis par le développeur, sont gérè par <strong>ExecutorService</strong> in java</li>
 </ul>
 </li>
-<li>No side effects</li>
-<li>Higher Order Function<ul>
-<li>The function one takes or more functions as parameter</li>
-<li>The function returns another function as result</li>
 </ul>
 </li>
-<li>Immutable data</li>
-<li>Referential transparency</li>
+<li>volatile: <ul>
+<li>Do not cache the variable</li>
+<li>Always read it from the main memory</li>
+</ul>
+</li>
 </ul>
 
 

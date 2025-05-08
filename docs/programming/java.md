@@ -1,4 +1,5 @@
 ## Garbage Collector
+
 - Free the heap by destroying the objects that don't contain a reference
 - Steps
     - Mark objects

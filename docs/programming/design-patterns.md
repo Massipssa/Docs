@@ -1,22 +1,23 @@
+
 ## Creational
 
 Used to create object
 
-* Singleton
-* Factory
-* Abstract Factory
-* Builder:
-    * Create a complex object from a simple one
-    * When some attributes are not required
-* Prototype
+1. Singleton 
+2. Factory 
+3. Abstract Factory 
+4. Builder:
+   - Create a complex object from a simple one 
+   - When some attributes are not required
+5. Prototype
 
 ## Structural
 
-* Relationship between objects
+Relationship between objects
 
 ## Behavior
 
-* Communication between objects
+Communication between objects
 
 
 ### Combinator

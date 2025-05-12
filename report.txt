@@ -1,59 +1,43 @@
-override def check(
-  creDf: DataFrame,
-  metadataDf: DataFrame,
-  creCsvFilenameDto: CreCsvFilenameDto
-)(implicit spark: SparkSession): List[CheckErrorDto] = {
+import org.scalatest.funsuite.AnyFunSuite
 
-  logger.info(s"Execute ${getCheckName}")
+class InterfaceValidationServiceTest extends AnyFunSuite {
 
-  val creId: String = creCsvFilenameDto.getCreId
-
-  // Skip check for specific CRE ID
-  if (creId == "3A001") {
-    logger.info(s"Check skipped for CRE ID: $creId")
-    return List.empty
+  test("Should throw exception when interface is null") {
+    assertThrows[IllegalArgumentException] {
+      InterfaceValidationService.checkInterfaceValidity(3, null)
+    }
   }
 
-  // Extract expected codeBoite from metadata
-  val expectedCodeBoiteOpt = metadataDf
-    .filter(col("creId") === creId)
-    .select("interfaceDto.codeBoite")
-    .as[String]
-    .headOption
+  test("Should return error if structureInterface contains null") {
+    val dto = InterfaceDto(List(null))
+    val result = InterfaceValidationService.checkInterfaceValidity(3, dto)
+    assert(result.contains(IngestionReportConstants.METADATA_INTERFACE_STRUCTURE_INTERFACE_NULL_ATTRIBUTE_FOUND_ERROR_STATE))
+  }
 
-  expectedCodeBoiteOpt match {
-    case Some(expectedCodeBoite) =>
-      val differencesDf = allValuesAreEqual(creDf, "_c1", expectedCodeBoite)
+  test("Should return error if positions are not unique") {
+    val dto = InterfaceDto(List(
+      StructureInterfaceDto("field1", 1),
+      StructureInterfaceDto("field2", 1)  // duplicate position
+    ))
+    val result = InterfaceValidationService.checkInterfaceValidity(2, dto)
+    assert(result.contains(IngestionReportConstants.METADATA_INTERFACE_STRUCTURE_INTERFACE_POSITIONS_DUPLICITY_ERROR_STATE))
+  }
 
-      if (differencesDf.isEmpty) {
-        List.empty
-      } else {
-        val columnName = CreConstants.DIRECTIVE_COLUMNS_MAP(CreConstants.ENTETE_CD_BTE_COLUMN_INDEX)
+  test("Should return error if number of columns doesn't match") {
+    val dto = InterfaceDto(List(
+      StructureInterfaceDto("field1", 1),
+      StructureInterfaceDto("field2", 2)
+    ))
+    val result = InterfaceValidationService.checkInterfaceValidity(3, dto)
+    assert(result.exists(_.contains("REAL_NUMBER_OF_CRE_COLUMNS_DIFFERENT")))
+  }
 
-        logger.warn(s"CRE: $creId contains different code boite")
-
-        differencesDf
-          .select(col("_c1"), col("_c6"))
-          .withColumn("index", monotonically_increasing_id())
-          .collect()
-          .map { row =>
-            val index = row.getAs[Long]("index").toString
-            val actualValue = row.getAs[String]("_c1")
-            val enteteNoColum = row.getAs[String]("_c6")
-
-            CheckErrorDto(
-              Option(index),
-              Option(enteteNoColum),
-              None,
-              Option(CreConstants.ENTETE_CD_BTE_COLUMN_NAME),
-              Option(s"Expected (codeBoite) in Metadata Interface: $expectedCodeBoite"),
-              Option(s"Actual $columnName in CRE: $actualValue")
-            )
-          }.toList
-      }
-
-    case None =>
-      logger.warn(s"No metadata found for CRE ID: $creId")
-      List.empty
+  test("Should return None for valid interface") {
+    val dto = InterfaceDto(List(
+      StructureInterfaceDto("field1", 1),
+      StructureInterfaceDto("field2", 2)
+    ))
+    val result = InterfaceValidationService.checkInterfaceValidity(2, dto)
+    assert(result.isEmpty)
   }
 }

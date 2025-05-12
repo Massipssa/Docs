@@ -1,43 +1,63 @@
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers._
 
-class InterfaceValidationServiceTest extends AnyFunSuite {
+class MetadataUtilityTest extends AnyFunSuite with MockitoSugar {
 
-  test("Should throw exception when interface is null") {
-    assertThrows[IllegalArgumentException] {
-      InterfaceValidationService.checkInterfaceValidity(3, null)
+  implicit val jobConfig: JobConfigDto = mock[JobConfigDto]
+
+  test("should return metadata file key when exactly one key is found") {
+    val batchName = "testBatch"
+    val appZone = "zone"
+    val s3Key = "zone/testBatch"
+    val metadataKey = "zone/testBatch/meta/file1.json"
+
+    // Mocking S3Utility
+    val s3Util = mock[S3Utility.type]
+    when(S3Utility.createS3Key(List(appZone, batchName))).thenReturn(s3Key)
+    when(S3Utility.listAllKeys(s3Key)).thenReturn(List(metadataKey))
+    when(S3Utility.containsKeyPart(metadataKey, StorageConstants.METADATA_FOLDER)).thenReturn(true)
+
+    val result = MetadataUtility.getMetadataKeyForBatch(batchName, appZone)
+    assert(result == metadataKey)
+  }
+
+  test("should throw NoSuchElementException when no metadata file is found") {
+    val batchName = "emptyBatch"
+    val s3Key = "zone/emptyBatch"
+
+    when(S3Utility.createS3Key(any())).thenReturn(s3Key)
+    when(S3Utility.listAllKeys(s3Key)).thenReturn(List())
+
+    val exception = intercept[NoSuchElementException] {
+      MetadataUtility.getMetadataKeyForBatch(batchName)
     }
+
+    assert(exception.getMessage.contains("No METADATA file found"))
   }
 
-  test("Should return error if structureInterface contains null") {
-    val dto = InterfaceDto(List(null))
-    val result = InterfaceValidationService.checkInterfaceValidity(3, dto)
-    assert(result.contains(IngestionReportConstants.METADATA_INTERFACE_STRUCTURE_INTERFACE_NULL_ATTRIBUTE_FOUND_ERROR_STATE))
+  test("should throw IllegalStateException when multiple metadata files are found") {
+    val batchName = "multiBatch"
+    val s3Key = "zone/multiBatch"
+    val keys = List("file1.json", "file2.json")
+
+    when(S3Utility.createS3Key(any())).thenReturn(s3Key)
+    when(S3Utility.listAllKeys(s3Key)).thenReturn(keys)
+    when(S3Utility.containsKeyPart(anyString(), anyString())).thenReturn(true)
+
+    val exception = intercept[IllegalStateException] {
+      MetadataUtility.getMetadataKeyForBatch(batchName)
+    }
+
+    assert(exception.getMessage.contains("Multiple METADATA files"))
   }
 
-  test("Should return error if positions are not unique") {
-    val dto = InterfaceDto(List(
-      StructureInterfaceDto("field1", 1),
-      StructureInterfaceDto("field2", 1)  // duplicate position
-    ))
-    val result = InterfaceValidationService.checkInterfaceValidity(2, dto)
-    assert(result.contains(IngestionReportConstants.METADATA_INTERFACE_STRUCTURE_INTERFACE_POSITIONS_DUPLICITY_ERROR_STATE))
-  }
+  test("should throw IllegalArgumentException when batchName is empty") {
+    val exception = intercept[IllegalArgumentException] {
+      MetadataUtility.getMetadataKeyForBatch("")
+    }
 
-  test("Should return error if number of columns doesn't match") {
-    val dto = InterfaceDto(List(
-      StructureInterfaceDto("field1", 1),
-      StructureInterfaceDto("field2", 2)
-    ))
-    val result = InterfaceValidationService.checkInterfaceValidity(3, dto)
-    assert(result.exists(_.contains("REAL_NUMBER_OF_CRE_COLUMNS_DIFFERENT")))
-  }
-
-  test("Should return None for valid interface") {
-    val dto = InterfaceDto(List(
-      StructureInterfaceDto("field1", 1),
-      StructureInterfaceDto("field2", 2)
-    ))
-    val result = InterfaceValidationService.checkInterfaceValidity(2, dto)
-    assert(result.isEmpty)
+    assert(exception.getMessage.contains("Invalid arguments"))
   }
 }

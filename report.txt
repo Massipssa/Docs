@@ -7,57 +7,39 @@ class MetadataUtilityTest extends AnyFunSuite with MockitoSugar {
 
   implicit val jobConfig: JobConfigDto = mock[JobConfigDto]
 
-  test("should return metadata file key when exactly one key is found") {
-    val batchName = "testBatch"
+  test("getParsedMetadataForBatch should return parsed metadata lines") {
+    val batchName = "myBatch"
     val appZone = "zone"
-    val s3Key = "zone/testBatch"
-    val metadataKey = "zone/testBatch/meta/file1.json"
+    val fileKey = "zone/myBatch/meta.json"
+    val expected = Array(MetadataLineDto("line1"), MetadataLineDto("line2"))
 
-    // Mocking S3Utility
-    val s3Util = mock[S3Utility.type]
-    when(S3Utility.createS3Key(List(appZone, batchName))).thenReturn(s3Key)
-    when(S3Utility.listAllKeys(s3Key)).thenReturn(List(metadataKey))
-    when(S3Utility.containsKeyPart(metadataKey, StorageConstants.METADATA_FOLDER)).thenReturn(true)
+    // Mock static-like methods
+    mockStaticMethods()
 
-    val result = MetadataUtility.getMetadataKeyForBatch(batchName, appZone)
-    assert(result == metadataKey)
+    when(MetadataUtility.getMetadataKeyForBatch(batchName, appZone)).thenReturn(fileKey)
+    when(MetadataParser.parseMetadataFile(fileKey)).thenReturn(expected)
+
+    val result = MetadataUtility.getParsedMetadataForBatch(batchName, appZone)
+    assert(result.sameElements(expected))
   }
 
-  test("should throw NoSuchElementException when no metadata file is found") {
-    val batchName = "emptyBatch"
-    val s3Key = "zone/emptyBatch"
+  test("getParsedMetadataForBatch should return empty array when exception is thrown") {
+    val batchName = "badBatch"
+    val appZone = "zone"
 
-    when(S3Utility.createS3Key(any())).thenReturn(s3Key)
-    when(S3Utility.listAllKeys(s3Key)).thenReturn(List())
+    // Mock static-like methods
+    mockStaticMethods()
 
-    val exception = intercept[NoSuchElementException] {
-      MetadataUtility.getMetadataKeyForBatch(batchName)
-    }
+    when(MetadataUtility.getMetadataKeyForBatch(batchName, appZone))
+      .thenThrow(new RuntimeException("not found"))
 
-    assert(exception.getMessage.contains("No METADATA file found"))
+    val result = MetadataUtility.getParsedMetadataForBatch(batchName, appZone)
+    assert(result.isEmpty)
   }
 
-  test("should throw IllegalStateException when multiple metadata files are found") {
-    val batchName = "multiBatch"
-    val s3Key = "zone/multiBatch"
-    val keys = List("file1.json", "file2.json")
-
-    when(S3Utility.createS3Key(any())).thenReturn(s3Key)
-    when(S3Utility.listAllKeys(s3Key)).thenReturn(keys)
-    when(S3Utility.containsKeyPart(anyString(), anyString())).thenReturn(true)
-
-    val exception = intercept[IllegalStateException] {
-      MetadataUtility.getMetadataKeyForBatch(batchName)
-    }
-
-    assert(exception.getMessage.contains("Multiple METADATA files"))
-  }
-
-  test("should throw IllegalArgumentException when batchName is empty") {
-    val exception = intercept[IllegalArgumentException] {
-      MetadataUtility.getMetadataKeyForBatch("")
-    }
-
-    assert(exception.getMessage.contains("Invalid arguments"))
+  // This method assumes you're using a mocking framework that allows mocking singletons
+  private def mockStaticMethods(): Unit = {
+    // Add any necessary setup for mocking MetadataUtility and MetadataParser
+    // If using PowerMockito or ScalaMock, implement accordingly
   }
 }

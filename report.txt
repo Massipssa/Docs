@@ -1,27 +1,29 @@
-private def applyOverrideRules(
-    creRuleDto: CreRuleDto,
-    dateToApplyRules: LocalDate
-): LocalDate = {
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-  val currentDay = dateToApplyRules.getDayOfMonth
-  val lastDayOfMonth = dateToApplyRules.`with`(TemporalAdjusters.lastDayOfMonth()).getDayOfMonth
+class MetadataSorterSpec extends AnyFlatSpec with Matchers {
 
-  creRuleDto.range_rule.foreach { rangeRule =>
-    val ruleType = rangeRule.`type`
+  "sortMetadataLineDtosOnEnvironment" should "prioritize the preferred environment" in {
+    val dtos = Array(
+      MetadataLineDto("D", "dev-dto"),
+      MetadataLineDto("P", "prod-dto"),
+      MetadataLineDto("T", "test-dto"),
+      MetadataLineDto("P", "prod-dto-2")
+    )
 
-    if (ruleType == OVERRIDE_RULE_TYPE_CALENDAR) {
-      val endDay = if (rangeRule.end == LAST_DAY_OF_MONTH) lastDayOfMonth
-                   else rangeRule.end.toInt
+    val sorted = sortMetadataLineDtosOnEnvironment(dtos, "P")
 
-      val startDay = rangeRule.start.toInt
-
-      if (startDay <= currentDay && currentDay <= endDay) {
-        return dateToApplyRules.plusMonths(rangeRule.offset)
-      }
-    } else {
-      logger.warn(s"Rule of type $ruleType is not supported yet")
-    }
+    sorted.take(2).foreach(_.env shouldEqual "P")
+    sorted.drop(2).foreach(_.env should not equal "P")
   }
 
-  throw new Exception(NO_OVERRIDE_RULE_APPLIED)
+  it should "return original order if no env matches" in {
+    val dtos = Array(
+      MetadataLineDto("D", "dev-dto"),
+      MetadataLineDto("T", "test-dto")
+    )
+
+    val sorted = sortMetadataLineDtosOnEnvironment(dtos, "P")
+    sorted shouldEqual dtos
+  }
 }

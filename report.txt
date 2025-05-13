@@ -1,45 +1,27 @@
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatestplus.mockito.MockitoSugar
-import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers._
+private def applyOverrideRules(
+    creRuleDto: CreRuleDto,
+    dateToApplyRules: LocalDate
+): LocalDate = {
 
-class MetadataUtilityTest extends AnyFunSuite with MockitoSugar {
+  val currentDay = dateToApplyRules.getDayOfMonth
+  val lastDayOfMonth = dateToApplyRules.`with`(TemporalAdjusters.lastDayOfMonth()).getDayOfMonth
 
-  implicit val jobConfig: JobConfigDto = mock[JobConfigDto]
+  creRuleDto.range_rule.foreach { rangeRule =>
+    val ruleType = rangeRule.`type`
 
-  test("getParsedMetadataForBatch should return parsed metadata lines") {
-    val batchName = "myBatch"
-    val appZone = "zone"
-    val fileKey = "zone/myBatch/meta.json"
-    val expected = Array(MetadataLineDto("line1"), MetadataLineDto("line2"))
+    if (ruleType == OVERRIDE_RULE_TYPE_CALENDAR) {
+      val endDay = if (rangeRule.end == LAST_DAY_OF_MONTH) lastDayOfMonth
+                   else rangeRule.end.toInt
 
-    // Mock static-like methods
-    mockStaticMethods()
+      val startDay = rangeRule.start.toInt
 
-    when(MetadataUtility.getMetadataKeyForBatch(batchName, appZone)).thenReturn(fileKey)
-    when(MetadataParser.parseMetadataFile(fileKey)).thenReturn(expected)
-
-    val result = MetadataUtility.getParsedMetadataForBatch(batchName, appZone)
-    assert(result.sameElements(expected))
+      if (startDay <= currentDay && currentDay <= endDay) {
+        return dateToApplyRules.plusMonths(rangeRule.offset)
+      }
+    } else {
+      logger.warn(s"Rule of type $ruleType is not supported yet")
+    }
   }
 
-  test("getParsedMetadataForBatch should return empty array when exception is thrown") {
-    val batchName = "badBatch"
-    val appZone = "zone"
-
-    // Mock static-like methods
-    mockStaticMethods()
-
-    when(MetadataUtility.getMetadataKeyForBatch(batchName, appZone))
-      .thenThrow(new RuntimeException("not found"))
-
-    val result = MetadataUtility.getParsedMetadataForBatch(batchName, appZone)
-    assert(result.isEmpty)
-  }
-
-  // This method assumes you're using a mocking framework that allows mocking singletons
-  private def mockStaticMethods(): Unit = {
-    // Add any necessary setup for mocking MetadataUtility and MetadataParser
-    // If using PowerMockito or ScalaMock, implement accordingly
-  }
+  throw new Exception(NO_OVERRIDE_RULE_APPLIED)
 }

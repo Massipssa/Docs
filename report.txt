@@ -172,3 +172,34 @@ class AwsS3ServiceTest extends AnyFlatSpec with Matchers with MockitoSugar {
 }
 
 
+class AwsS3Service(s3Client: AmazonS3) extends S3Service {
+
+  override def listAllObjects(prefix: String)(implicit jobConfig: JobConfigDto): List[S3ObjectSummary] = {
+    if (StringUtils.isEmpty(jobConfig.bucketName)) {
+      logger.warn("Provided bucket name is null or empty")
+      return List.empty
+    }
+
+    val request = new ListObjectsV2Request()
+      .withBucketName(jobConfig.bucketName)
+      .withPrefix(prefix)
+
+    @tailrec
+    def fetchAll(accumulated: List[S3ObjectSummary], token: String = null): List[S3ObjectSummary] = {
+      if (token != null) request.setContinuationToken(token)
+
+      val result = s3Client.listObjectsV2(request)
+      val summaries = result.getObjectSummaries.asScala.toList
+      val nextToken = result.getNextContinuationToken
+
+      if (result.isTruncated && nextToken != null)
+        fetchAll(accumulated ++ summaries, nextToken)
+      else
+        accumulated ++ summaries
+    }
+
+    fetchAll(Nil)
+  }
+}
+
+

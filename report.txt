@@ -132,3 +132,43 @@ class AwsS3ServiceTest extends AnyFlatSpec with Matchers with MockitoSugar {
   }
 }
 
+
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers._
+import org.scalatestplus.mockito.MockitoSugar
+import com.amazonaws.services.s3.model.{AmazonS3Exception, ObjectMetadata}
+import com.amazonaws.services.s3.AmazonS3
+
+class AwsS3ServiceTest extends AnyFlatSpec with Matchers with MockitoSugar {
+
+  val mockS3Client: AmazonS3 = mock[AmazonS3]
+  val bucketName = "my-test-bucket"
+  val service = new AwsS3Service(mockS3Client, bucketName)
+
+  "createS3Uri" should "return correct S3 URI for given key" in {
+    val key = "folder/file.csv"
+    val result = service.createS3Uri(key)
+    result shouldEqual "s3://my-test-bucket/folder/file.csv"
+  }
+
+  "exist" should "return true when object metadata is found" in {
+    when(mockS3Client.getObjectMetadata(bucketName, "existing-key"))
+      .thenReturn(new ObjectMetadata())
+
+    val exists = service.exist("existing-key")
+    exists shouldBe true
+  }
+
+  it should "return false when object does not exist" in {
+    val exception = new AmazonS3Exception("Not Found")
+    when(mockS3Client.getObjectMetadata(bucketName, "missing-key"))
+      .thenThrow(exception)
+
+    val exists = service.exist("missing-key")
+    exists shouldBe false
+  }
+}
+
+

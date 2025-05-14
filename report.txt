@@ -97,3 +97,38 @@ class AwsS3Service(s3Client: AmazonS3, bucketName: String) extends S3Service {
 
   // Other methods...
 }
+
+class AwsS3ServiceTest extends AnyFlatSpec with Matchers with MockitoSugar {
+
+  val mockS3Client = mock[AmazonS3]
+  val service = new AwsS3Service(mockS3Client, "my-bucket")
+
+  "splitKey" should "split a key into parts" in {
+    service.splitKey("a/b/c.txt") shouldEqual List("a", "b", "c.txt")
+  }
+
+  it should "return empty for null or empty key" in {
+    service.splitKey(null) shouldBe empty
+    service.splitKey("") shouldBe empty
+  }
+
+  "containsKeyPart" should "return true if part exists" in {
+    service.containsKeyPart("a/b/c.txt", "b") shouldBe true
+  }
+
+  it should "return false if part is missing" in {
+    service.containsKeyPart("a/b/c.txt", "x") shouldBe false
+  }
+
+  "delete" should "call deleteObject when key is valid" in {
+    service.delete("file.csv")
+    verify(mockS3Client).deleteObject("my-bucket", "file.csv")
+  }
+
+  it should "not call deleteObject for empty key" in {
+    service.delete("")
+    service.delete(null)
+    verify(mockS3Client, never).deleteObject(any[String], any[String])
+  }
+}
+

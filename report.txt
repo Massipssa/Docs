@@ -1,46 +1,99 @@
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers._
-import org.scalatestplus.mockito.MockitoSugar
+trait S3Service {
+  def uploadMultipart(key: String, input: InputStream, partSize: Int): CompleteMultipartUploadResult
+  def listAllKeys(prefix: String): List[S3ObjectSummary]
+  def extractFilenameFromKey(objectKey: String): Option[String]
+  def buildKey(parts: List[String], filename: String): String
+  def splitKey(key: String): List[String]
+  def containsKeyPart(key: String, part: String): Boolean
+  def delete(key: String): Unit
+}
 
-class S3UtilSpec extends AnyFlatSpec with Matchers with MockitoSugar {
+class AwsS3Service(s3Client: AmazonS3, bucketName: String) extends S3Service {
 
-  "splitKey" should "split a valid object key by delimiter" in {
-    val objectKey = "folder/subfolder/file.txt"
-    val result = S3Util.splitKey(objectKey)
-    result shouldEqual List("folder", "subfolder", "file.txt")
+  private val delimiter = "/"
+
+  override def uploadMultipart(key: String, input: InputStream, partSize: Int): CompleteMultipartUploadResult = {
+    val uploadId = s3Client.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucketName, key)).getUploadId
+    val buffer = new Array[Byte](partSize)
+
+    def readStream(stream: InputStream): LazyList[(Int, Array[Byte])] = {
+      val bytes = new Array[Byte](partSize)
+      val read = stream.read(bytes)
+      if (read == -1) LazyList.empty
+      else (read, bytes.take(read)) #:: readStream(stream)
+    }
+
+    val partETags = readStream(input).zipWithIndex.map { case ((read, chunk), idx) =>
+      val partStream = new ByteArrayInputStream(chunk)
+      val partRequest = new UploadPartRequest()
+        .withBucketName(bucketName)
+        .withKey(key)
+        .withUploadId(uploadId)
+        .withPartNumber(idx + 1)
+        .withInputStream(partStream)
+        .withPartSize(read)
+
+      val result = s3Client.uploadPart(partRequest)
+      new PartETag(result.getPartNumber, result.getETag)
+    }.toList.asJava
+
+    s3Client.completeMultipartUpload(new CompleteMultipartUploadRequest(bucketName, key, uploadId, partETags))
   }
 
-  it should "return empty list for null or empty key" in {
-    S3Util.splitKey(null) shouldEqual List.empty
-    S3Util.splitKey("") shouldEqual List.empty
+  override def listAllKeys(prefix: String): List[S3ObjectSummary] = {
+    val req = new ListObjectsV2Request().withBucketName(bucketName).withPrefix(prefix)
+
+    @tailrec
+    def paginate(token: String, acc: List[S3ObjectSummary]): List[S3ObjectSummary] = {
+      if (token != null) req.setContinuationToken(token)
+      val result = s3Client.listObjectsV2(req)
+      val newSummaries = result.getObjectSummaries.asScala.toList
+      if (result.isTruncated) paginate(result.getNextContinuationToken, acc ++ newSummaries)
+      else acc ++ newSummaries
+    }
+
+    paginate(null, Nil)
   }
 
-  "containsKeyPart" should "return true if key part exists in object key" in {
-    val objectKey = "data/2025/report.csv"
-    S3Util.containsKeyPart(objectKey, "2025") shouldBe true
+  override def extractFilenameFromKey(objectKey: String): Option[String] =
+    Option(objectKey)
+      .filter(_.nonEmpty)
+      .map(_.split(delimiter))
+      .flatMap(_.lastOption)
+
+  override def buildKey(parts: List[String], filename: String): String =
+    (parts :+ filename).mkString(delimiter)
+}
+
+class AwsS3Service(s3Client: AmazonS3, bucketName: String) extends S3Service {
+
+  private val delimiter = "/"
+
+  // Split key into parts using delimiter
+  override def splitKey(key: String): List[String] = {
+    Option(key)
+      .filter(_.nonEmpty)
+      .map(_.split(delimiter).toList)
+      .getOrElse {
+        logger.warn("Provided key is null or empty")
+        List.empty
+      }
   }
 
-  it should "return false if key part does not exist" in {
-    S3Util.containsKeyPart("data/2025/report.csv", "2024") shouldBe false
+  // Check if part exists in S3 key
+  override def containsKeyPart(key: String, part: String): Boolean = {
+    splitKey(key).contains(part)
   }
 
-  it should "return false if any input is null or empty" in {
-    S3Util.containsKeyPart(null, "2025") shouldBe false
-    S3Util.containsKeyPart("data/2025/report.csv", "") shouldBe false
+  // Delete an object from S3
+  override def delete(key: String): Unit = {
+    if (Option(key).exists(_.nonEmpty)) {
+      s3Client.deleteObject(bucketName, key)
+      logger.info(s"Deleted object: $key from bucket: $bucketName")
+    } else {
+      logger.warn("Cannot delete object: key is null or empty")
+    }
   }
 
-  "delete" should "call deleteObject on s3Client" in {
-    implicit val jobConfig: JobConfig = JobConfig("test-bucket")
-    val mockS3Client = mock[S3Client]
-    S3Util.s3Client = mockS3Client // assuming you made this mutable for testability
-
-    val key = "folder/file.txt"
-    S3Util.delete(key)
-
-    verify(mockS3Client).deleteObject(argThat { req =>
-      req.getBucketName == "test-bucket" && req.getKey == key
-    })
-  }
+  // Other methods...
 }

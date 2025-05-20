@@ -1,60 +1,55 @@
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import org.apache.spark.sql.SparkSession
-import org.mockito.Mockito._
-import org.scalatestplus.mockito.MockitoSugar
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types._
 
-class SemicolonDelimiterCheckTest extends AnyFunSuite with Matchers with MockitoSugar {
+class RequiredColumnsCheckTest extends AnyFunSuite {
 
   implicit val spark: SparkSession = SparkSession.builder()
-    .master("local[1]")
-    .appName("Test")
+    .appName("RequiredColumnsCheckTest")
+    .master("local[*]")
     .getOrCreate()
 
-  implicit val jobConfig: JobConfigDto = mock[JobConfigDto]
+  import spark.implicits._
 
-  test("check should return Right(CheckErrorDto) when DataFrame is non-empty") {
-    val mockDf = spark.read.csv(Seq("a;b;c").toDS)
-    val key = "some/key.csv"
+  test("should detect empty required columns and return CheckErrorDto") {
+    // Simuler un creDF avec une colonne vide
+    val creDF = Seq(
+      Row("1", null, "fam1", "id1", "data1")
+    )
 
-    object TestSparkUtil extends SparkUtility {
-      override def loadCsvFromS3(key: String, csvDelimiter: String, hasCsvHeader: Boolean)
-                                (implicit jobConfig: JobConfigDto, sparkSession: SparkSession): DataFrame = {
-        mockDf
-      }
+    val creSchema = StructType(Seq(
+      StructField("c0", StringType),
+      StructField("c1", StringType),
+      StructField("famille", StringType),
+      StructField("identifiant", StringType),
+      StructField("nomDonnee", StringType)
+    ))
+
+    val creDf = spark.createDataFrame(
+      spark.sparkContext.parallelize(creDF),
+      creSchema
+    )
+
+    // Simuler metadataDF
+    val metadata = Seq(
+      ("eventX", true, 2)
+    ).toDF("codeEvenement", "obligatoire", "position")
+      .withColumn("interfaceDto", struct(
+        col("codeEvenement").as("codeEvenement"),
+        array(struct(
+          col("obligatoire").as("obligatoire"),
+          col("position").as("position")
+        )).as("structureInterfaces")
+      )).drop("codeEvenement", "obligatoire", "position")
+
+    val creCsvFilenameDto = new CreCsvFilenameDto {
+      override def getCodeEvenement: String = "eventX"
     }
 
-    val result = SemicolonDelimiterCheck.check(key)(jobConfig, spark)
-    result.isRight shouldBe true
-  }
-
-  test("check should return Left(df) when DataFrame is empty") {
-    val emptyDf = spark.emptyDataFrame
-    val key = "some/empty.csv"
-
-    object TestSparkUtil extends SparkUtility {
-      override def loadCsvFromS3(key: String, csvDelimiter: String, hasCsvHeader: Boolean)
-                                (implicit jobConfig: JobConfigDto, sparkSession: SparkSession): DataFrame = {
-        emptyDf
-      }
-    }
-
-    val result = SemicolonDelimiterCheck.check(key)(jobConfig, spark)
-    result.isLeft shouldBe true
-  }
-
-  test("check should handle exceptions and return CheckErrorDto") {
-    val key = "invalid.csv"
-
-    object FailingSparkUtil extends SparkUtility {
-      override def loadCsvFromS3(key: String, csvDelimiter: String, hasCsvHeader: Boolean)
-                                (implicit jobConfig: JobConfigDto, sparkSession: SparkSession): DataFrame = {
-        throw new RuntimeException("Failed to read")
-      }
-    }
-
-    val result = SemicolonDelimiterCheck.check(key)(jobConfig, spark)
-    result.isRight shouldBe true
-    result.right.get.description.get should include ("exception")
+    val errors = RequiredColumnsCheck.check(creDf, metadata, creCsvFilenameDto)
+    assert(errors.nonEmpty)
+    assert(errors.head.description.get.contains("Not empty column value"))
   }
 }

@@ -1,41 +1,26 @@
-override def check(creDf: DataFrame, creCsvFilenameDto: CreCsvFilenameDto): List[CheckErrorDto] = {
-  // Ajout d'un numéro de ligne pour tracer les erreurs
-  val windowSpec = Window.orderBy(lit(1))
-  val creDfWithRowNumber = creDf.withColumn(ROW_NUMBER_COL, row_number().over(windowSpec))
+val errors = invalidCases.map { row =>
+  val rowId = row.getAs[Any](ROW_NUMBER_COL).toString
 
-  // Application des règles de validation
-  val validatedData = validations.foldLeft(creDfWithRowNumber) {
-    case (df, (colName, condition)) =>
-      df.withColumn(isValidColName(colName), condition)
-  }.withColumn(
-    "is_valid",
-    validations.keys.map(col => col(isValidColName(col))).reduce(_ && _)
-  )
-
-  // Récupération des colonnes invalides
-  val checkErrors = validations.flatMap { case (colName, _) =>
+  // Pour chaque colonne, vérifier si elle est invalide
+  val columnErrors = validations.keys.flatMap { colName =>
     val isValidCol = isValidColName(colName)
+    val isValid = Option(row.getAs[Any](isValidCol)).exists(_.toString == "true")
 
-    // Filtrer les lignes invalides pour cette colonne
-    val invalidRows = validatedData
-      .filter(!col(isValidCol))
-      .select(col(ROW_NUMBER_COL), col(colName))
-      .collect()
+    if (!isValid) {
+      val actual = Option(row.getAs[Any](colName)).map(_.toString).getOrElse("null")
+      val expected = validations(colName).expr.sql
 
-    // Transformer chaque ligne invalide en DTO d'erreur
-    invalidRows.map { row =>
-      val rowId = row.getAs[Any](ROW_NUMBER_COL).toString
-      val actualValue = Option(row.getAs[Any](colName)).map(_.toString).getOrElse("null")
-
-      CheckErrorDto(
+      Some(CheckErrorDto(
         Option(rowId),
-        Option("ADD ENTETE-DR"), // à remplacer si besoin
         Option(colName),
-        Option(actualValue),
+        Option(actual),
+        Option(expected),
         getDescription(colName)
-      )
+      ))
+    } else {
+      None
     }
   }
 
-  checkErrors.toList
-}
+  columnErrors
+}.flatten.toList

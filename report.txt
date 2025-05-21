@@ -1,26 +1,24 @@
-val errors = invalidCases.map { row =>
-  val rowId = row.getAs[Any](ROW_NUMBER_COL).toString
+val invalidColumns = areAllValuesEquals.filterNot(_._2).keys.toSeq
 
-  // Pour chaque colonne, vérifier si elle est invalide
-  val columnErrors = validations.keys.flatMap { colName =>
-    val isValidCol = isValidColName(colName)
-    val isValid = Option(row.getAs[Any](isValidCol)).exists(_.toString == "true")
+val windowSpec = Window.orderBy(lit(1))
+val dfWithRowId = creDf.withColumn(ROW_NUMBER_COL, row_number().over(windowSpec))
 
-    if (!isValid) {
-      val actual = Option(row.getAs[Any](colName)).map(_.toString).getOrElse("null")
-      val expected = validations(colName).expr.sql
+val errors = invalidColumns.flatMap { colName =>
+  dfWithRowId
+    .select(ROW_NUMBER_COL, col(colName))
+    .distinct() // Pour ne garder que les valeurs distinctes
+    .collect()
+    .map { row =>
+      val rowId = row.getAs[Int](ROW_NUMBER_COL).toString
+      val actualValue = Option(row.getAs[Any](colName)).map(_.toString).getOrElse("null")
+      val expected = "Same value for all rows"
 
-      Some(CheckErrorDto(
+      CheckErrorDto(
         Option(rowId),
         Option(colName),
-        Option(actual),
+        Option(actualValue),
         Option(expected),
-        getDescription(colName)
-      ))
-    } else {
-      None
+        Some(s"Column $colName is not consistent across all rows")
+      )
     }
-  }
-
-  columnErrors
-}.flatten.toList
+}

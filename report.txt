@@ -64,3 +64,28 @@ class DirectiveColumnsFormatCheckTest extends AnyFlatSpec with Matchers with Spa
     result.size shouldBe 1
   }
 }
+
+
+val invalidCases = validations.flatMap { case (colName, condition) =>
+  val expected = condition.expr.sql
+
+  val isValidCol = isValidColName(colName)
+  val filtered = validatedData
+    .filter(!col(isValidCol))
+    .select(col(ROW_ID_COLUMN), col(colName))
+    .collect()
+
+  filtered.map { row =>
+    val rowId = row.getAs[Any](ROW_ID_COLUMN).toString
+    val actual = Option(row.getAs[Any](colName)).map(_.toString).getOrElse("null")
+
+    CheckErrorDto(
+      Option(rowId),
+      Option("ADD ENTETE-DR"),
+      getDescription,
+      Option(colName),
+      Option(expected),
+      Option(actual)
+    )
+  }
+}.toList

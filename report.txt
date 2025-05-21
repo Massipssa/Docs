@@ -53,3 +53,23 @@ class RequiredColumnsCheckTest extends AnyFunSuite {
     assert(errors.head.description.get.contains("Not empty column value"))
   }
 }
+
+
+ val metadataRows = Seq(
+      Row(Row("EVT123", Seq(Row(true, 2)))) // position 2 -> c1
+    )
+
+    val metadataSchema = StructType(Seq(
+      StructField("interfaceDto", StructType(Seq(
+        StructField("codeEvenement", StringType),
+        StructField("structureInterface", ArrayType(StructType(Seq(
+          StructField("obligatoire", BooleanType),
+          StructField("position", IntegerType)
+        ))))
+      )))
+    ))
+
+    val metadataDF = spark.createDataFrame(
+      spark.sparkContext.parallelize(metadataRows),
+      metadataSchema
+    )

@@ -1,75 +1,66 @@
-import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.types._
+object DirectiveColumnsFormatCheck extends DataframeCheck {
 
-class RequiredColumnsCheckTest extends AnyFunSuite {
+  @transient private val logger = new GlueLogger
 
-  implicit val spark: SparkSession = SparkSession.builder()
-    .appName("RequiredColumnsCheckTest")
-    .master("local[*]")
-    .getOrCreate()
+  override def check(creDf: DataFrame, creCsvFilenameDto: CreCsvFilenameDto): List[CheckErrorDto] = {
+    logger.info(s"Execute $getCheckName")
 
-  import spark.implicits._
+    val DATE_REGEX = "^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$"
+    val TIMESTAMP_REGEX = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}$"
 
-  test("should detect empty required columns and return CheckErrorDto") {
-    // Simuler un creDF avec une colonne vide
-    val creDF = Seq(
-      Row("1", null, "fam1", "id1", "data1")
+    val validations = Map(
+      CD_EFS_COLUMN  -> (length(col(CD_EFS_COLUMN)) === 2),
+      CD_BTE_COLUMN  -> (length(col(CD_BTE_COLUMN)) === 4),
+      CD_EVE_COLUMN  -> (length(col(CD_EVE_COLUMN)) === 5),
+      DA_ARR_COLUMN  -> col(DA_ARR_COLUMN).rlike(DATE_REGEX),
+      DA_VAL_COLUMN  -> col(DA_VAL_COLUMN).rlike(DATE_REGEX),
+      TMSTP_COLUMN   -> col(TMSTP_COLUMN).rlike(TIMESTAMP_REGEX)
     )
 
-    val creSchema = StructType(Seq(
-      StructField("c0", StringType),
-      StructField("c1", StringType),
-      StructField("famille", StringType),
-      StructField("identifiant", StringType),
-      StructField("nomDonnee", StringType)
-    ))
+    def isValidColName(c: String): String = s"${c}_valid"
+    val validColNames = validations.keys.map(isValidColName).toList
 
-    val creDf = spark.createDataFrame(
-      spark.sparkContext.parallelize(creDF),
-      creSchema
-    )
+    val validatedData = validations.foldLeft(creDf) {
+      case (df, (colName, condition)) =>
+        df.withColumn(isValidColName(colName), condition)
+    }.withColumn("is_valid", validations.keys.map(c => col(isValidColName(c))).reduce(_ && _))
 
-    // Simuler metadataDF
-    val metadata = Seq(
-      ("eventX", true, 2)
-    ).toDF("codeEvenement", "obligatoire", "position")
-      .withColumn("interfaceDto", struct(
-        col("codeEvenement").as("codeEvenement"),
-        array(struct(
-          col("obligatoire").as("obligatoire"),
-          col("position").as("position")
-        )).as("structureInterfaces")
-      )).drop("codeEvenement", "obligatoire", "position")
+    val invalidRows = validatedData
+      .filter(!col("is_valid"))
+      .select((validations.keys ++ validColNames).map(col): _*)
+      .collect()
+      .map(row =>
+        CheckErrorDto(
+          Option("ADD ROW ID HERE"),
+          Option("ADD ENTETE-DR"),
+          getDescription,
+          Option("directiveColumnName"),
+          Option("expectedValue"),
+          Option("actualValue")
+        )
+      )
+      .toList
 
-    val creCsvFilenameDto = new CreCsvFilenameDto {
-      override def getCodeEvenement: String = "eventX"
-    }
-
-    val errors = RequiredColumnsCheck.check(creDf, metadata, creCsvFilenameDto)
-    assert(errors.nonEmpty)
-    assert(errors.head.description.get.contains("Not empty column value"))
+    invalidRows
   }
+
+  override def getCheckName: String = DataCheckConstants.DATA_FILE_DIRECTIVE_COLUMNS_FORMAT
 }
 
 
- val metadataRows = Seq(
-      Row(Row("EVT123", Seq(Row(true, 2)))) // position 2 -> c1
-    )
+class DirectiveColumnsFormatCheckTest extends AnyFlatSpec with Matchers with SparkSessionTestWrapper {
 
-    val metadataSchema = StructType(Seq(
-      StructField("interfaceDto", StructType(Seq(
-        StructField("codeEvenement", StringType),
-        StructField("structureInterface", ArrayType(StructType(Seq(
-          StructField("obligatoire", BooleanType),
-          StructField("position", IntegerType)
-        ))))
-      )))
-    ))
+  import spark.implicits._
 
-    val metadataDF = spark.createDataFrame(
-      spark.sparkContext.parallelize(metadataRows),
-      metadataSchema
-    )
+  "DirectiveColumnsFormatCheck" should "detect invalid rows based on column format" in {
+    val df = Seq(
+      ("12", "1234", "ABCDE", "31/12/2022", "01/01/2023", "2023-01-01T00:00:00.000000"), // valid
+      ("1",  "12",   "AB",    "99/99/9999", "01/01/2023", "invalid-timestamp")           // invalid
+    ).toDF("CD_EFS", "CD_BTE", "CD_EVE", "DA_ARR", "DA_VAL", "TMSTP")
+
+    val result = DirectiveColumnsFormatCheck.check(df, CreCsvFilenameDto(...)) // remplacez par une instance factice
+
+    result should not be empty
+    result.size shouldBe 1
+  }
+}

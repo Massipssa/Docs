@@ -1,91 +1,41 @@
-object DirectiveColumnsFormatCheck extends DataframeCheck {
+override def check(creDf: DataFrame, creCsvFilenameDto: CreCsvFilenameDto): List[CheckErrorDto] = {
+  // Ajout d'un numéro de ligne pour tracer les erreurs
+  val windowSpec = Window.orderBy(lit(1))
+  val creDfWithRowNumber = creDf.withColumn(ROW_NUMBER_COL, row_number().over(windowSpec))
 
-  @transient private val logger = new GlueLogger
+  // Application des règles de validation
+  val validatedData = validations.foldLeft(creDfWithRowNumber) {
+    case (df, (colName, condition)) =>
+      df.withColumn(isValidColName(colName), condition)
+  }.withColumn(
+    "is_valid",
+    validations.keys.map(col => col(isValidColName(col))).reduce(_ && _)
+  )
 
-  override def check(creDf: DataFrame, creCsvFilenameDto: CreCsvFilenameDto): List[CheckErrorDto] = {
-    logger.info(s"Execute $getCheckName")
+  // Récupération des colonnes invalides
+  val checkErrors = validations.flatMap { case (colName, _) =>
+    val isValidCol = isValidColName(colName)
 
-    val DATE_REGEX = "^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$"
-    val TIMESTAMP_REGEX = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}$"
-
-    val validations = Map(
-      CD_EFS_COLUMN  -> (length(col(CD_EFS_COLUMN)) === 2),
-      CD_BTE_COLUMN  -> (length(col(CD_BTE_COLUMN)) === 4),
-      CD_EVE_COLUMN  -> (length(col(CD_EVE_COLUMN)) === 5),
-      DA_ARR_COLUMN  -> col(DA_ARR_COLUMN).rlike(DATE_REGEX),
-      DA_VAL_COLUMN  -> col(DA_VAL_COLUMN).rlike(DATE_REGEX),
-      TMSTP_COLUMN   -> col(TMSTP_COLUMN).rlike(TIMESTAMP_REGEX)
-    )
-
-    def isValidColName(c: String): String = s"${c}_valid"
-    val validColNames = validations.keys.map(isValidColName).toList
-
-    val validatedData = validations.foldLeft(creDf) {
-      case (df, (colName, condition)) =>
-        df.withColumn(isValidColName(colName), condition)
-    }.withColumn("is_valid", validations.keys.map(c => col(isValidColName(c))).reduce(_ && _))
-
+    // Filtrer les lignes invalides pour cette colonne
     val invalidRows = validatedData
-      .filter(!col("is_valid"))
-      .select((validations.keys ++ validColNames).map(col): _*)
+      .filter(!col(isValidCol))
+      .select(col(ROW_NUMBER_COL), col(colName))
       .collect()
-      .map(row =>
-        CheckErrorDto(
-          Option("ADD ROW ID HERE"),
-          Option("ADD ENTETE-DR"),
-          getDescription,
-          Option("directiveColumnName"),
-          Option("expectedValue"),
-          Option("actualValue")
-        )
+
+    // Transformer chaque ligne invalide en DTO d'erreur
+    invalidRows.map { row =>
+      val rowId = row.getAs[Any](ROW_NUMBER_COL).toString
+      val actualValue = Option(row.getAs[Any](colName)).map(_.toString).getOrElse("null")
+
+      CheckErrorDto(
+        Option(rowId),
+        Option("ADD ENTETE-DR"), // à remplacer si besoin
+        Option(colName),
+        Option(actualValue),
+        getDescription(colName)
       )
-      .toList
-
-    invalidRows
+    }
   }
 
-  override def getCheckName: String = DataCheckConstants.DATA_FILE_DIRECTIVE_COLUMNS_FORMAT
+  checkErrors.toList
 }
-
-
-class DirectiveColumnsFormatCheckTest extends AnyFlatSpec with Matchers with SparkSessionTestWrapper {
-
-  import spark.implicits._
-
-  "DirectiveColumnsFormatCheck" should "detect invalid rows based on column format" in {
-    val df = Seq(
-      ("12", "1234", "ABCDE", "31/12/2022", "01/01/2023", "2023-01-01T00:00:00.000000"), // valid
-      ("1",  "12",   "AB",    "99/99/9999", "01/01/2023", "invalid-timestamp")           // invalid
-    ).toDF("CD_EFS", "CD_BTE", "CD_EVE", "DA_ARR", "DA_VAL", "TMSTP")
-
-    val result = DirectiveColumnsFormatCheck.check(df, CreCsvFilenameDto(...)) // remplacez par une instance factice
-
-    result should not be empty
-    result.size shouldBe 1
-  }
-}
-
-
-val invalidCases = validations.flatMap { case (colName, condition) =>
-  val expected = condition.expr.sql
-
-  val isValidCol = isValidColName(colName)
-  val filtered = validatedData
-    .filter(!col(isValidCol))
-    .select(col(ROW_ID_COLUMN), col(colName))
-    .collect()
-
-  filtered.map { row =>
-    val rowId = row.getAs[Any](ROW_ID_COLUMN).toString
-    val actual = Option(row.getAs[Any](colName)).map(_.toString).getOrElse("null")
-
-    CheckErrorDto(
-      Option(rowId),
-      Option("ADD ENTETE-DR"),
-      getDescription,
-      Option(colName),
-      Option(expected),
-      Option(actual)
-    )
-  }
-}.toList

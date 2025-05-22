@@ -1,24 +1,15 @@
-val invalidColumns = areAllValuesEquals.filterNot(_._2).keys.toSeq
+ test("should return None if column count <= directiveColumnCount") {
+    val df: DataFrame = Seq((1, "A"), (2, "B")).toDF("_c0", "_c1")
+    val result = MinimalColumnCountCheck.check(df, directiveColumnCount = 3)
 
-val windowSpec = Window.orderBy(lit(1))
-val dfWithRowId = creDf.withColumn(ROW_NUMBER_COL, row_number().over(windowSpec))
+    assert(result.isEmpty)
+  }
 
-val errors = invalidColumns.flatMap { colName =>
-  dfWithRowId
-    .select(ROW_NUMBER_COL, col(colName))
-    .distinct() // Pour ne garder que les valeurs distinctes
-    .collect()
-    .map { row =>
-      val rowId = row.getAs[Int](ROW_NUMBER_COL).toString
-      val actualValue = Option(row.getAs[Any](colName)).map(_.toString).getOrElse("null")
-      val expected = "Same value for all rows"
+  test("should return error if column count > directiveColumnCount") {
+    val df: DataFrame = Seq((1, "A", "X"), (2, "B", "Y")).toDF("_c0", "_c1", "_c2")
+    val result = MinimalColumnCountCheck.check(df, directiveColumnCount = 2)
 
-      CheckErrorDto(
-        Option(rowId),
-        Option(colName),
-        Option(actualValue),
-        Option(expected),
-        Some(s"Column $colName is not consistent across all rows")
-      )
-    }
-}
+    assert(result.isDefined)
+    assert(result.get.actual.contains("CSV file with 3 columns"))
+    assert(result.get.expected.contains("CSV file with maximum 2 columns"))
+  }

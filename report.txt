@@ -1,15 +1,109 @@
- test("should return None if column count <= directiveColumnCount") {
-    val df: DataFrame = Seq((1, "A"), (2, "B")).toDF("_c0", "_c1")
-    val result = MinimalColumnCountCheck.check(df, directiveColumnCount = 3)
+val requiredInterfaces = metadataDf
+  .withColumn("explodedStructure", explode(col("interfaceDto.structureInterface")))
+  .filter(col("interfaceDto.codeEvenement") === creCsvFilenameDto.getCreId)
+  .filter(col("explodedStructure.obligatoire") === COLUMN_REQUIRED_VALUE)
+  .selectExpr("interfaceDto.codeEvenement", "explodedStructure.*")
 
-    assert(result.isEmpty)
+// Convert to Scala collection for processing
+val checksToApply = requiredInterfaces
+  .select("famille", "position")
+  .distinct()  // pour éviter les doublons
+  .as[(String, Int)]
+  .collect()
+  .toList
+
+val allErrors = checksToApply.flatMap { case (famille, position) =>
+  val configOpt = CONFIG_FAMILLE_ATTRIBUTE_REGEXES.get(famille)
+
+  configOpt.map { config =>
+    val targetColumn = s"_c${position - 1}"
+
+    creDf
+      .filter(!col(targetColumn).rlike(config.regex))
+      .select(
+        SparkUtility.getRowIndexValue(creDf, hasHeader = false).alias("rowId"),
+        lit(targetColumn).alias("column"),
+        lit(getDescription).alias("description"),
+        lit(famille).alias("famille"),
+        col(targetColumn).alias("actual")
+      )
+      .collect()
+      .map(row =>
+        CheckErrorDto(
+          Option(row.getAs[Any]("rowId").toString),
+          Option(targetColumn),
+          Option(row.getAs[String]("description")),
+          Option(famille),
+          Option(s"Value should match regex: ${config.regex}"),
+          Option(row.getAs[String]("actual"))
+        )
+      )
+  }.getOrElse(Array.empty)
+}.toList
+
+
+import org.scalatest.funsuite.AnyFunSuite
+import org.apache.spark.sql.{SparkSession, Row, DataFrame}
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.Encoders
+
+class ColumnsFormatCheckTest extends AnyFunSuite {
+
+  val spark: SparkSession = SparkSession.builder()
+    .master("local[*]")
+    .appName("ColumnsFormatCheckTest")
+    .getOrCreate()
+
+  import spark.implicits._
+
+  test("should detect invalid values for multiple families based on regex") {
+
+    // Simulated CRE CSV input (creDf)
+    val creDf = Seq(
+      Row("abc123", "valid1"),
+      Row("xyz789", "invalide") // should fail regex
+    )
+
+    val creSchema = StructType(List(
+      StructField("_c0", StringType, nullable = true),
+      StructField("_c1", StringType, nullable = true)
+    ))
+
+    val creDataFrame = spark.createDataFrame(spark.sparkContext.parallelize(creDf), creSchema)
+
+    // Simulated metadataDf
+    val metadataDf = Seq(
+      ("CRE001", "FAM1", 1, "yes"),
+      ("CRE001", "FAM2", 2, "yes")
+    ).toDF("codeEvenement", "famille", "position", "obligatoire")
+      .withColumn("structureInterface", struct(
+        col("famille").alias("famille"),
+        col("position").alias("position"),
+        col("obligatoire").alias("obligatoire")
+      ))
+      .withColumn("interfaceDto", struct(
+        col("codeEvenement").alias("codeEvenement"),
+        array(col("structureInterface")).alias("structureInterface")
+      ))
+
+    val creCsvFilenameDto = new CreCsvFilenameDto("CRE001") // or however it's constructed
+
+    // Inject config statically for test (mocking CONFIG_FAMILLE_ATTRIBUTE_REGEXES)
+    val configMap = Map(
+      "FAM1" -> FamilleFormatConfigLineDto("FAM1", "^abc.*", "Regex FAM1"),
+      "FAM2" -> FamilleFormatConfigLineDto("FAM2", "^valid.*", "Regex FAM2")
+    )
+
+    ColumnsFormatCheck.CONFIG_FAMILLE_ATTRIBUTE_REGEXES = configMap // make var if needed
+
+    val result: List[CheckErrorDto] =
+      ColumnsFormatCheck.check(creDataFrame, metadataDf, creCsvFilenameDto)
+
+    // We expect one invalid value in _c1 for FAM2
+    assert(result.nonEmpty)
+    assert(result.exists(_.column.contains("_c1")))
+    assert(result.exists(_.famille.contains("FAM2")))
+    assert(result.exists(_.actual.contains("invalide")))
   }
-
-  test("should return error if column count > directiveColumnCount") {
-    val df: DataFrame = Seq((1, "A", "X"), (2, "B", "Y")).toDF("_c0", "_c1", "_c2")
-    val result = MinimalColumnCountCheck.check(df, directiveColumnCount = 2)
-
-    assert(result.isDefined)
-    assert(result.get.actual.contains("CSV file with 3 columns"))
-    assert(result.get.expected.contains("CSV file with maximum 2 columns"))
-  }
+}

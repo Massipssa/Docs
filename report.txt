@@ -1,33 +1,53 @@
-val checksToApply = requiredInterfaces
-  .select("famille", "position")
-  .distinct()
-  .as[(String, Int)]
-  .collect()
-  .toList
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types._
 
-val allErrors = checksToApply.flatMap { case (famille, position) =>
-  CONFIG_FAMILLE_ATTRIBUTE_REGEXES.get(famille).map { config =>
-    val targetCol = s"_c${position - 1}"
+class EnteteDaValToInterfaceEqualityCheckTest extends AnyFlatSpec with Matchers {
 
-    creDf
-      .filter(!col(targetCol).rlike(config.regex))
-      .select(
-        SparkUtility.getRowIndexValue(creDf, hasHeader = false).alias("rowId"),
-        lit(targetCol).alias("column"),
-        lit(getDescription).alias("description"),
-        lit(famille).alias("famille"),
-        col(targetCol).alias("actual")
-      )
-      .collect()
-      .map(row =>
-        CheckErrorDto(
-          Option(row.getAs[Any]("rowId").toString),
-          Option(targetCol),
-          Option(row.getAs[String]("description")),
-          Option(famille),
-          Option(s"Expected pattern: ${config.regex}"),
-          Option(row.getAs[String]("actual"))
-        )
-      )
-  }.getOrElse(Array.empty)
-}.toList
+  implicit val spark: SparkSession = SparkSession.builder()
+    .master("local[*]")
+    .appName("Test")
+    .getOrCreate()
+
+  import spark.implicits._
+
+  "check" should "return no errors when all values are equal" in {
+    val creDF = Seq(
+      ("2024-06-01", "1001"),
+      ("2024-06-01", "1002")
+    ).toDF("ENTETE-DA-VAL", "ENTETE-NO")
+
+    val metadataDF = Seq(
+      ("1001", "2024-06-01")
+    ).toDF("creId", "interface.dateMaj")
+
+    val dto = CreCsvFilenameDto("1001")
+
+    val result = EnteteDaValToInterfaceEqualityCheck
+      .check(creDF, metadataDF, dto)
+
+    result shouldBe empty
+  }
+
+  it should "return errors when values are different" in {
+    val creDF = Seq(
+      ("2024-06-01", "1001"),
+      ("2024-06-02", "1002")
+    ).toDF("ENTETE-DA-VAL", "ENTETE-NO")
+
+    val metadataDF = Seq(
+      ("1001", "2024-06-01")
+    ).toDF("creId", "interface.dateMaj")
+
+    val dto = CreCsvFilenameDto("1001")
+
+    val result = EnteteDaValToInterfaceEqualityCheck
+      .check(creDF, metadataDF, dto)
+
+    result should have size 1
+    result.head.getColumnName should contain ("ENTETE-DA-VAL")
+  }
+}

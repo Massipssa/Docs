@@ -1,40 +1,40 @@
-import org.apache.spark.sql.{SparkSession, Row}
-import org.apache.spark.sql.types._
 import org.scalatest.funsuite.AnyFunSuite
-import fr.ccf.job.parser.MonitoringDataParser
+import org.apache.spark.sql.{SparkSession, Row}
+import fr.ccf.job.integration.checks.monitoring.DataStructureCheck
+import java.nio.file.Files
 
-class MonitoringDataParserTest extends AnyFunSuite {
+class DataStructureCheckTest extends AnyFunSuite {
 
   val spark: SparkSession = SparkSession.builder()
+    .appName("DataStructureCheckTest")
     .master("local[*]")
-    .appName("MonitoringDataParserTest")
     .getOrCreate()
 
-  import spark.implicits._
+  test("check should return Left(DataFrame) when data is valid and not empty") {
+    val jsonLine =
+      """{"value": "{\"CRE\": \"ABCD\", \"nbLigne\": 10, \"dateTraitement\": \"2024-05-01\", \"vacation\": \"day\"}"}"""
 
-  test("parseMonitoringDataFile should parse JSON lines correctly") {
-    val tempFile = java.io.File.createTempFile("monitoring", ".json")
-    tempFile.deleteOnExit()
+    val file = Files.createTempFile("monitoring", ".json")
+    Files.write(file, jsonLine.getBytes)
 
-    val sampleJson =
-      """
-        |{"value": "{\"CRE\": \"1234\", \"nbLigne\": 5, \"dateTraitement\": \"2024-05-01\", \"vacation\": \"night\"}"}
-        |""".stripMargin
+    val result = DataStructureCheck.check(file.toString)(spark)
 
-    java.nio.file.Files.write(tempFile.toPath, sampleJson.getBytes)
+    assert(result.isLeft)
+    val df = result.left.get
+    assert(df.count() == 1)
+    assert(df.columns.contains("CRE"))
+    assert(df.columns.contains("nbLigne"))
+  }
 
-    val resultDF = MonitoringDataParser.parseMonitoringDataFile(tempFile.getAbsolutePath, spark)
+  test("check should return Right(errorDto) when data is empty") {
+    val file = Files.createTempFile("monitoring_empty", ".json")
+    Files.write(file, Array.emptyByteArray)
 
-    val expectedSchema = StructType(Seq(
-      StructField("CRE", StringType, nullable = true),
-      StructField("nbLigne", IntegerType, nullable = true),
-      StructField("dateTraitement", StringType, nullable = true),
-      StructField("vacation", StringType, nullable = true)
-    ))
+    val result = DataStructureCheck.check(file.toString)(spark)
 
-    val expectedRow = Row("1234", 5, "2024-05-01", "night")
-
-    assert(resultDF.schema === expectedSchema)
-    assert(resultDF.collect().head === expectedRow)
+    assert(result.isRight)
+    val error = result.right.get
+    assert(error.isDefined)
+    assert(error.get.message.contains("Could not parse all monitoringData lines"))
   }
 }

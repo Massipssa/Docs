@@ -1,40 +1,38 @@
 import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.{SparkSession, Row}
-import fr.ccf.job.integration.checks.monitoring.DataStructureCheck
-import java.nio.file.Files
+import org.apache.spark.sql.{SparkSession, DataFrame}
+import org.apache.spark.sql.functions.lit
+import fr.ccf.job.parser.CommonMonitoringCheck
 
-class DataStructureCheckTest extends AnyFunSuite {
+class CommonMonitoringCheckTest extends AnyFunSuite {
 
   val spark: SparkSession = SparkSession.builder()
-    .appName("DataStructureCheckTest")
     .master("local[*]")
+    .appName("CommonMonitoringCheckTest")
     .getOrCreate()
 
-  test("check should return Left(DataFrame) when data is valid and not empty") {
-    val jsonLine =
-      """{"value": "{\"CRE\": \"ABCD\", \"nbLigne\": 10, \"dateTraitement\": \"2024-05-01\", \"vacation\": \"day\"}"}"""
+  import spark.implicits._
 
-    val file = Files.createTempFile("monitoring", ".json")
-    Files.write(file, jsonLine.getBytes)
-
-    val result = DataStructureCheck.check(file.toString)(spark)
-
-    assert(result.isLeft)
-    val df = result.left.get
-    assert(df.count() == 1)
-    assert(df.columns.contains("CRE"))
-    assert(df.columns.contains("nbLigne"))
+  def createDfWithDate(date: String): DataFrame = {
+    Seq((date)).toDF("dateTraitement")
   }
 
-  test("check should return Right(errorDto) when data is empty") {
-    val file = Files.createTempFile("monitoring_empty", ".json")
-    Files.write(file, Array.emptyByteArray)
+  test("dateTraitementCheck returns None when date matches") {
+    val df = createDfWithDate("2024-05-01")
+    val result = CommonMonitoringCheck.dateTraitementCheck(df, "2024-05-01", "FLAG1", "file1")
+    assert(result.isEmpty)
+  }
 
-    val result = DataStructureCheck.check(file.toString)(spark)
+  test("dateTraitementCheck returns Some when date does not match") {
+    val df = createDfWithDate("2024-05-02")
+    val result = CommonMonitoringCheck.dateTraitementCheck(df, "2024-05-01", "FLAG2", "file2")
+    assert(result.isDefined)
+    assert(result.get.message.contains("Date Traitement"))
+  }
 
-    assert(result.isRight)
-    val error = result.right.get
-    assert(error.isDefined)
-    assert(error.get.message.contains("Could not parse all monitoringData lines"))
+  test("dateTraitementCheck returns error when DataFrame is empty") {
+    val emptyDF = spark.emptyDataFrame
+    val result = CommonMonitoringCheck.dateTraitementCheck(emptyDF, "2024-05-01", "FLAG3", "file3")
+    assert(result.isDefined)
+    assert(result.get.message.contains("Could not create a valid object"))
   }
 }

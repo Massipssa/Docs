@@ -1,37 +1,36 @@
 import org.scalatest.funsuite.AnyFunSuite
 import org.apache.spark.sql.{SparkSession, DataFrame}
-import org.apache.spark.sql.functions.lit
-import fr.ccf.job.parser.CommonMonitoringCheck
+import fr.ccf.job.integration.checks.monitoring.CommonMonitoringCheck
 
-class CommonMonitoringCheckTest extends AnyFunSuite {
+class CommonMonitoringCheckVacationTest extends AnyFunSuite {
 
   val spark: SparkSession = SparkSession.builder()
     .master("local[*]")
-    .appName("CommonMonitoringCheckTest")
+    .appName("CommonMonitoringCheckVacationTest")
     .getOrCreate()
 
   import spark.implicits._
 
-  def createDfWithDate(date: String): DataFrame = {
-    Seq((date)).toDF("dateTraitement")
+  def createDfWithVacation(vac: Int): DataFrame = {
+    Seq((vac)).toDF("vacation")
   }
 
-  test("dateTraitementCheck returns None when date matches") {
-    val df = createDfWithDate("2024-05-01")
-    val result = CommonMonitoringCheck.dateTraitementCheck(df, "2024-05-01", "FLAG1", "file1")
+  test("vacationNumberCheck returns None when vacation matches") {
+    val df = createDfWithVacation(2)
+    val result = CommonMonitoringCheck.vacationNumberCheck(df, 2, "FLAG1", "monitoringFile1")
     assert(result.isEmpty)
   }
 
-  test("dateTraitementCheck returns Some when date does not match") {
-    val df = createDfWithDate("2024-05-02")
-    val result = CommonMonitoringCheck.dateTraitementCheck(df, "2024-05-01", "FLAG2", "file2")
+  test("vacationNumberCheck returns Some when vacation mismatches") {
+    val df = createDfWithVacation(3)
+    val result = CommonMonitoringCheck.vacationNumberCheck(df, 2, "FLAG2", "monitoringFile2")
     assert(result.isDefined)
-    assert(result.get.message.contains("Date Traitement"))
+    assert(result.get.message.contains("Vacation"))
   }
 
-  test("dateTraitementCheck returns error when DataFrame is empty") {
+  test("vacationNumberCheck returns error when DataFrame is empty") {
     val emptyDF = spark.emptyDataFrame
-    val result = CommonMonitoringCheck.dateTraitementCheck(emptyDF, "2024-05-01", "FLAG3", "file3")
+    val result = CommonMonitoringCheck.vacationNumberCheck(emptyDF, 1, "FLAG3", "monitoringFile3")
     assert(result.isDefined)
     assert(result.get.message.contains("Could not create a valid object"))
   }

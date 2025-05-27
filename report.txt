@@ -1,53 +1,40 @@
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{SparkSession, Row}
 import org.apache.spark.sql.types._
+import org.scalatest.funsuite.AnyFunSuite
+import fr.ccf.job.parser.MonitoringDataParser
 
-class EnteteDaValToInterfaceEqualityCheckTest extends AnyFlatSpec with Matchers {
+class MonitoringDataParserTest extends AnyFunSuite {
 
-  implicit val spark: SparkSession = SparkSession.builder()
+  val spark: SparkSession = SparkSession.builder()
     .master("local[*]")
-    .appName("Test")
+    .appName("MonitoringDataParserTest")
     .getOrCreate()
 
   import spark.implicits._
 
-  "check" should "return no errors when all values are equal" in {
-    val creDF = Seq(
-      ("2024-06-01", "1001"),
-      ("2024-06-01", "1002")
-    ).toDF("ENTETE-DA-VAL", "ENTETE-NO")
+  test("parseMonitoringDataFile should parse JSON lines correctly") {
+    val tempFile = java.io.File.createTempFile("monitoring", ".json")
+    tempFile.deleteOnExit()
 
-    val metadataDF = Seq(
-      ("1001", "2024-06-01")
-    ).toDF("creId", "interface.dateMaj")
+    val sampleJson =
+      """
+        |{"value": "{\"CRE\": \"1234\", \"nbLigne\": 5, \"dateTraitement\": \"2024-05-01\", \"vacation\": \"night\"}"}
+        |""".stripMargin
 
-    val dto = CreCsvFilenameDto("1001")
+    java.nio.file.Files.write(tempFile.toPath, sampleJson.getBytes)
 
-    val result = EnteteDaValToInterfaceEqualityCheck
-      .check(creDF, metadataDF, dto)
+    val resultDF = MonitoringDataParser.parseMonitoringDataFile(tempFile.getAbsolutePath, spark)
 
-    result shouldBe empty
-  }
+    val expectedSchema = StructType(Seq(
+      StructField("CRE", StringType, nullable = true),
+      StructField("nbLigne", IntegerType, nullable = true),
+      StructField("dateTraitement", StringType, nullable = true),
+      StructField("vacation", StringType, nullable = true)
+    ))
 
-  it should "return errors when values are different" in {
-    val creDF = Seq(
-      ("2024-06-01", "1001"),
-      ("2024-06-02", "1002")
-    ).toDF("ENTETE-DA-VAL", "ENTETE-NO")
+    val expectedRow = Row("1234", 5, "2024-05-01", "night")
 
-    val metadataDF = Seq(
-      ("1001", "2024-06-01")
-    ).toDF("creId", "interface.dateMaj")
-
-    val dto = CreCsvFilenameDto("1001")
-
-    val result = EnteteDaValToInterfaceEqualityCheck
-      .check(creDF, metadataDF, dto)
-
-    result should have size 1
-    result.head.getColumnName should contain ("ENTETE-DA-VAL")
+    assert(resultDF.schema === expectedSchema)
+    assert(resultDF.collect().head === expectedRow)
   }
 }

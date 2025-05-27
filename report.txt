@@ -1,37 +1,44 @@
-import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.{SparkSession, DataFrame}
-import fr.ccf.job.integration.checks.monitoring.CommonMonitoringCheck
+def executeRawContentChecks(
+  dataKey: String,
+  integrationConfig: IntegrationConfig,
+  dataChecksSettings: DataChecksSettings
+): (Boolean, Option[DataFrame]) = {
 
-class CommonMonitoringCheckVacationTest extends AnyFunSuite {
-
-  val spark: SparkSession = SparkSession.builder()
-    .master("local[*]")
-    .appName("CommonMonitoringCheckVacationTest")
-    .getOrCreate()
-
-  import spark.implicits._
-
-  def createDfWithVacation(vac: Int): DataFrame = {
-    Seq((vac)).toDF("vacation")
+  if (!dataChecksSettings.isCheckEnabled(SemicolonDeLimiterCheck.getDescription.id)) {
+    logger.info(DISABLED_CHECK_LOG_MSG.format(SemicolonDeLimiterCheck.getDescription.id))
+    return (false, None)
   }
 
-  test("vacationNumberCheck returns None when vacation matches") {
-    val df = createDfWithVacation(2)
-    val result = CommonMonitoringCheck.vacationNumberCheck(df, 2, "FLAG1", "monitoringFile1")
-    assert(result.isEmpty)
+  val isValidCsvResult = SemicolonDeLimiterCheck.check(dataKey)
+
+  isValidCsvResult match {
+    case Left(validCsvDf) =>
+      logger.info("CSV is valid")
+      handleValidCsv(validCsvDf, dataChecksSettings)
+
+    case Right(error) =>
+      logger.info("Invalid CSV for the CRE")
+      fileBasedChecksErrors.append(error)
+      (false, None)
+  }
+}
+
+private def handleValidCsv(
+  validCsvDf: DataFrame,
+  dataChecksSettings: DataChecksSettings
+): (Boolean, Option[DataFrame]) = {
+
+  if (!dataChecksSettings.isCheckEnabled(CsvValidCheck.getDescription.id)) {
+    logger.info(DISABLED_CHECK_LOG_MSG.format(CsvValidCheck.getDescription.id))
+    return (true, Some(validCsvDf))
   }
 
-  test("vacationNumberCheck returns Some when vacation mismatches") {
-    val df = createDfWithVacation(3)
-    val result = CommonMonitoringCheck.vacationNumberCheck(df, 2, "FLAG2", "monitoringFile2")
-    assert(result.isDefined)
-    assert(result.get.message.contains("Vacation"))
-  }
+  CsvValidCheck.check(validCsvDf) match {
+    case Some(error) =>
+      fileBasedChecksErrors.append(error)
+      (false, None)
 
-  test("vacationNumberCheck returns error when DataFrame is empty") {
-    val emptyDF = spark.emptyDataFrame
-    val result = CommonMonitoringCheck.vacationNumberCheck(emptyDF, 1, "FLAG3", "monitoringFile3")
-    assert(result.isDefined)
-    assert(result.get.message.contains("Could not create a valid object"))
+    case None =>
+      (true, Some(validCsvDf))
   }
 }

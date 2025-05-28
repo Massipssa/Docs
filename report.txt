@@ -1,44 +1,58 @@
-def executeRawContentChecks(
-  dataKey: String,
-  integrationConfig: IntegrationConfig,
-  dataChecksSettings: DataChecksSettings
-): (Boolean, Option[DataFrame]) = {
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-  if (!dataChecksSettings.isCheckEnabled(SemicolonDeLimiterCheck.getDescription.id)) {
-    logger.info(DISABLED_CHECK_LOG_MSG.format(SemicolonDeLimiterCheck.getDescription.id))
-    return (false, None)
+class MetadataReceivedMetadataEqualityCheckTest extends AnyFunSuite with Matchers {
+
+  val spark: SparkSession = SparkSession.builder()
+    .appName("UnitTest")
+    .master("local[*]")
+    .getOrCreate()
+
+  import spark.implicits._
+
+  test("check should return error when metadataDF or monitoringMetadataDF is empty") {
+    val metadataDF = spark.emptyDataFrame
+    val monitoringMetadataDF = spark.emptyDataFrame
+
+    val result = MetadataReceivedMetadataEqualityCheck.check(metadataDF, monitoringMetadataDF)
+    result.isDefined shouldBe true
+    result.get.message should include("Could not create a valid object")
   }
 
-  val isValidCsvResult = SemicolonDeLimiterCheck.check(dataKey)
+  test("check should return error when counts are different") {
+    val metadataDF = Seq(
+      ("data1"), ("data2")
+    ).toDF("value")
 
-  isValidCsvResult match {
-    case Left(validCsvDf) =>
-      logger.info("CSV is valid")
-      handleValidCsv(validCsvDf, dataChecksSettings)
+    val monitoringMetadataDF = Seq(
+      ("nbCRE", "3")  // 3 is different from 2 rows in metadataDF
+    ).toDF("key", "value")
 
-    case Right(error) =>
-      logger.info("Invalid CSV for the CRE")
-      fileBasedChecksErrors.append(error)
-      (false, None)
-  }
-}
+    val result = MetadataReceivedMetadataEqualityCheck.check(
+      metadataDF,
+      monitoringMetadataDF.withColumnRenamed("value", "nbCRE")  // expected column
+    )
 
-private def handleValidCsv(
-  validCsvDf: DataFrame,
-  dataChecksSettings: DataChecksSettings
-): (Boolean, Option[DataFrame]) = {
-
-  if (!dataChecksSettings.isCheckEnabled(CsvValidCheck.getDescription.id)) {
-    logger.info(DISABLED_CHECK_LOG_MSG.format(CsvValidCheck.getDescription.id))
-    return (true, Some(validCsvDf))
+    result.isDefined shouldBe true
+    result.get.message should include("Number of Metadata in batch")
   }
 
-  CsvValidCheck.check(validCsvDf) match {
-    case Some(error) =>
-      fileBasedChecksErrors.append(error)
-      (false, None)
+  test("check should return None when counts are equal") {
+    val metadataDF = Seq(
+      ("data1"), ("data2")
+    ).toDF("value")
 
-    case None =>
-      (true, Some(validCsvDf))
+    val monitoringMetadataDF = Seq(
+      ("nbCRE", "2")
+    ).toDF("key", "value")
+      .withColumnRenamed("value", "nbCRE") // match expected col name
+
+    val result = MetadataReceivedMetadataEqualityCheck.check(
+      metadataDF,
+      monitoringMetadataDF
+    )
+
+    result shouldBe None
   }
 }

@@ -1,76 +1,14 @@
-import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.functions._
-import com.package.StructureInterfaceFamilleEmptinessCheck // update this import
 
-class StructureInterfaceFamilleEmptinessCheckTest extends AnyFunSuite {
-
-  val spark = SparkSession.builder()
-    .master("local[*]")
-    .appName("FamilleCheckTest")
-    .getOrCreate()
-
-  import spark.implicits._
-
-  test("check should return errors when famille is null or empty at directive position") {
-
-    val structureInterfaceType = ArrayType(StructType(Seq(
-      StructField("position", IntegerType, nullable = true),
-      StructField("famille", StringType, nullable = true)
-    )))
-
-    val schema = StructType(Seq(
-      StructField("interfaceDto", StructType(Seq(
-        StructField("structureInterface", structureInterfaceType)
-      )))
-    ))
-
-    val data = Seq(
-      // famille is null => should trigger error
-      Row(Row(Seq(Row(5, null)))),
-      // famille is empty => should trigger error
-      Row(Row(Seq(Row(5, "")))),
-      // famille is valid but position not matching => should not trigger error
-      Row(Row(Seq(Row(4, "VALID")))),
-      // famille is valid and position matching => should not trigger error
-      Row(Row(Seq(Row(5, "VALID"))))
-    )
-
-    val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
-
-    val result = StructureInterfaceFamilleEmptinessCheck.check(df)
-
-    // Expecting 2 errors
-    assert(result.size == 2)
-
-    val messages = result.flatMap(_.message)
-
-    assert(messages.exists(_.contains("famille")))
-  }
-
-  test("check should return empty when all famille values are valid") {
-
-    val structureInterfaceType = ArrayType(StructType(Seq(
-      StructField("position", IntegerType, nullable = true),
-      StructField("famille", StringType, nullable = true)
-    )))
-
-    val schema = StructType(Seq(
-      StructField("interfaceDto", StructType(Seq(
-        StructField("structureInterface", structureInterfaceType)
-      )))
-    ))
-
-    val data = Seq(
-      Row(Row(Seq(Row(5, "DATA"), Row(6, "OTHER")))),
-      Row(Row(Seq(Row(5, "OK"))))
-    )
-
-    val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
-
-    val result = StructureInterfaceFamilleEmptinessCheck.check(df)
-
-    assert(result.isEmpty)
-  }
-}
+val schema = StructType(Seq(
+  StructField("interfaceDto", StructType(Seq(
+    StructField("codeEvenement", StringType, nullable = true),
+    StructField("structureInterface", ArrayType(
+      StructType(Seq(
+        StructField("position", IntegerType, nullable = true),
+        StructField("obligatoire", StringType, nullable = true)
+      )),
+      containsNull = true
+    ), nullable = true)
+  )), nullable = true)
+))

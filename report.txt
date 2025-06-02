@@ -10,3 +10,8 @@ val schema = StructType(Seq(
     ), nullable = true)
   )), nullable = true)
 ))
+
+
+val data = Seq(
+  Row(Row("EV01", Seq(Row(1, "Y"), Row(2, "N")))) // One Row with one nested struct (interfaceDto)
+)

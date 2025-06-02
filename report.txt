@@ -1,56 +1,76 @@
 import org.scalatest.funsuite.AnyFunSuite
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types._
-import com.package.InterfaceProfondeurAllowedValuesCheck  // Adjust to your package
+import org.apache.spark.sql.functions._
+import com.package.StructureInterfaceFamilleEmptinessCheck // update this import
 
-class InterfaceProfondeurAllowedValuesCheckTest extends AnyFunSuite {
+class StructureInterfaceFamilleEmptinessCheckTest extends AnyFunSuite {
 
   val spark = SparkSession.builder()
-    .appName("InterfaceProfondeurCheckTest")
     .master("local[*]")
+    .appName("FamilleCheckTest")
     .getOrCreate()
 
   import spark.implicits._
 
-  // Define nested schema for interfaceDto
-  val schema = StructType(Seq(
-    StructField("interfaceDto", StructType(Seq(
-      StructField("profondeur", StringType, nullable = true),
-      StructField("codeEvenement", StringType, nullable = true)
-    )))
-  ))
+  test("check should return errors when famille is null or empty at directive position") {
 
-  test("check should flag rows with invalid interfaceDto.profondeur values") {
+    val structureInterfaceType = ArrayType(StructType(Seq(
+      StructField("position", IntegerType, nullable = true),
+      StructField("famille", StringType, nullable = true)
+    )))
+
+    val schema = StructType(Seq(
+      StructField("interfaceDto", StructType(Seq(
+        StructField("structureInterface", structureInterfaceType)
+      )))
+    ))
+
     val data = Seq(
-      Row(Row("invalid_value", "EVT1")),
-      Row(Row("", "EVT2")),
-      Row(Row(null, "EVT3")),
-      Row(Row("VALID_VALUE", "EVT4")) // assume this is valid
+      // famille is null => should trigger error
+      Row(Row(Seq(Row(5, null)))),
+      // famille is empty => should trigger error
+      Row(Row(Seq(Row(5, "")))),
+      // famille is valid but position not matching => should not trigger error
+      Row(Row(Seq(Row(4, "VALID")))),
+      // famille is valid and position matching => should not trigger error
+      Row(Row(Seq(Row(5, "VALID"))))
     )
 
     val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
 
-    val result = InterfaceProfondeurAllowedValuesCheck.check(df)
+    val result = StructureInterfaceFamilleEmptinessCheck.check(df)
 
-    assert(result.size == 3)
+    // Expecting 2 errors
+    assert(result.size == 2)
 
     val messages = result.flatMap(_.message)
-    assert(messages.exists(_.contains("Found profondeur: invalid_value")))
-    assert(messages.exists(_.contains("Found profondeur: ")))
-    assert(messages.exists(_.contains("Found profondeur: null")) || messages.exists(_.contains("Found profondeur:")))
+
+    assert(messages.exists(_.contains("famille")))
   }
 
-  test("check should return empty list when all values are valid") {
+  test("check should return empty when all famille values are valid") {
+
+    val structureInterfaceType = ArrayType(StructType(Seq(
+      StructField("position", IntegerType, nullable = true),
+      StructField("famille", StringType, nullable = true)
+    )))
+
+    val schema = StructType(Seq(
+      StructField("interfaceDto", StructType(Seq(
+        StructField("structureInterface", structureInterfaceType)
+      )))
+    ))
+
     val data = Seq(
-      Row(Row("VALID_VALUE", "EVT1")),
-      Row(Row("VALID_VALUE", "EVT2"))
+      Row(Row(Seq(Row(5, "DATA"), Row(6, "OTHER")))),
+      Row(Row(Seq(Row(5, "OK"))))
     )
 
     val df = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
 
-    val result = InterfaceProfondeurAllowedValuesCheck.check(df)
+    val result = StructureInterfaceFamilleEmptinessCheck.check(df)
 
-    // No errors expected
     assert(result.isEmpty)
   }
 }

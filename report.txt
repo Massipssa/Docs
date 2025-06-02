@@ -1,17 +1,47 @@
-val schema = StructType(Seq(
-  StructField("interfaceDto", StructType(Seq(
-    StructField("codeEvenement", StringType, nullable = true),
-    StructField("structureInterface", ArrayType(
-      StructType(Seq(
-        StructField("position", IntegerType, nullable = true),
-        StructField("obligatoire", StringType, nullable = true)
-      )),
-      containsNull = true
-    ), nullable = true)
-  )), nullable = true)
-))
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.types._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
+class CsvValidCheckTest extends AnyFlatSpec with Matchers {
 
-val data = Seq(
-  Row(Row("EV01", Seq(Row(1, "Y"), Row(2, "N")))) // One Row with one nested struct (interfaceDto)
-)
+  implicit val spark: SparkSession = SparkSession.builder()
+    .appName("CsvValidCheckTest")
+    .master("local[*]")
+    .getOrCreate()
+
+  import spark.implicits._
+
+  "CsvValidCheck.check" should "return Some error when DataFrame is empty" in {
+    val emptyDF = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], StructType(Seq(
+      StructField("col1", StringType, true),
+      StructField("col2", StringType, true),
+      StructField("col3", StringType, true)
+    )))
+
+    val result = CsvValidCheck.check(emptyDF)
+    result should not be empty
+    result.get.message.get should include ("CSV with empty data content")
+  }
+
+  it should "return Some error when DataFrame has only nulls" in {
+    val dfWithNulls = Seq(
+      (null: String, null: String, null: String),
+      (null, null, null)
+    ).toDF("col1", "col2", "col3")
+
+    val result = CsvValidCheck.check(dfWithNulls)
+    result should not be empty
+    result.get.message.get should include ("CSV with empty data content")
+  }
+
+  it should "return None when DataFrame has non-empty data" in {
+    val validDF = Seq(
+      ("a", null, null),
+      (null, "b", null)
+    ).toDF("col1", "col2", "col3")
+
+    val result = CsvValidCheck.check(validDF)
+    result shouldBe None
+  }
+}

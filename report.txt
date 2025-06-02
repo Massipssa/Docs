@@ -2,69 +2,67 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.scalatest.funsuite.AnyFunSuite
 
-class NotEmptyColumnCheckTest extends AnyFunSuite {
+// Dummy error DTO
+case class CheckErrorDto(message: String, details: Option[String])
+
+// Mock of your check class
+object InterfaceCodeBoiteEmptinessCheck extends MetadataCheck {
+  override def check(metadataDf: DataFrame): List[Option[CheckErrorDto]] = {
+    val envColName = "interfaceDto.codeBoite"
+    val nomTableColName = "nomTable"
+    val columnToCheck = col(envColName) // dot notation for nested field
+
+    CommonChecks.notEmptyColumnCheck(
+      metadataDf,
+      columnToCheck,
+      nomTableColName,
+      envColName,
+      getCheckErrorDto
+    )
+  }
+
+  def getCheckErrorDto: (String, Option[String]) => Option[CheckErrorDto] =
+    (field, value) => Some(CheckErrorDto(s"$field is null or empty", value))
+}
+
+class InterfaceCodeBoiteEmptinessCheckTest extends AnyFunSuite {
 
   val spark = SparkSession.builder()
     .master("local[*]")
-    .appName("NotEmptyColumnCheckTest")
+    .appName("InterfaceCodeBoiteCheckTest")
     .getOrCreate()
 
   import spark.implicits._
 
-  def getCheckErrorDto(field: String, value: Option[String]): Option[CheckErrorDto] =
-    Some(CheckErrorDto(s"$field is null or empty", value))
-
-  def notEmptyColumnCheck(
-      df: DataFrame,
-      columnToCheck: Column,
-      keyColumn: String,
-      valueColumn: String,
-      getCheckErrorDto: (String, Option[String]) => Option[CheckErrorDto]
-  ): List[Option[CheckErrorDto]] = {
-    val resultDf = df.filter(columnToCheck === "" || columnToCheck.isNull)
-    if (!resultDf.isEmpty) {
-      val emptyColsValues = SparkDfUtil.listColumnAsListStr(resultDf, keyColumn)
-      emptyColsValues.map(p => getCheckErrorDto(s"${valueColumn.capitalize} is null or empty", Option(p)))
-    } else {
-      List.empty
-    }
-  }
-
-  test("should return error for null or empty values") {
+  test("detects empty or null codeBoite in nested object") {
     val df = Seq(
-      ("1", "abc"),
-      ("2", null),
-      ("3", ""),
-      ("4", "xyz")
-    ).toDF("id", "name")
+      ("t1", Some("BOITE1")),
+      ("t2", Some("")),
+      ("t3", None)
+    ).toDF("nomTable", "codeBoiteValue")
+      .select(
+        $"nomTable",
+        struct($"codeBoiteValue".as("codeBoite")).as("interfaceDto")
+      )
 
-    val result = notEmptyColumnCheck(
-      df,
-      col("name"),
-      "id",
-      "name",
-      getCheckErrorDto
-    )
+    val result = InterfaceCodeBoiteEmptinessCheck.check(df)
 
     assert(result.flatten.size == 2)
-    assert(result.flatten.exists(_.details.contains("2")))
-    assert(result.flatten.exists(_.details.contains("3")))
+    assert(result.flatten.exists(_.details.contains("t2")))
+    assert(result.flatten.exists(_.details.contains("t3")))
   }
 
-  test("should return empty list when no null or empty") {
+  test("returns empty when all codeBoite are valid") {
     val df = Seq(
-      ("1", "abc"),
-      ("2", "def")
-    ).toDF("id", "name")
+      ("t1", Some("B1")),
+      ("t2", Some("B2"))
+    ).toDF("nomTable", "codeBoiteValue")
+      .select(
+        $"nomTable",
+        struct($"codeBoiteValue".as("codeBoite")).as("interfaceDto")
+      )
 
-    val result = notEmptyColumnCheck(
-      df,
-      col("name"),
-      "id",
-      "name",
-      getCheckErrorDto
-    )
-
+    val result = InterfaceCodeBoiteEmptinessCheck.check(df)
     assert(result.flatten.isEmpty)
   }
 }

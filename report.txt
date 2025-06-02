@@ -1,58 +1,70 @@
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
-class MetadataReceivedMetadataEqualityCheckTest extends AnyFunSuite with Matchers {
+class NotEmptyColumnCheckTest extends AnyFunSuite {
 
-  val spark: SparkSession = SparkSession.builder()
-    .appName("UnitTest")
+  val spark = SparkSession.builder()
     .master("local[*]")
+    .appName("NotEmptyColumnCheckTest")
     .getOrCreate()
 
   import spark.implicits._
 
-  test("check should return error when metadataDF or monitoringMetadataDF is empty") {
-    val metadataDF = spark.emptyDataFrame
-    val monitoringMetadataDF = spark.emptyDataFrame
+  def getCheckErrorDto(field: String, value: Option[String]): Option[CheckErrorDto] =
+    Some(CheckErrorDto(s"$field is null or empty", value))
 
-    val result = MetadataReceivedMetadataEqualityCheck.check(metadataDF, monitoringMetadataDF)
-    result.isDefined shouldBe true
-    result.get.message should include("Could not create a valid object")
+  def notEmptyColumnCheck(
+      df: DataFrame,
+      columnToCheck: Column,
+      keyColumn: String,
+      valueColumn: String,
+      getCheckErrorDto: (String, Option[String]) => Option[CheckErrorDto]
+  ): List[Option[CheckErrorDto]] = {
+    val resultDf = df.filter(columnToCheck === "" || columnToCheck.isNull)
+    if (!resultDf.isEmpty) {
+      val emptyColsValues = SparkDfUtil.listColumnAsListStr(resultDf, keyColumn)
+      emptyColsValues.map(p => getCheckErrorDto(s"${valueColumn.capitalize} is null or empty", Option(p)))
+    } else {
+      List.empty
+    }
   }
 
-  test("check should return error when counts are different") {
-    val metadataDF = Seq(
-      ("data1"), ("data2")
-    ).toDF("value")
+  test("should return error for null or empty values") {
+    val df = Seq(
+      ("1", "abc"),
+      ("2", null),
+      ("3", ""),
+      ("4", "xyz")
+    ).toDF("id", "name")
 
-    val monitoringMetadataDF = Seq(
-      ("nbCRE", "3")  // 3 is different from 2 rows in metadataDF
-    ).toDF("key", "value")
-
-    val result = MetadataReceivedMetadataEqualityCheck.check(
-      metadataDF,
-      monitoringMetadataDF.withColumnRenamed("value", "nbCRE")  // expected column
+    val result = notEmptyColumnCheck(
+      df,
+      col("name"),
+      "id",
+      "name",
+      getCheckErrorDto
     )
 
-    result.isDefined shouldBe true
-    result.get.message should include("Number of Metadata in batch")
+    assert(result.flatten.size == 2)
+    assert(result.flatten.exists(_.details.contains("2")))
+    assert(result.flatten.exists(_.details.contains("3")))
   }
 
-  test("check should return None when counts are equal") {
-    val metadataDF = Seq(
-      ("data1"), ("data2")
-    ).toDF("value")
+  test("should return empty list when no null or empty") {
+    val df = Seq(
+      ("1", "abc"),
+      ("2", "def")
+    ).toDF("id", "name")
 
-    val monitoringMetadataDF = Seq(
-      ("nbCRE", "2")
-    ).toDF("key", "value")
-      .withColumnRenamed("value", "nbCRE") // match expected col name
-
-    val result = MetadataReceivedMetadataEqualityCheck.check(
-      metadataDF,
-      monitoringMetadataDF
+    val result = notEmptyColumnCheck(
+      df,
+      col("name"),
+      "id",
+      "name",
+      getCheckErrorDto
     )
 
-    result shouldBe None
+    assert(result.flatten.isEmpty)
   }
 }

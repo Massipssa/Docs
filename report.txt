@@ -1,47 +1,44 @@
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.types._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+def createMapFromControlVersionDataFrame(
+    planIdentifierMap: Map[String, ReferentialPlanningDto],
+    controlVersionFileDf: DataFrame
+): Map[String, ControlVersionDto] = {
 
-class CsvValidCheckTest extends AnyFlatSpec with Matchers {
+  val versionDfUpdateDateFormatter = DateTimeFormatter.ofPattern(VersioningConstants.UPDATE_DATE_DATE_FORMAT)
 
-  implicit val spark: SparkSession = SparkSession.builder()
-    .appName("CsvValidCheckTest")
-    .master("local[*]")
-    .getOrCreate()
+  controlVersionFileDf.collect().flatMap { row =>
+    val dfRowId = row.getAs[String](ID_COLUMN_CONTROL_VERSION)
+    val dfRowVersion = row.getAs[String](VERSION_COLUMN_CONTROL_VERSION)
 
-  import spark.implicits._
+    try {
+      val dfRowMetadataExpectedUpdateDate = Option(row.getAs[String](METADATA_EXPECTED_UPDATE_DATE_CONTROL_VERSION))
+        .filterNot(_.isEmpty)
+        .map(LocalDate.parse(_, versionDfUpdateDateFormatter))
 
-  "CsvValidCheck.check" should "return Some error when DataFrame is empty" in {
-    val emptyDF = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], StructType(Seq(
-      StructField("col1", StringType, true),
-      StructField("col2", StringType, true),
-      StructField("col3", StringType, true)
-    )))
+      val referentialPlanningDto = planIdentifierMap.get(dfRowId)
 
-    val result = CsvValidCheck.check(emptyDF)
-    result should not be empty
-    result.get.message.get should include ("CSV with empty data content")
-  }
+      val dfRowMetadataExpected: Option[AbstractInterfaceDto] = referentialPlanningDto match {
+        case Some(dto) if dto.objectType == CRE_TYPE_PARAM =>
+          val rawJson = row.getAs[String](METADATA_EXPECTED_CONTROL_VERSION)
+          Some(MetadataParser.parseInterfaceJson(rawJson, handleDoubleQuotes = true))
+        case Some(_) =>
+          Some(new GesparamControlVersionDto(
+            row.getAs[String](METADATA_EXPECTED_CONTROL_VERSION)
+              .split(GESPARAM_CONTROL_VERSION_COLUMN_SEPARATOR)
+          ))
+        case None =>
+          logger.warn(s"Could not find Arkea object name $dfRowId in $ARKEA_REFERENTIAL_PLANNING_FILE")
+          None
+      }
 
-  it should "return Some error when DataFrame has only nulls" in {
-    val dfWithNulls = Seq(
-      (null: String, null: String, null: String),
-      (null, null, null)
-    ).toDF("col1", "col2", "col3")
+      Some(dfRowId -> new ControlVersionDtoBuilder()
+        .insertControlVersionRowDto(ControlVersionRowDto(dfRowId, dfRowVersion, dfRowMetadataExpectedUpdateDate.orNull, dfRowMetadataExpected.orNull))
+        .build())
 
-    val result = CsvValidCheck.check(dfWithNulls)
-    result should not be empty
-    result.get.message.get should include ("CSV with empty data content")
-  }
-
-  it should "return None when DataFrame has non-empty data" in {
-    val validDF = Seq(
-      ("a", null, null),
-      (null, "b", null)
-    ).toDF("col1", "col2", "col3")
-
-    val result = CsvValidCheck.check(validDF)
-    result shouldBe None
-  }
+    } catch {
+      case ex: Throwable =>
+        logger.warn(s"An exception occurred while processing row for $dfRowId in $ARKEA_CONTROL_VERSION_FILE")
+        logger.warn(s"${ex.getMessage}")
+        None
+    }
+  }.toMap
 }

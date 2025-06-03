@@ -1,44 +1,60 @@
-def createMapFromControlVersionDataFrame(
-    planIdentifierMap: Map[String, ReferentialPlanningDto],
-    controlVersionFileDf: DataFrame
-): Map[String, ControlVersionDto] = {
+import org.scalatest.funsuite.AnyFunSuite
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types._
 
-  val versionDfUpdateDateFormatter = DateTimeFormatter.ofPattern(VersioningConstants.UPDATE_DATE_DATE_FORMAT)
+class DataRejectionServiceTest extends AnyFunSuite {
 
-  controlVersionFileDf.collect().flatMap { row =>
-    val dfRowId = row.getAs[String](ID_COLUMN_CONTROL_VERSION)
-    val dfRowVersion = row.getAs[String](VERSION_COLUMN_CONTROL_VERSION)
+  val spark: SparkSession = SparkSession.builder()
+    .appName("UnitTest")
+    .master("local[*]")
+    .getOrCreate()
 
-    try {
-      val dfRowMetadataExpectedUpdateDate = Option(row.getAs[String](METADATA_EXPECTED_UPDATE_DATE_CONTROL_VERSION))
-        .filterNot(_.isEmpty)
-        .map(LocalDate.parse(_, versionDfUpdateDateFormatter))
+  import spark.implicits._
 
-      val referentialPlanningDto = planIdentifierMap.get(dfRowId)
+  test("getDataRejectionsFromReport should return correct rejections map") {
+    // Sample data that simulates the CSV
+    val schema = StructType(List(
+      StructField("CRE_ID", StringType, nullable = true),
+      StructField("SEVERITY", StringType, nullable = true)
+    ))
 
-      val dfRowMetadataExpected: Option[AbstractInterfaceDto] = referentialPlanningDto match {
-        case Some(dto) if dto.objectType == CRE_TYPE_PARAM =>
-          val rawJson = row.getAs[String](METADATA_EXPECTED_CONTROL_VERSION)
-          Some(MetadataParser.parseInterfaceJson(rawJson, handleDoubleQuotes = true))
-        case Some(_) =>
-          Some(new GesparamControlVersionDto(
-            row.getAs[String](METADATA_EXPECTED_CONTROL_VERSION)
-              .split(GESPARAM_CONTROL_VERSION_COLUMN_SEPARATOR)
-          ))
-        case None =>
-          logger.warn(s"Could not find Arkea object name $dfRowId in $ARKEA_REFERENTIAL_PLANNING_FILE")
-          None
-      }
+    val testData = Seq(
+      Row("CRE_001", "FATAL"),
+      Row("CRE_002", "INFO"),
+      Row("CRE_001", "WARNING"),
+      Row("CRE_003", "FATAL")
+    )
 
-      Some(dfRowId -> new ControlVersionDtoBuilder()
-        .insertControlVersionRowDto(ControlVersionRowDto(dfRowId, dfRowVersion, dfRowMetadataExpectedUpdateDate.orNull, dfRowMetadataExpected.orNull))
-        .build())
+    val df = spark.createDataFrame(spark.sparkContext.parallelize(testData), schema)
 
-    } catch {
-      case ex: Throwable =>
-        logger.warn(s"An exception occurred while processing row for $dfRowId in $ARKEA_CONTROL_VERSION_FILE")
-        logger.warn(s"${ex.getMessage}")
-        None
+    // Mock SparkUtility
+    object MockSparkUtility {
+      def loadCsvFromS3(reportKey: String, addRowIdColumn: Boolean, delimiter: String): DataFrame = df
     }
-  }.toMap
+
+    // Mock isCreRejected logic
+    def isCreRejected(fatalDf: DataFrame, key: String): Boolean = {
+      fatalDf.filter($"CRE_ID" === key).count() > 0
+    }
+
+    // Method under test
+    def getDataRejectionsFromReport(dataKeys: List[String], reportKey: String): Map[String, Boolean] = {
+      val allErrorsDf = MockSparkUtility.loadCsvFromS3(reportKey, false, ";")
+      val fatalErrorsDf = allErrorsDf.filter($"SEVERITY" === "FATAL")
+
+      dataKeys.map(key => key -> isCreRejected(fatalErrorsDf, key)).toMap
+    }
+
+    // Run test
+    val result = getDataRejectionsFromReport(List("CRE_001", "CRE_002", "CRE_003", "CRE_004"), "mockKey")
+
+    assert(result == Map(
+      "CRE_001" -> true,
+      "CRE_002" -> false,
+      "CRE_003" -> true,
+      "CRE_004" -> false
+    ))
+  }
 }

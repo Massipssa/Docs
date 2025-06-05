@@ -1,31 +1,29 @@
+
 import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.types._
 
-class DataRejectionServiceTest extends AnyFunSuite {
+class VacationUtilTest extends AnyFunSuite {
 
-  val spark: SparkSession = SparkSession.builder()
-    .appName("UnitTest")
-    .master("local[*]")
-    .getOrCreate()
+  test("parseOpcDate should return correct formatted string for valid input") {
+    val input = "20250605"
+    val expected = Some("year=2025/month=06/day=05")
+    assert(VacationUtil.parseOpcDate(input) == expected)
+  }
 
-  import spark.implicits._
+  test("parseOpcDate should return None for invalid length") {
+    val input = "202506"
+    assert(VacationUtil.parseOpcDate(input).isEmpty)
+  }
 
-  test("getDataRejectionsFromReport should return correct rejections map") {
-    // Sample data that simulates the CSV
-    val schema = StructType(List(
-      StructField("CRE_ID", StringType, nullable = true),
-      StructField("SEVERITY", StringType, nullable = true)
-    ))
+  test("parseOpcDate should return None for non-digit input") {
+    val input = "2025ABCD"
+    assert(VacationUtil.parseOpcDate(input).isEmpty)
+  }
 
-    val testData = Seq(
-      Row("CRE_001", "FATAL"),
-      Row("CRE_002", "INFO"),
-      Row("CRE_001", "WARNING"),
-      Row("CRE_003", "FATAL")
-    )
+  test("parseOpcDate should return None for null input") {
+    val input: String = null
+    assert(VacationUtil.parseOpcDate(input).isEmpty)
+  }
+}
 
     val df = spark.createDataFrame(spark.sparkContext.parallelize(testData), schema)
 

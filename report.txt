@@ -1,45 +1,66 @@
+def appendDataFrameToS3(
+    df: DataFrame,
+    csvPrefix: String,
+    csvDelimiter: String = GeneralConstants.CSV_DELIMITER,
+    showHeader: Boolean = true,
+    oneCsvForAllPartitions: Boolean = true
+)(implicit spark: SparkSession): String = {
+
+  try {
+    val dataFrameToWrite = if (oneCsvForAllPartitions) df.coalesce(1) else df
+
+    dataFrameToWrite.write
+      .option("header", showHeader)
+      .option("sep", csvDelimiter)
+      .mode(SaveMode.Append)
+      .csv(csvPrefix)
+
+    csvPrefix
+  } catch {
+    case ex: Throwable =>
+      logger.warn(s"Failed to write DataFrame to S3 with prefix: $csvPrefix", ex)
+      throw new RuntimeException(s"Unable to write to S3 path: $csvPrefix", ex)
+  }
+}
+
+
 import org.scalatest.funsuite.AnyFunSuite
-import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers._
-import org.scalatestplus.mockito.MockitoSugar
-import java.time.{Instant, ZoneId, ZonedDateTime}
-import java.time.format.DateTimeFormatter
-import com.amazonaws.services.s3.model.S3ObjectSummary
+import org.apache.spark.sql.{SaveMode, SparkSession}
+import java.nio.file.{Files, Paths}
+import java.io.File
 
-class VacationUtilTest extends AnyFunSuite with MockitoSugar {
+class SparkUtilityTest extends AnyFunSuite with SparkSessionTestWrapper {
 
-  implicit val jobConfig: JobConfigDto = mock[JobConfigDto]
+  test("appendDataFrameToS3 should write CSV to given prefix") {
+    import spark.implicits._
 
-  test("getVacationReceptionTimestamp should return formatted timestamp for valid batch") {
-    // Arrange
-    val batchName = "test-batch"
-    val fakeDate = ZonedDateTime.of(2023, 6, 1, 12, 30, 0, 0, ZoneId.of("Europe/Paris"))
-    val instant = fakeDate.toInstant
+    val df = Seq(
+      ("Alice", 30),
+      ("Bob", 25)
+    ).toDF("name", "age")
 
-    val mockSummary = mock[S3ObjectSummary]
-    when(mockSummary.getLastModified).thenReturn(java.util.Date.from(instant))
+    val tmpDir = Files.createTempDirectory("test_csv_output").toString
 
-    val fromKey = StorageConstants.FROM_FLOWS_BATCH_KEY_PATTERN.format(batchName)
-    when(S3Utils.listAllObjectSummaries(fromKey)).thenReturn(List(mockSummary))
+    val resultPrefix = SparkUtility.appendDataFrameToS3(
+      df,
+      tmpDir,
+      csvDelimiter = ",",
+      showHeader = true,
+      oneCsvForAllPartitions = true
+    )(spark)
 
-    // Act
-    val result = VacationUtil.getVacationReceptionTimestamp(batchName)
-
-    // Assert
-    val expectedFormat = DateTimeFormatter.ofPattern(StorageConstants.TIMESTAMP_PATTERN)
-    val expectedDateStr = fakeDate.format(expectedFormat)
-    assert(result == expectedDateStr)
+    assert(resultPrefix == tmpDir)
+    val files = new File(tmpDir).listFiles().filter(_.getName.endsWith(".csv"))
+    assert(files.nonEmpty)
   }
 
-  test("getVacationReceptionTimestamp should throw exception for null batch name") {
-    assertThrows[IllegalArgumentException] {
-      VacationUtil.getVacationReceptionTimestamp(null)
-    }
-  }
+  test("appendDataFrameToS3 should throw exception on invalid path") {
+    import spark.implicits._
 
-  test("getVacationReceptionTimestamp should throw exception for empty batch name") {
-    assertThrows[IllegalArgumentException] {
-      VacationUtil.getVacationReceptionTimestamp("")
+    val df = Seq(("test", 1)).toDF("col1", "col2")
+
+    assertThrows[RuntimeException] {
+      SparkUtility.appendDataFrameToS3(df, "/invalid-path/output.csv")(spark)
     }
   }
 }

@@ -1,40 +1,45 @@
-import boto3
-import re
+import org.scalatest.funsuite.AnyFunSuite
+import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers._
+import org.scalatestplus.mockito.MockitoSugar
+import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.time.format.DateTimeFormatter
+import com.amazonaws.services.s3.model.S3ObjectSummary
 
-s3 = boto3.client('s3')
+class VacationUtilTest extends AnyFunSuite with MockitoSugar {
 
-# Set this to your target prefix and bucket
-SOURCE_BUCKET = 'my-bucket'
-SOURCE_PREFIX = 'processed/'  # the folder where files are located
+  implicit val jobConfig: JobConfigDto = mock[JobConfigDto]
 
-def lambda_handler(event, context):
-    response = s3.list_objects_v2(Bucket=SOURCE_BUCKET, Prefix=SOURCE_PREFIX)
+  test("getVacationReceptionTimestamp should return formatted timestamp for valid batch") {
+    // Arrange
+    val batchName = "test-batch"
+    val fakeDate = ZonedDateTime.of(2023, 6, 1, 12, 30, 0, 0, ZoneId.of("Europe/Paris"))
+    val instant = fakeDate.toInstant
 
-    if 'Contents' not in response:
-        print("No files found.")
-        return {'statusCode': 404, 'body': 'No files found'}
+    val mockSummary = mock[S3ObjectSummary]
+    when(mockSummary.getLastModified).thenReturn(java.util.Date.from(instant))
 
-    for obj in response['Contents']:
-        src_key = obj['Key']
-        filename = src_key.split('/')[-1]  # e.g. 20221209_processed_files.csv
+    val fromKey = StorageConstants.FROM_FLOWS_BATCH_KEY_PATTERN.format(batchName)
+    when(S3Utils.listAllObjectSummaries(fromKey)).thenReturn(List(mockSummary))
 
-        match = re.match(r'(\d{4})(\d{2})(\d{2})_processed_files\.csv', filename)
-        if not match:
-            print(f"Skipping invalid file: {filename}")
-            continue
+    // Act
+    val result = VacationUtil.getVacationReceptionTimestamp(batchName)
 
-        year, month, day = match.groups()
-        dest_key = f'year={year}/month={month}/day={day}/processed_files.csv'
+    // Assert
+    val expectedFormat = DateTimeFormatter.ofPattern(StorageConstants.TIMESTAMP_PATTERN)
+    val expectedDateStr = fakeDate.format(expectedFormat)
+    assert(result == expectedDateStr)
+  }
 
-        print(f"Copying {src_key} → {dest_key}")
-
-        s3.copy_object(
-            Bucket=SOURCE_BUCKET,
-            CopySource={'Bucket': SOURCE_BUCKET, 'Key': src_key},
-            Key=dest_key
-        )
-
-    return {
-        'statusCode': 200,
-        'body': 'All matching files copied successfully'
+  test("getVacationReceptionTimestamp should throw exception for null batch name") {
+    assertThrows[IllegalArgumentException] {
+      VacationUtil.getVacationReceptionTimestamp(null)
     }
+  }
+
+  test("getVacationReceptionTimestamp should throw exception for empty batch name") {
+    assertThrows[IllegalArgumentException] {
+      VacationUtil.getVacationReceptionTimestamp("")
+    }
+  }
+}

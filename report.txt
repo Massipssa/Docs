@@ -1,66 +1,43 @@
-def appendDataFrameToS3(
-    df: DataFrame,
-    csvPrefix: String,
-    csvDelimiter: String = GeneralConstants.CSV_DELIMITER,
-    showHeader: Boolean = true,
-    oneCsvForAllPartitions: Boolean = true
-)(implicit spark: SparkSession): String = {
+test("replaceTwoDoubleQuotesWithSingleDoubleQuote should replace two double quotes with one and trim edges") {
+  val input = "\"\"Hello World\"\""
+  val result = GeneralUtility.replaceTwoDoubleQuotesWithSingleDoubleQuote(input)
 
-  try {
-    val dataFrameToWrite = if (oneCsvForAllPartitions) df.coalesce(1) else df
-
-    dataFrameToWrite.write
-      .option("header", showHeader)
-      .option("sep", csvDelimiter)
-      .mode(SaveMode.Append)
-      .csv(csvPrefix)
-
-    csvPrefix
-  } catch {
-    case ex: Throwable =>
-      logger.warn(s"Failed to write DataFrame to S3 with prefix: $csvPrefix", ex)
-      throw new RuntimeException(s"Unable to write to S3 path: $csvPrefix", ex)
-  }
+  assert(result == "\"Hello World\"")
 }
 
 
-import org.scalatest.funsuite.AnyFunSuite
-import org.apache.spark.sql.{SaveMode, SparkSession}
-import java.nio.file.{Files, Paths}
-import java.io.File
+test("hashString should return MD5 hash of a string") {
+  val input = "hello"
+  val result = GeneralUtility.hashString(input, "MD5")
 
-class SparkUtilityTest extends AnyFunSuite with SparkSessionTestWrapper {
+  // Precomputed MD5 hash of "hello"
+  assert(result == "5d41402abc4b2a76b9719d911017c592")
+}
 
-  test("appendDataFrameToS3 should write CSV to given prefix") {
-    import spark.implicits._
+test("hashString should return EMPTY_STRING when input value is empty") {
+  val result = GeneralUtility.hashString("", "MD5")
+  assert(result == GeneralConstants.EMPTY_STRING)
+}
 
-    val df = Seq(
-      ("Alice", 30),
-      ("Bob", 25)
-    ).toDF("name", "age")
-
-    val tmpDir = Files.createTempDirectory("test_csv_output").toString
-
-    val resultPrefix = SparkUtility.appendDataFrameToS3(
-      df,
-      tmpDir,
-      csvDelimiter = ",",
-      showHeader = true,
-      oneCsvForAllPartitions = true
-    )(spark)
-
-    assert(resultPrefix == tmpDir)
-    val files = new File(tmpDir).listFiles().filter(_.getName.endsWith(".csv"))
-    assert(files.nonEmpty)
+test("hashString should throw exception for empty hash method") {
+  val thrown = intercept[IllegalArgumentException] {
+    GeneralUtility.hashString("hello", "")
   }
+  assert(thrown.getMessage == "Invalid hash method provided.")
+}
 
-  test("appendDataFrameToS3 should throw exception on invalid path") {
-    import spark.implicits._
 
-    val df = Seq(("test", 1)).toDF("col1", "col2")
+test("streamToString should return string from InputStream") {
+  val content = "test content"
+  val stream = new ByteArrayInputStream(content.getBytes("UTF-8"))
 
-    assertThrows[RuntimeException] {
-      SparkUtility.appendDataFrameToS3(df, "/invalid-path/output.csv")(spark)
-    }
-  }
+  val result = GeneralUtility.streamToString(stream)
+
+  assert(result == content)
+}
+
+test("streamToString should return EMPTY_STRING when stream is null") {
+  val result = GeneralUtility.streamToString(null)
+
+  assert(result == GeneralConstants.EMPTY_STRING)
 }

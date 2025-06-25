@@ -1,61 +1,26 @@
-import org.scalatest.funsuite.AnyFunSuite
-import org.mockito.MockitoSugar
-import scala.util.matching.Regex
-import fr.ccf.job.util.AutresUtil
-import fr.ccf.job.dtos.config.JobConfigDto
+  test("addRowColumn should add a row_number column") {
+    val df = Seq("a", "b", "c").toDF("value")
+    val resultDf = DfUtil.addRowColumn(df)
 
-class AutresUtilTest extends AnyFunSuite with MockitoSugar {
+    assert(resultDf.columns.contains("ROW_NUMBER_COL"))
 
-  test("processAutres should call processFn for each file type") {
-    // Mock data
-    val batchName = "batch-001"
-    val rawZoneDomain = "rawZone"
-    val appZone = "app"
-    val autresFilesToProcess = Map(
-      "typeA" -> "fileA.*\\.csv".r,
-      "typeB" -> "fileB.*\\.csv".r
-    )
-
-    val inProgressMap = Map(
-      "fileA1.csv" -> "IN_PROGRESS",
-      "fileB1.csv" -> "IN_PROGRESS"
-    )
-
-    // Mock FileStateUtil (you might have to use PowerMockito or redesign it for true testability)
-    object MockFileStateUtil extends FileStateUtil.type {
-      override def listKeysFromZoneWithInProgressState(
-          batch: String, domain: String, app: String
-      ): Map[String, String] = inProgressMap
-    }
-
-    // Capture invocations of processFn
-    var called = List.empty[(String, String, Regex, String, Map[String, String])]
-
-    def mockProcessFn(
-        b: String, t: String, r: Regex, z: String, inProg: Map[String, String]
-    ): Unit = {
-      called = called :+ (b, t, r, z, inProg)
-    }
-
-    implicit val jobConfig: JobConfigDto = mock[JobConfigDto]
-
-    // Replace FileStateUtil with the mock temporarily (alternatively refactor to inject)
-    // Assuming FileStateUtil is a class/object that can be replaced — this step might require additional setup
-
-    AutresUtil.processAutres(
-      batchName,
-      rawZoneDomain,
-      appZone,
-      autresFilesToProcess,
-      mockProcessFn
-    )(jobConfig)
-
-    // Assertions
-    assert(called.size == 2)
-    assert(called.exists(_._2 == "typeA"))
-    assert(called.exists(_._2 == "typeB"))
-    assert(called.forall(_._1 == batchName))
-    assert(called.forall(_._4 == rawZoneDomain))
-    assert(called.forall(_._5 == inProgressMap))
+    val rowNumbers = resultDf.select("ROW_NUMBER_COL").as[Int].collect()
+    assert(rowNumbers.sorted sameElements Array(1, 2, 3))
   }
-}
+
+  test("listColumnAsListStr should return values from specified column as List") {
+    val df = Seq("x", "y", "z").toDF("letters")
+
+    val result = DfUtil.listColumnAsListStr(df, "letters")
+
+    assert(result == List("x", "y", "z"))
+  }
+
+  test("dfToMap should convert two-column DataFrame to Map") {
+    val data = Seq(("k1", "v1"), ("k2", "v2"))
+    val df = data.toDF("key", "value")
+
+    val result = DfUtil.dfToMap(df, "key", "value")
+
+    assert(result == Map("k1" -> "v1", "k2" -> "v2"))
+  }

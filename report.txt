@@ -1,43 +1,61 @@
-test("replaceTwoDoubleQuotesWithSingleDoubleQuote should replace two double quotes with one and trim edges") {
-  val input = "\"\"Hello World\"\""
-  val result = GeneralUtility.replaceTwoDoubleQuotesWithSingleDoubleQuote(input)
+import org.scalatest.funsuite.AnyFunSuite
+import org.mockito.MockitoSugar
+import scala.util.matching.Regex
+import fr.ccf.job.util.AutresUtil
+import fr.ccf.job.dtos.config.JobConfigDto
 
-  assert(result == "\"Hello World\"")
-}
+class AutresUtilTest extends AnyFunSuite with MockitoSugar {
 
+  test("processAutres should call processFn for each file type") {
+    // Mock data
+    val batchName = "batch-001"
+    val rawZoneDomain = "rawZone"
+    val appZone = "app"
+    val autresFilesToProcess = Map(
+      "typeA" -> "fileA.*\\.csv".r,
+      "typeB" -> "fileB.*\\.csv".r
+    )
 
-test("hashString should return MD5 hash of a string") {
-  val input = "hello"
-  val result = GeneralUtility.hashString(input, "MD5")
+    val inProgressMap = Map(
+      "fileA1.csv" -> "IN_PROGRESS",
+      "fileB1.csv" -> "IN_PROGRESS"
+    )
 
-  // Precomputed MD5 hash of "hello"
-  assert(result == "5d41402abc4b2a76b9719d911017c592")
-}
+    // Mock FileStateUtil (you might have to use PowerMockito or redesign it for true testability)
+    object MockFileStateUtil extends FileStateUtil.type {
+      override def listKeysFromZoneWithInProgressState(
+          batch: String, domain: String, app: String
+      ): Map[String, String] = inProgressMap
+    }
 
-test("hashString should return EMPTY_STRING when input value is empty") {
-  val result = GeneralUtility.hashString("", "MD5")
-  assert(result == GeneralConstants.EMPTY_STRING)
-}
+    // Capture invocations of processFn
+    var called = List.empty[(String, String, Regex, String, Map[String, String])]
 
-test("hashString should throw exception for empty hash method") {
-  val thrown = intercept[IllegalArgumentException] {
-    GeneralUtility.hashString("hello", "")
+    def mockProcessFn(
+        b: String, t: String, r: Regex, z: String, inProg: Map[String, String]
+    ): Unit = {
+      called = called :+ (b, t, r, z, inProg)
+    }
+
+    implicit val jobConfig: JobConfigDto = mock[JobConfigDto]
+
+    // Replace FileStateUtil with the mock temporarily (alternatively refactor to inject)
+    // Assuming FileStateUtil is a class/object that can be replaced — this step might require additional setup
+
+    AutresUtil.processAutres(
+      batchName,
+      rawZoneDomain,
+      appZone,
+      autresFilesToProcess,
+      mockProcessFn
+    )(jobConfig)
+
+    // Assertions
+    assert(called.size == 2)
+    assert(called.exists(_._2 == "typeA"))
+    assert(called.exists(_._2 == "typeB"))
+    assert(called.forall(_._1 == batchName))
+    assert(called.forall(_._4 == rawZoneDomain))
+    assert(called.forall(_._5 == inProgressMap))
   }
-  assert(thrown.getMessage == "Invalid hash method provided.")
-}
-
-
-test("streamToString should return string from InputStream") {
-  val content = "test content"
-  val stream = new ByteArrayInputStream(content.getBytes("UTF-8"))
-
-  val result = GeneralUtility.streamToString(stream)
-
-  assert(result == content)
-}
-
-test("streamToString should return EMPTY_STRING when stream is null") {
-  val result = GeneralUtility.streamToString(null)
-
-  assert(result == GeneralConstants.EMPTY_STRING)
 }

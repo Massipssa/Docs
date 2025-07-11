@@ -9,6 +9,10 @@
       
       
       
+        <link rel="prev" href="../../airflow/concepts/">
+      
+      
+        <link rel="next" href="../read-write/">
       
       
       <link rel="icon" href="../../../assets/ms_icon.png">
@@ -73,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#components" class="md-skip">
+        <a href="#apache-iceberg-architechture" class="md-skip">
           Skip to content
         </a>
       
@@ -225,6 +229,8 @@
   
   
   
+    
+  
   
     
     
@@ -232,10 +238,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../../spark/concepts/" class="md-tabs__link">
           
   
@@ -845,24 +853,29 @@
       
   
   
+    
   
   
+  
     
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
@@ -875,7 +888,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Data
@@ -1152,6 +1165,187 @@
   
   <span class="md-ellipsis">
     Concepts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Apache Iceberg
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_5">
+            <span class="md-nav__icon md-icon"></span>
+            Apache Iceberg
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Layers
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#catalog-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Catalog Layer
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metadata-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Metadata Layer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Layer
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../read-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Read-Write
     
   </span>
   
@@ -2585,6 +2779,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -2593,27 +2789,42 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#components" class="md-nav__link">
+  <a href="#layers" class="md-nav__link">
     <span class="md-ellipsis">
-      Components
+      Layers
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#catalog-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Catalog Layer
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metadata-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Metadata Layer
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#data-model" class="md-nav__link">
+  <a href="#data-layer" class="md-nav__link">
     <span class="md-ellipsis">
-      Data Model
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Notes
+      Data Layer
     </span>
   </a>
   
@@ -2641,113 +2852,31 @@
   
 
 
-  <h1>Architecture</h1>
-
-<h2 id="components">Components</h2>
-<ul>
-<li>
-<p><strong>HMaster server</strong></p>
-<ul>
-<li>Acts as NameNode in HDFS</li>
-<li>Handles and manage Region Server</li>
-<li>Performs DDL operations</li>
-<li>Assigns regions to Region Servers</li>
-<li>Performs recovery activities</li>
-</ul>
-</li>
-<li>
-<p><strong>HBase Region server</strong></p>
-<ul>
-<li>Responsible for handling, manging, executing reads and writes operations on the set of regions</li>
-<li>Region<ul>
-<li>Contains all the rows between the start key and end key</li>
-<li>Hbase table can be divided into a number of regions in such way that all the columns of family
-  is stored in one region</li>
-<li>Each region contains the rows in <strong><em>sorted order</em></strong></li>
-<li>Many regions are assigned to a Region Server</li>
-<li>Default size of region is <strong>256 MB</strong> which can be configured</li>
-<li>They are automatically scaled when they become large, or they can be also merged</li>
-<li><strong>Recommendations</strong><ul>
-<li>10 to 10000 regions per region server</li>
-<li>Between 1 GB to 2 GB per size for each region </li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<p><strong>Zookeeper</strong></p>
-<ul>
-<li>Acts as a coordinator inside HBase</li>
-<li>Helps in maintains servers states. Servers send heartbeat to Zookeeper</li>
-<li>Maintains .META server's path</li>
-<li>Region servers are created as ephemeral nodes, once they fail to send heartbeat the node are deleted</li>
-</ul>
-</li>
-<li>
-<p><strong>Region Server</strong></p>
-</li>
-</ul>
-<p><img alt="region_server" src="../../screenshots/hbase/region_server.png" /></p>
-<div class="highlight"><pre><span></span><code>- **Block Cache**
-    - It stores in the memory the frequently accessed data  
-    - If the data in BlockCache is least recently used, then that data is removed from BlockCache
-- **WAL (Write Ahead Log)**
-    - Is a file attached to every Region Server
-    - Stores a new data hasn&#39;t been persisted or committed to permanent storage
-    - It is used in case of failure to recover data sets
-- **MemStore**
-    - It is write cache store
-    - It stores all the incoming data before committing it to the disk or permanent memory
-    - There is one MemStore for each column family
-    - The data is stored in lexicographical order before committing it to the disk
-- **Hfile**
-    - It stores data to cells on the disk
-    - Persistent, ordered and  immutable, it maps keys to values
-    - Default size **64 KB**  
-    - MemStore commit the data to Hfile when the size of MemStore exceeds
-</code></pre></div>
-<ul>
-<li><strong>Read Mechanism</strong></li>
-<li><strong>Write Mechanism</strong></li>
-</ul>
-<h2 id="data-model">Data Model</h2>
-<ul>
-<li><strong>Table:</strong> is made of set columns and rows</li>
-<li><strong>Row:</strong> addressed uniquely by <strong><em>row key</em></strong>*</li>
-<li><strong>Column family:</strong> set of column</li>
-<li><strong>Column</strong> <ul>
-<li>Small unit in HBase</li>
-<li>May have multiple <strong>versions</strong> </li>
-<li><strong>Version</strong><ul>
-<li>Distinct the values contained in <strong>cells</strong></li>
-<li>They are stored in decreasing timestamped order which helps to retrieve the newest value first</li>
-<li>User can specify the number of version to keep</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<div class="highlight"><pre><span></span><code>SortedMap&lt;RowKey, // first map --&gt; is table (map row keo to list of CF)
-    List&lt;SortedMap&lt;Column, // first list --&gt; CF, second map --&gt; (map column to list of values) 
-        List&lt;Value, Timestamp&gt;&gt;&gt;&gt; // second list --&gt; List of values and ts
-</code></pre></div>
-<h2 id="notes">Notes</h2>
-<ul>
-<li>Sparse</li>
-<li>wWide tables </li>
-<li>Column-oriented </li>
-</ul>
-<p>Often eliminate the to normalize data, and the <strong>Join</strong> operations cost needed to aggregate data</p>
-<ul>
-<li>
-<p>Use of intelligent keys gives fine-grained control over how - and where data is stored.</p>
-</li>
-<li>
-<p>Set large memory for region servers, could sometimes be dangerous, because of GC</p>
-</li>
-</ul>
+<h1 id="apache-iceberg-architechture">Apache Iceberg Architechture</h1>
+<h2 id="layers">Layers</h2>
+<p>Apache iceberg is made up by a three layer</p>
+<h3 id="catalog-layer">Catalog Layer</h3>
+<p>It holds the references to the current metadata pointer, that is, the lastest metadata file for each table. </p>
+<h2 id="metadata-layer">Metadata Layer</h2>
+<p>It's a layer that contains all metadata files for an table in Iceberg. It's a tree that tracks the datafiles and metadata about them as well as the oprations that resulted in the their creation. It's made up of three file types: manifest files, manifest lists and metadata files. 
+This layer is essential for effenciently managing large datasets and enable core features such as time travel and schema evolution. 
+Manifest file: keep track of file in the data layer (datafiles and delete files) as well as some aditionnal details and statistics about each files such as minimum and maximum values of datafiles's columns. Note: separate subsebt of manifest files are used to track datafiles and delete file but the schema is identical same for both.</p>
+<p>Information from the manifest files, such as upper and lower bounds for a specific column, null value counts, and partition-specific data, is used by the engine for file pruning.
+Manifest list: is a snapshot of Iceberg table at a given point in time. It contains a list of manifest file, including the location, the partitions it belongs to, and the upper and lower bounds for partition columns for the datafiles it tracks. </p>
+<p>Query engines interact with the manifest lists to get information about partition specifications that help them skip the nonrequired manifest files for faster performance.
+Metadata file: it tracks manifest list files. It includes table's schema, partition information, snapshots, and which snapshot is current one. Each time a change is made to an Iceberg table, a metadata file is created and is registred as last version of the metadata file, it helps during scenarios such as:</p>
+<p>Concurrent writes (i.e., multiple engines writing data simultaneously).
+Also, during read operations, engines will always see the latest version of the table.</p>
+<h2 id="data-layer">Data Layer</h2>
+<p>The layer where the data that be quyered is stored be the user.
+It's made up by the datafiles and deleted files (data deleted) and is backed by a distibuted system such as Hadoop, Amazon Simple Storage (S3), Google Cloud Storage (GCS) and Azure Data Lake Storage (ADLS), etc. 
+It's file agnostic and at time of this writing three formats are supported by Apache Iceberg, Apache Paraquet, Apache Avro and Apache ORC. 
+Deleted files: it's a best practice to keep data in data lake immutable, so when you can't update rows in file in place. Instead you need to write a new file. Two ways are available in Apache Iceberg
+Copy-On-Write (COW): the new file is a copy of the old file with the changfes reflected in a new copy of it
+Merge-On-Read (MOR): a new file that only has the changes written, which engines reading the data then coalesce</p>
+<p>MOR delete methods
+Positional delete file
+Eqaulity delete file</p>
 
 
 

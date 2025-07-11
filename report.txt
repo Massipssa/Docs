@@ -1,22 +1,16 @@
-from airflow.utils.task_group import TaskGroup
-from airflow.decorators import task
+#!/bin/bash
 
-def split_list_equally(lst, n):
-    """Split une liste en n morceaux aussi égaux que possible."""
-    k, m = divmod(len(lst), n)
-    return [lst[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n)]
+CSV_FILE="backup-1.csv"
 
-def cft_receive_vacation(dag_id: str):
-    with TaskGroup(group_id="vacation_transfers", tooltip="Split & Transfer") as transfer_group:
-        ls_list = get_ls_list_somehow()  # ← Tu récupères ça depuis list_files_from_fgw()
+tail -n +2 "$CSV_FILE" | while IFS=';' read -r idt froot; do
+  clean_froot="${froot%.txt.gz}"
+  clean_froot="${clean_froot%.log}"
 
-        split_parts = split_list_equally(ls_list, 5)
-
-        for i, chunk in enumerate(split_parts):
-            @task(task_id=f"put-files-in-transfi-part-{i+1}")
-            def transfer_chunk(data=chunk):
-                return put_files_in_transfi(data)
-
-            transfer_chunk()  # Exécute chaque sous-tâche
-
-    return transfer_group
+  for fichier in *"$idt"*; do
+    if [[ -f "$fichier" ]]; then
+      nouveau_nom="${fichier//$idt/$clean_froot}"
+      echo "Renommage : $fichier -> $nouveau_nom"
+      mv "$fichier" "$nouveau_nom"
+    fi
+  done
+done

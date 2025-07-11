@@ -1,26 +1,18 @@
-  test("addRowColumn should add a row_number column") {
-    val df = Seq("a", "b", "c").toDF("value")
-    val resultDf = DfUtil.addRowColumn(df)
+#!/bin/bash
 
-    assert(resultDf.columns.contains("ROW_NUMBER_COL"))
+# Chemin vers le fichier CSV
+fichier_csv="liste_fichiers.csv"
 
-    val rowNumbers = resultDf.select("ROW_NUMBER_COL").as[Int].collect()
-    assert(rowNumbers.sorted sameElements Array(1, 2, 3))
-  }
+# Dossier contenant les fichiers à renommer
+dossier="/path/tmp"
 
-  test("listColumnAsListStr should return values from specified column as List") {
-    val df = Seq("x", "y", "z").toDF("letters")
-
-    val result = DfUtil.listColumnAsListStr(df, "letters")
-
-    assert(result == List("x", "y", "z"))
-  }
-
-  test("dfToMap should convert two-column DataFrame to Map") {
-    val data = Seq(("k1", "v1"), ("k2", "v2"))
-    val df = data.toDF("key", "value")
-
-    val result = DfUtil.dfToMap(df, "key", "value")
-
-    assert(result == Map("k1" -> "v1", "k2" -> "v2"))
-  }
+# Lire le CSV ligne par ligne en ignorant l’en-tête
+tail -n +2 "$fichier_csv" | while IFS=';' read -r idt froot; do
+  for fichier in "$dossier"/*"$idt"*; do
+    if [[ -f "$fichier" ]]; then
+      nouveau_nom="${fichier//$idt/$froot}"
+      echo "Renommage : $fichier -> $nouveau_nom"
+      mv "$fichier" "$nouveau_nom"
+    fi
+  done
+done

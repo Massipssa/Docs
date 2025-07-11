@@ -1,14 +1,13 @@
 #!/bin/bash
 
+# Fichier CSV (remplace par le vrai chemin si nécessaire)
 CSV_FILE="backup-1.csv"
 
+# Lire le CSV ligne par ligne, en ignorant l'en-tête
 tail -n +2 "$CSV_FILE" | while IFS=';' read -r idt froot; do
-  clean_froot="${froot%.txt.gz}"
-  clean_froot="${clean_froot%.log}"
-
   for fichier in *"$idt"*; do
     if [[ -f "$fichier" ]]; then
-      nouveau_nom="${fichier//$idt/$clean_froot}"
+      nouveau_nom="${fichier//$idt/$froot}"
       echo "Renommage : $fichier -> $nouveau_nom"
       mv "$fichier" "$nouveau_nom"
     fi

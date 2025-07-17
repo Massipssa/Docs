@@ -1,15 +1,23 @@
-#!/bin/bash
+<dependencies>
+    <!-- Iceberg runtime Spark 3.3 -->
+    <dependency>
+      <groupId>org.apache.iceberg</groupId>
+      <artifactId>iceberg-spark-runtime-3.3_2.12</artifactId>
+      <version>${iceberg.version}</version>
+    </dependency>
 
-# Fichier CSV (remplace par le vrai chemin si nécessaire)
-CSV_FILE="backup-1.csv"
+    <!-- AWS SDK used by Iceberg -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <version>2.17.106</version>
+    </dependency>
 
-# Lire le CSV ligne par ligne, en ignorant l'en-tête
-tail -n +2 "$CSV_FILE" | while IFS=';' read -r idt froot; do
-  for fichier in *"$idt"*; do
-    if [[ -f "$fichier" ]]; then
-      nouveau_nom="${fichier//$idt/$froot}"
-      echo "Renommage : $fichier -> $nouveau_nom"
-      mv "$fichier" "$nouveau_nom"
-    fi
-  done
-done
+    <!-- Spark provided by Glue, not included -->
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-sql_2.12</artifactId>
+      <version>${spark.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>

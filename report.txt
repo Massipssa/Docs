@@ -1,19 +1,31 @@
-<dependencies>
-    <!-- Iceberg runtime Spark 3.3 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>iceberg-glue-spark330</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <properties>
+    <scala.version>2.12.15</scala.version>
+    <spark.version>3.3.0</spark.version>
+    <iceberg.version>1.2.1</iceberg.version>
+  </properties>
+
+  <dependencies>
+    <!-- Iceberg Spark runtime -->
     <dependency>
       <groupId>org.apache.iceberg</groupId>
       <artifactId>iceberg-spark-runtime-3.3_2.12</artifactId>
       <version>${iceberg.version}</version>
     </dependency>
 
-    <!-- AWS SDK used by Iceberg -->
+    <!-- AWS SDK v2 for Iceberg AWS IO -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
       <version>2.17.106</version>
     </dependency>
 
-    <!-- Spark provided by Glue, not included -->
+    <!-- Spark (provided by Glue 4) -->
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_2.12</artifactId>
@@ -21,3 +33,42 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Scala compiler -->
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>4.5.6</version>
+        <executions>
+          <execution>
+            <goals><goal>compile</goal><goal>testCompile</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Fat JAR without Spark -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.2.4</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>shade</goal></goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <filters>
+                <filter>
+                  <artifact>*:spark-*</artifact>
+                  <excludes><exclude>*</exclude></excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

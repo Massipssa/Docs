@@ -1,74 +1,89 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.example</groupId>
-  <artifactId>iceberg-glue-spark330</artifactId>
-  <version>1.0-SNAPSHOT</version>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <properties>
-    <scala.version>2.12.15</scala.version>
-    <spark.version>3.3.0</spark.version>
-    <iceberg.version>1.2.1</iceberg.version>
-  </properties>
+    <groupId>com.mycompany</groupId>
+    <artifactId>iceberg-glue-job</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
 
-  <dependencies>
-    <!-- Iceberg Spark runtime -->
-    <dependency>
-      <groupId>org.apache.iceberg</groupId>
-      <artifactId>iceberg-spark-runtime-3.3_2.12</artifactId>
-      <version>${iceberg.version}</version>
-    </dependency>
+    <properties>
+        <scala.binary.version>2.12</scala.binary.version>
+        <spark.version>3.3.0</spark.version>
+        <iceberg.version>1.0.0</iceberg.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
 
-    <!-- AWS SDK v2 for Iceberg AWS IO -->
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>s3</artifactId>
-      <version>2.17.106</version>
-    </dependency>
+    <dependencies>
+        <!-- Apache Iceberg runtime for Spark 3.3 -->
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-spark-runtime-3.3_2.12</artifactId>
+            <version>${iceberg.version}</version>
+        </dependency>
 
-    <!-- Spark (provided by Glue 4) -->
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql_2.12</artifactId>
-      <version>${spark.version}</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
+        <!-- AWS Glue Catalog support -->
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-aws</artifactId>
+            <version>${iceberg.version}</version>
+        </dependency>
 
-  <build>
-    <plugins>
-      <!-- Scala compiler -->
-      <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-        <version>4.5.6</version>
-        <executions>
-          <execution>
-            <goals><goal>compile</goal><goal>testCompile</goal></goals>
-          </execution>
-        </executions>
-      </plugin>
+        <!-- Core and API (some classes used by aws/glue modules) -->
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-core</artifactId>
+            <version>${iceberg.version}</version>
+        </dependency>
 
-      <!-- Fat JAR without Spark -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.4</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals><goal>shade</goal></goals>
-            <configuration>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-              <filters>
-                <filter>
-                  <artifact>*:spark-*</artifact>
-                  <excludes><exclude>*</exclude></excludes>
-                </filter>
-              </filters>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-api</artifactId>
+            <version>${iceberg.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Compiler plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+
+            <!-- Shade plugin to create a fat JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.mycompany.Main</mainClass> <!-- Remplace si besoin -->
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

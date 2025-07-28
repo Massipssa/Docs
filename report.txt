@@ -1,18 +1,14 @@
-generate-tag:
-  stage: release
-  image: alpine:latest
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
-      when: always
-  before_script:
-    - apk add --no-cache git
-  script:
-    - git fetch --tags
-    - latest_tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
-    - echo "Latest tag: $latest_tag"
-    - if [ -z "$latest_tag" ]; then latest_tag="v0.0.0"; fi
-    - IFS='.' read -r major minor patch <<< "${latest_tag#v}"
-    - new_tag="v$major.$minor.$((patch + 1))"
-    - echo "New tag: $new_tag"
-    - git tag "$new_tag"
-    - git push origin "$new_tag"
+git fetch --tags
+latest_tag=$(git tag --sort=-v:refname | head -n1)
+[ -z "$latest_tag" ] && latest_tag="v0.0.0"
+
+IFS='.' read -r major minor patch <<< "${latest_tag#v}"
+new_tag="v$major.$minor.$((patch + 1))"
+
+if git rev-parse "$new_tag" >/dev/null 2>&1; then
+  echo "Tag $new_tag already exists. Skipping."
+  exit 0
+fi
+
+git tag "$new_tag"
+git push origin "$new_tag"

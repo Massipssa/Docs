@@ -1,14 +1,15 @@
-git fetch --tags
-latest_tag=$(git tag --sort=-v:refname | head -n1)
-[ -z "$latest_tag" ] && latest_tag="v0.0.0"
-
-IFS='.' read -r major minor patch <<< "${latest_tag#v}"
-new_tag="v$major.$minor.$((patch + 1))"
-
-if git rev-parse "$new_tag" >/dev/null 2>&1; then
-  echo "Tag $new_tag already exists. Skipping."
-  exit 0
-fi
-
-git tag "$new_tag"
-git push origin "$new_tag"
+ - git fetch --tags
+    - echo "Fetching latest tag..."
+    - latest_tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+    - echo "Latest tag is: ${latest_tag}"
+    - if [ -z "$latest_tag" ]; then latest_tag="v0.0.0"; fi
+    - IFS='.' read -r major minor patch <<< "${latest_tag#v}"
+    - new_tag="v$major.$minor.$((patch + 1))"
+    - echo "New tag to push: ${new_tag}"
+    - |
+      if git rev-parse "$new_tag" >/dev/null 2>&1; then
+        echo "Tag $new_tag already exists. Skipping."
+        exit 0
+      fi
+    - git tag "$new_tag"
+    - git push https://oauth2:${GITLAB_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git "$new_tag"

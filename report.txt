@@ -1,31 +1,18 @@
-val newDF = Seq(
-  ("Alice", "Paris", 30),
-  ("Bob", "Lyon", null),
-  ("Charlie", "Marseille", 35)
-).toDF("name", "city", "age")
-
-val existingDF = Seq(
-  ("Alice", "Paris", 30),
-  ("Bob", "Lyon", null)
-).toDF("name", "city", "age")
-
-// Fonction pour remplacer les nulls
-def nullSafe(df: DataFrame): DataFrame = {
-  df.columns.foldLeft(df) { (acc, colName) =>
-    acc.withColumn(colName,
-      when(col(colName).isNull, lit("__NULL__")).otherwise(col(colName))
-    )
-  }
-}
-
-val newClean = nullSafe(newDF)
-val existingClean = nullSafe(existingDF)
-
-val result = newClean.except(existingClean)
-
-// Remet les nulls pour l'insertion
-val finalDF = result.columns.foldLeft(result) { (acc, c) =>
-  acc.withColumn(c, when(col(c) === "__NULL__", lit(null)).otherwise(col(c)))
-}
-
-finalDF.show()
+generate-tag:
+  stage: release
+  image: alpine:latest
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: always
+  before_script:
+    - apk add --no-cache git
+  script:
+    - git fetch --tags
+    - latest_tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+    - echo "Latest tag: $latest_tag"
+    - if [ -z "$latest_tag" ]; then latest_tag="v0.0.0"; fi
+    - IFS='.' read -r major minor patch <<< "${latest_tag#v}"
+    - new_tag="v$major.$minor.$((patch + 1))"
+    - echo "New tag: $new_tag"
+    - git tag "$new_tag"
+    - git push origin "$new_tag"

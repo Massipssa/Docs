@@ -1,28 +1,27 @@
-generate_tag:
-  stage: release
-  image: alpine:latest
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE == "push"'
-      when: always
-    - when: never
-  before_script:
-    - apk add --no-cache git
-  script:
-    - git config --global user.name "gitlab-ci"
-    - git config --global user.email "ci@example.com"
-    - git fetch --tags
-    - echo "Fetching latest tag..."
-    - latest_tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
-    - if [ -z "$latest_tag" ]; then
-        echo "No tag found. Using v0.0.0 as base.";
-        latest_tag="v0.0.0";
-      fi
-    - IFS='.' read -r major minor patch <<< "${latest_tag#v}"
-    - new_tag="v$major.$minor.$((patch + 1))"
-    - echo "New tag to push: $new_tag"
-    - if git rev-parse "$new_tag" >/dev/null 2>&1; then
-        echo "Tag $new_tag already exists. Skipping.";
-        exit 0;
-      fi
-    - git tag "$new_tag"
-    - git push https://oauth2:${GITLAB_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git "$new_tag"
+# Always fetch remote tags freshly
+git fetch --tags --force
+
+# Compute latest from remote
+latest_tag=$(git ls-remote --tags origin | \
+             grep -oE 'refs/tags/[0-9]+\.[0-9]+\.[0-9]+$' | \
+             sed 's#refs/tags/##' | \
+             sort -V | tail -n1)
+
+if [ -z "$latest_tag" ]; then
+  latest_tag="0.0.0"
+fi
+
+IFS=. read -r major minor patch <<<"$latest_tag"
+new_tag="$major.$minor.$((patch + 1))"
+
+echo "New tag candidate: $new_tag"
+
+# Check if it exists on remote, not local
+if git ls-remote --tags origin | grep -q "refs/tags/$new_tag$"; then
+  echo "Tag $new_tag already exists on remote. Skipping."
+  exit 0
+fi
+
+# Push safely
+git tag "$new_tag"
+git push origin "$new_tag"

@@ -2749,20 +2749,39 @@
 
 <h1 id="functional-programming">Functional Programming</h1>
 <ul>
-<li>No state</li>
-<li>Pure function<ul>
-<li>Given the same inputs, always returns the same output, and</li>
-<li>Has no side-effects</li>
+<li>Pure functions</li>
+<li>Given the same inputs, always return the same output</li>
+<li>Perform no observable side effects</li>
 </ul>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+</div>
+<p>What is a side effect?
+A side effect is any observable interaction other than returning a value.
+- <strong>Examples:</strong> reading/writing mutable state, I/O (files, network, console/logging), reading the clock or random numbers, throwing exceptions, process exit.
+- <strong>Why it matters:</strong> side effects break referential transparency and make code harder to reason about and test.
+- <strong>FP approach:</strong> keep a pure core and isolate effects at the edges, often by modeling them as values (e.g., IO/Task/Future, algebraic effects) and composing them explicitly.</p>
+<ul>
+<li>Immutability</li>
+<li>
+<p>Data isn’t modified in place; new values are created instead</p>
 </li>
-<li>No side effects</li>
-<li>Higher Order Function<ul>
-<li>The function one takes or more functions as parameter</li>
-<li>The function returns another function as result</li>
-</ul>
+<li>
+<p>No shared mutable state</p>
 </li>
-<li>Immutable data</li>
-<li>Referential transparency</li>
+<li>
+<p>Avoid hidden coupling; simplifies reasoning and concurrency</p>
+</li>
+<li>
+<p>Higher-order functions</p>
+</li>
+<li>
+<p>Take functions as arguments and/or return functions</p>
+</li>
+<li>
+<p>Referential transparency</p>
+</li>
+<li>Any expression can be replaced by its value without changing behavior</li>
 </ul>
 
 

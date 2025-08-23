@@ -1356,6 +1356,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../optimization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Optimization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2856,7 +2879,9 @@
 <h2 id="layers">Layers</h2>
 <p>Apache iceberg is made up by a three layer</p>
 <h3 id="catalog-layer">Catalog Layer</h3>
-<p>It holds the references to the current metadata pointer, that is, the lastest metadata file for each table. </p>
+<p>The data layer of an Apache Iceberg table stores the actual table data, consisting mainly of <strong>data files</strong> and <strong>delete 
+files</strong>. It is responsible for supplying query results, except in certain cases where metadata can answer
+queries (e.g., max value lookups). In Iceberg’s tree structure, the data layer forms the leaves.</p>
 <h2 id="metadata-layer">Metadata Layer</h2>
 <p>It's a layer that contains all metadata files for an table in Iceberg. It's a tree that tracks the datafiles and metadata about them as well as the oprations that resulted in the their creation. It's made up of three file types: manifest files, manifest lists and metadata files. 
 This layer is essential for effenciently managing large datasets and enable core features such as time travel and schema evolution. 

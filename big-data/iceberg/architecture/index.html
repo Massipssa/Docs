@@ -2992,6 +2992,17 @@
 <p>Apache iceberg is made up by a three layer</p>
 <p><img alt="layers" src="../../../assets/img/bigdata/iceberg/00-layers.png" /></p>
 <h3 id="catalog-layer">Catalog Layer</h3>
+<p>A catalog maps fully qualified table names (namespace + table) to their current metadata file ("metadata pointer"). 
+It must support atomic updates to the metadata pointer, ensuring that all readers and writers see a consistent table
+state at any given time.</p>
+<p>Depending on the catalog in use, the metadata pointer is stored differently. For example:</p>
+<ul>
+<li><strong>S3</strong> Catalog stores the pointer in a file named <strong>version-hint.text</strong> within the table’s metadata folder. This file
+contains the version number of the current metadata file.</li>
+<li><strong>AWS Glue</strong> stores the pointer as a table property called <strong>metadata_location</strong>, which holds the full path to the 
+current metadata file.</li>
+<li><strong>Apache Hive</strong> uses the <strong>location</strong> table property to point to the current metadata file.</li>
+</ul>
 <h2 id="metadata-layer">Metadata Layer</h2>
 <p>It's a layer that contains all metadata files for a table in Iceberg. It's a tree that tracks the datafiles and 
 metadata about them as well as the operations that resulted in the creation. It's made up of three file types: </p>
@@ -3015,11 +3026,12 @@ table format, where statistics are gathered by long, expensive read jobs that mu
 whole tables—before writing partition- or table-level stats.</li>
 </ul>
 </div>
-<p>Information from the manifest files, such as upper and lower bounds for a specific column, null value counts, and partition-specific data, is used by the engine for file pruning.</p>
+<p>Information from the manifest files, such as upper and lower bounds for a specific column, null value counts, 
+and partition-specific data, is used by the engine for file pruning.</p>
 <h3 id="manifest-list">Manifest list</h3>
-<p>It is a snapshot of Iceberg table at a given point in time. It contains a list of <strong>manifest file</strong>, 
-including the location, the partitions it belongs to, and the upper and lower bounds for partition columns for the 
-datafiles it tracks.</p>
+<p>It is a snapshot of Iceberg table at a given point in time. It contains a list of <strong>manifest file</strong>, including 
+the location, the partitions it belongs to, and the upper and lower bounds for partition columns for the datafiles it 
+tracks.</p>
 <p>Query engines interact with the manifest lists to get information about partition specifications that help them skip 
 the non required manifest files for faster performance.</p>
 <h3 id="metadata-file">Metadata file</h3>

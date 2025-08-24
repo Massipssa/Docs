@@ -2992,7 +2992,7 @@
 <p>Apache iceberg is made up by a three layer</p>
 <p><img alt="layers" src="../../../assets/img/bigdata/iceberg/00-layers.png" /></p>
 <h3 id="catalog-layer">Catalog Layer</h3>
-<p>A catalog maps fully qualified table names (namespace + table) to their current metadata file ("metadata pointer"). 
+<p>A catalog maps fully qualified table names (namespace + table) to their current metadata file (<strong>metadata pointer</strong>). 
 It must support atomic updates to the metadata pointer, ensuring that all readers and writers see a consistent table
 state at any given time.</p>
 <p>Depending on the catalog in use, the metadata pointer is stored differently. For example:</p>
@@ -3029,18 +3029,42 @@ whole tables—before writing partition- or table-level stats.</li>
 <p>Information from the manifest files, such as upper and lower bounds for a specific column, null value counts, 
 and partition-specific data, is used by the engine for file pruning.</p>
 <h3 id="manifest-list">Manifest list</h3>
-<p>It is a snapshot of Iceberg table at a given point in time. It contains a list of <strong>manifest file</strong>, including 
-the location, the partitions it belongs to, and the upper and lower bounds for partition columns for the datafiles it 
-tracks.</p>
-<p>Query engines interact with the manifest lists to get information about partition specifications that help them skip 
-the non required manifest files for faster performance.</p>
+<p>A manifest list captures the state of an Iceberg table at a specific point in time. It contains a list of manifest files, each describing:</p>
+<ul>
+<li>The location of data files</li>
+<li>The partitions they belong to</li>
+<li>The upper and lower bounds of partition columns</li>
+<li>...</li>
+</ul>
+<p>Query engines use this information to evaluate partition specs and skip irrelevant manifest files, enabling faster, 
+more efficient reads through data pruning.</p>
 <h3 id="metadata-file">Metadata file</h3>
-<p>It tracks manifest list files. It includes table's schema, partition information, snapshots, and which snapshot 
-is current one. Each time a change is made to an Iceberg table, a metadata file is created and is registered as last 
-version of the metadata file, it helps during scenarios such as:</p>
-<p>Concurrent writes (i.e., multiple engines writing data simultaneously).
-Also, during read operations, engines will always see the latest version of the table.</p>
+<p>The metadata file tracks manifest list files and contains the table’s schema, partitioning details, snapshots, 
+and the identifier of the current snapshot. Each time an Iceberg table is modified, a new metadata file is created and 
+registered as the latest version. This design supports critical scenarios such as:</p>
+<ul>
+<li><strong>Concurrent writes</strong> – allowing multiple engines to write data simultaneously without conflict.</li>
+<li><strong>Consistent reads</strong> – ensuring that readers always access the latest committed version of the table.</li>
+</ul>
 <h2 id="data-layer">Data Layer</h2>
+<p>The data layer in an Apache Iceberg table holds the actual table data, primarily made up of <strong>data files</strong> and 
+<strong>delete files</strong>. </p>
+<p>This layer is responsible for serving query results—unless a query can be resolved using metadata 
+alone (e.g., min/max value lookups). In Iceberg’s tree-like architecture, the data layer represents the leaf nodes.</p>
+<p>It is typically backed by distributed storage systems such as HDFS, Amazon S3, Google Cloud Storage (GCS), 
+Azure Data Lake Storage (ADLS), and others.</p>
+<ul>
+<li>
+<p><strong>Data Files</strong>
+These files store the actual table data. As of now, Iceberg supports three file formats: Apache Parquet, Apache Avro, 
+and Apache ORC.</p>
+</li>
+<li>
+<p><strong>Delete Files</strong>
+These track rows that have been deleted from the dataset without rewriting the underlying data files, 
+enabling efficient handling of deletes.</p>
+</li>
+</ul>
 <p>The data layer of an Apache Iceberg table stores the actual table data, consisting mainly of <strong>data files</strong> and
 <strong>delete files</strong>. It is responsible for supplying query results, except in certain cases where metadata can answer
 queries (e.g., max value lookups). In Iceberg’s tree structure, the data layer forms the leaves.</p>
@@ -3062,14 +3086,23 @@ Tracks records in the dataset that have been deleted. </p>
 <p>It's a best practice to keep data in data lake immutable, so you can't update rows in file in place. Instead, 
 you need to write a new file.</p>
 </div>
-<p>Two ways are available in Apache Iceberg</p>
+<p>Apache Iceberg supports two approaches for handling data modifications:</p>
 <ul>
-<li><strong>Copy-On-Write (COW):</strong> the new file is a copy of the old file with the changes reflected in a new copy of it</li>
-<li><strong>Merge-On-Read (MOR):</strong> a new file that only has the changes written, which engines reading the data then coalesce</li>
+<li><strong>Copy-On-Write (COW):</strong> Changes are written by creating a new version of the data file with all updates applied. 
+The old file is replaced by this updated copy.</li>
+<li>
+<p><strong>Merge-On-Read (MOR):</strong> Only the changes (inserts, updates, deletes) are written to separate delta or delete files. 
+Query engines merge these changes with the base data at read time.</p>
+</li>
+<li>
+<p>Supported deletes operations</p>
+</li>
+<li>
+<p>MOR delete methods</p>
+</li>
+<li>Positional delete file</li>
+<li>Equality delete file</li>
 </ul>
-<p>MOR delete methods
-Positional delete file
-Eqaulity delete file</p>
 
 
 

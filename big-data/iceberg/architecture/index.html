@@ -1387,6 +1387,52 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../file-formats/apache-parquet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Apache Parquet
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../file-formats/apache-avro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Apache Avro
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2878,11 +2924,8 @@
 <h1 id="apache-iceberg-architechture">Apache Iceberg Architechture</h1>
 <h2 id="layers">Layers</h2>
 <p>Apache iceberg is made up by a three layer</p>
-<p>[]</p>
 <p><img alt="layers" src="../../../assets/img/bigdata/iceberg/00-layers.png" /></p>
 <h3 id="catalog-layer">Catalog Layer</h3>
-<p>The data layer of an Apache Iceberg table stores the actual table data, consisting mainly of \textcolor{blue}{data files}  and \textcolor{blue}{delete files}. It is responsible for supplying query results, except in certain cases where metadata can answer
-queries (e.g., max value lookups). In Iceberg’s tree structure, the data layer forms the leaves.</p>
 <h2 id="metadata-layer">Metadata Layer</h2>
 <p>It's a layer that contains all metadata files for an table in Iceberg. It's a tree that tracks the datafiles and metadata about them as well as the oprations that resulted in the their creation. It's made up of three file types: manifest files, manifest lists and metadata files. 
 This layer is essential for effenciently managing large datasets and enable core features such as time travel and schema evolution. 
@@ -2894,11 +2937,23 @@ Metadata file: it tracks manifest list files. It includes table's schema, partit
 <p>Concurrent writes (i.e., multiple engines writing data simultaneously).
 Also, during read operations, engines will always see the latest version of the table.</p>
 <h2 id="data-layer">Data Layer</h2>
-<p>The layer where the data that be quyered is stored be the user.
-It's made up by the datafiles and deleted files (data deleted) and is backed by a distibuted system such as Hadoop, Amazon Simple Storage (S3), Google Cloud Storage (GCS) and Azure Data Lake Storage (ADLS), etc. 
-It's file agnostic and at time of this writing three formats are supported by Apache Iceberg, Apache Paraquet, Apache Avro and Apache ORC. 
-Deleted files: it's a best practice to keep data in data lake immutable, so when you can't update rows in file in place. Instead you need to write a new file. Two ways are available in Apache Iceberg
-Copy-On-Write (COW): the new file is a copy of the old file with the changfes reflected in a new copy of it
+<p>The data layer of an Apache Iceberg table stores the actual table data, consisting mainly of <strong>data files</strong> and
+<strong>delete files</strong>. It is responsible for supplying query results, except in certain cases where metadata can answer
+queries (e.g., max value lookups). In Iceberg’s tree structure, the data layer forms the leaves.</p>
+<p>It is backed by a distributed system such as Hadoop, Amazon Simple Storage (S3), Google Cloud Storage (GCS) and 
+Azure Data Lake Storage (ADLS), etc.</p>
+<ul>
+<li>
+<p><strong>Datafile</strong>
+It's stores data itself at time of this writing three formats are supported by Apache Iceberg, Apache Paraquet, 
+Apache Avro and Apache ORC.</p>
+</li>
+<li>
+<p><strong>Deleted files</strong>
+It's a best practice to keep data in data lake immutable, so when you can't update rows in file in place. Instead you need to write a new file. Two ways are available in Apache Iceberg</p>
+</li>
+</ul>
+<p>Copy-On-Write (COW): the new file is a copy of the old file with the changfes reflected in a new copy of it
 Merge-On-Read (MOR): a new file that only has the changes written, which engines reading the data then coalesce</p>
 <p>MOR delete methods
 Positional delete file

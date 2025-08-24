@@ -3065,22 +3065,6 @@ These track rows that have been deleted from the dataset without rewriting the u
 enabling efficient handling of deletes.</p>
 </li>
 </ul>
-<p>The data layer of an Apache Iceberg table stores the actual table data, consisting mainly of <strong>data files</strong> and
-<strong>delete files</strong>. It is responsible for supplying query results, except in certain cases where metadata can answer
-queries (e.g., max value lookups). In Iceberg’s tree structure, the data layer forms the leaves.</p>
-<p>It is backed by a distributed system such as Hadoop, Amazon Simple Storage (S3), Google Cloud Storage (GCS) and 
-Azure Data Lake Storage (ADLS), etc.</p>
-<ul>
-<li>
-<p><strong>Datafile</strong>
-It's stores data itself at time of this writing three formats are supported by Apache Iceberg, Apache Paraquet, 
-Apache Avro and Apache ORC.</p>
-</li>
-<li>
-<p><strong>Deleted files</strong>
-Tracks records in the dataset that have been deleted. </p>
-</li>
-</ul>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>It's a best practice to keep data in data lake immutable, so you can't update rows in file in place. Instead, 

@@ -2950,11 +2950,19 @@ Apache Avro and Apache ORC.</p>
 </li>
 <li>
 <p><strong>Deleted files</strong>
-It's a best practice to keep data in data lake immutable, so when you can't update rows in file in place. Instead you need to write a new file. Two ways are available in Apache Iceberg</p>
+Tracks records in the dataset that have been deleted. </p>
 </li>
 </ul>
-<p>Copy-On-Write (COW): the new file is a copy of the old file with the changfes reflected in a new copy of it
-Merge-On-Read (MOR): a new file that only has the changes written, which engines reading the data then coalesce</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>It's a best practice to keep data in data lake immutable, so you can't update rows in file in place. Instead, 
+you need to write a new file.</p>
+</div>
+<p>Two ways are available in Apache Iceberg</p>
+<ul>
+<li><strong>Copy-On-Write (COW):</strong> the new file is a copy of the old file with the changfes reflected in a new copy of it</li>
+<li><strong>Merge-On-Read (MOR):</strong> a new file that only has the changes written, which engines reading the data then coalesce</li>
+</ul>
 <p>MOR delete methods
 Positional delete file
 Eqaulity delete file</p>

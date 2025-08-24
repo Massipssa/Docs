@@ -2890,25 +2890,23 @@ subset of rows.</li>
 <p>This allows parallelism: different executors can process different row groups.</p>
 </div>
 <ul>
-<li>
-<p><strong>Column chunk</strong>
-Within a row group, each column is stored separately in a column chunk.</p>
-</li>
-<li>
-<p><strong>Page</strong>
-The smallest unit of storage. Usually 8KB–1MB. Two main types:</p>
-</li>
-<li>
-<p><strong>Data Page:</strong> actual values. </p>
-</li>
+<li><strong>Column chunk</strong></li>
+</ul>
+<p>Within a row group, each column is stored separately in a column chunk.</p>
+<ul>
+<li><strong>Page</strong></li>
+</ul>
+<p>The smallest unit of storage. Usually 8KB–1MB. Two main types:</p>
+<ul>
+<li><strong>Data Page:</strong> actual values. </li>
 <li>
 <p><strong>Dictionary Page:</strong> optional; maps repeated values to dictionary indexes for compression.</p>
 </li>
 <li>
-<p><strong>File footer</strong>
-Stored at the end of the file. Contains schema, metadata (e.g., column types, encoding, statistics like min/max/null counts).</p>
+<p><strong>File footer</strong></p>
 </li>
 </ul>
+<p>Stored at the end of the file. Contains schema, metadata (e.g., column types, encoding, statistics like min/max/null counts).</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>This metadata is powerful: query engines can use it for predicate pushdown 

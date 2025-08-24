@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#apache-iceberg-architechture" class="md-skip">
+        <a href="#apache-iceberg-architecture" class="md-skip">
           Skip to content
         </a>
       
@@ -1312,6 +1312,39 @@
       Metadata Layer
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Metadata Layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#manifest-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manifest file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manifest-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manifest list
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metadata-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Metadata file
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2888,6 +2921,39 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Metadata Layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#manifest-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manifest file
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manifest-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manifest list
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metadata-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Metadata file
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2921,22 +2987,23 @@
   
 
 
-<h1 id="apache-iceberg-architechture">Apache Iceberg Architechture</h1>
+<h1 id="apache-iceberg-architecture">Apache Iceberg Architecture</h1>
 <h2 id="layers">Layers</h2>
 <p>Apache iceberg is made up by a three layer</p>
 <p><img alt="layers" src="../../../assets/img/bigdata/iceberg/00-layers.png" /></p>
 <h3 id="catalog-layer">Catalog Layer</h3>
 <h2 id="metadata-layer">Metadata Layer</h2>
 <p>It's a layer that contains all metadata files for a table in Iceberg. It's a tree that tracks the datafiles and 
-metadata about them as well as the operations that resulted in the creation. It's made up of three file types: 
-- Metadata files
-- Manifest lists
-- Manifest files</p>
-<p>This layer is essential for efficiently managing large datasets and enable core features such as time travel and schema evolution. </p>
+metadata about them as well as the operations that resulted in the creation. It's made up of three file types: </p>
 <ul>
-<li><strong>Manifest file:</strong> keep track of file in the data layer (datafiles and delete files) as well as some additional details 
-and statistics about each file such as minimum and maximum values of datafile's columns. </li>
+<li><a href="#manifest-file">Manifest files</a></li>
+<li><a href="#manifest-list-">Manifest lists</a></li>
+<li><a href="#metadata-file-">Metadata files</a></li>
 </ul>
+<p>This layer is essential for efficiently managing large datasets and enable core features such as time travel and schema evolution. </p>
+<h3 id="manifest-file">Manifest file</h3>
+<p>keep track of file in the data layer (datafiles and delete files) as well as some additional details 
+and statistics about each file such as minimum and maximum values of datafile's columns. </p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <ul>
@@ -2949,13 +3016,13 @@ whole tables—before writing partition- or table-level stats.</li>
 </ul>
 </div>
 <p>Information from the manifest files, such as upper and lower bounds for a specific column, null value counts, and partition-specific data, is used by the engine for file pruning.</p>
-<p><strong>Manifest list:</strong> </p>
+<h3 id="manifest-list">Manifest list</h3>
 <p>It is a snapshot of Iceberg table at a given point in time. It contains a list of <strong>manifest file</strong>, 
 including the location, the partitions it belongs to, and the upper and lower bounds for partition columns for the 
 datafiles it tracks.</p>
 <p>Query engines interact with the manifest lists to get information about partition specifications that help them skip 
 the non required manifest files for faster performance.</p>
-<p><strong>Metadata file:</strong> </p>
+<h3 id="metadata-file">Metadata file</h3>
 <p>It tracks manifest list files. It includes table's schema, partition information, snapshots, and which snapshot 
 is current one. Each time a change is made to an Iceberg table, a metadata file is created and is registered as last 
 version of the metadata file, it helps during scenarios such as:</p>

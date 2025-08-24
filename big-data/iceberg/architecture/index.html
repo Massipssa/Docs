@@ -2927,13 +2927,38 @@
 <p><img alt="layers" src="../../../assets/img/bigdata/iceberg/00-layers.png" /></p>
 <h3 id="catalog-layer">Catalog Layer</h3>
 <h2 id="metadata-layer">Metadata Layer</h2>
-<p>It's a layer that contains all metadata files for an table in Iceberg. It's a tree that tracks the datafiles and metadata about them as well as the oprations that resulted in the their creation. It's made up of three file types: manifest files, manifest lists and metadata files. 
-This layer is essential for effenciently managing large datasets and enable core features such as time travel and schema evolution. 
-Manifest file: keep track of file in the data layer (datafiles and delete files) as well as some aditionnal details and statistics about each files such as minimum and maximum values of datafiles's columns. Note: separate subsebt of manifest files are used to track datafiles and delete file but the schema is identical same for both.</p>
-<p>Information from the manifest files, such as upper and lower bounds for a specific column, null value counts, and partition-specific data, is used by the engine for file pruning.
-Manifest list: is a snapshot of Iceberg table at a given point in time. It contains a list of manifest file, including the location, the partitions it belongs to, and the upper and lower bounds for partition columns for the datafiles it tracks. </p>
-<p>Query engines interact with the manifest lists to get information about partition specifications that help them skip the nonrequired manifest files for faster performance.
-Metadata file: it tracks manifest list files. It includes table's schema, partition information, snapshots, and which snapshot is current one. Each time a change is made to an Iceberg table, a metadata file is created and is registred as last version of the metadata file, it helps during scenarios such as:</p>
+<p>It's a layer that contains all metadata files for a table in Iceberg. It's a tree that tracks the datafiles and 
+metadata about them as well as the operations that resulted in the creation. It's made up of three file types: 
+- Metadata files
+- Manifest lists
+- Manifest files</p>
+<p>This layer is essential for efficiently managing large datasets and enable core features such as time travel and schema evolution. </p>
+<ul>
+<li><strong>Manifest file:</strong> keep track of file in the data layer (datafiles and delete files) as well as some additional details 
+and statistics about each file such as minimum and maximum values of datafile's columns. </li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul>
+<li>Separate subset of manifest files are used to track datafiles and delete file but the schema is identical same 
+for both.</li>
+<li>During writes, the engine generates statistics and stores them in manifest files that track small batches of data 
+files. Because these stats are recorded incrementally at write time, producing them is far lighter than in the Hive 
+table format, where statistics are gathered by long, expensive read jobs that must scan entire partitions—or even 
+whole tables—before writing partition- or table-level stats.</li>
+</ul>
+</div>
+<p>Information from the manifest files, such as upper and lower bounds for a specific column, null value counts, and partition-specific data, is used by the engine for file pruning.</p>
+<p><strong>Manifest list:</strong> </p>
+<p>It is a snapshot of Iceberg table at a given point in time. It contains a list of <strong>manifest file</strong>, 
+including the location, the partitions it belongs to, and the upper and lower bounds for partition columns for the 
+datafiles it tracks.</p>
+<p>Query engines interact with the manifest lists to get information about partition specifications that help them skip 
+the non required manifest files for faster performance.</p>
+<p><strong>Metadata file:</strong> </p>
+<p>It tracks manifest list files. It includes table's schema, partition information, snapshots, and which snapshot 
+is current one. Each time a change is made to an Iceberg table, a metadata file is created and is registered as last 
+version of the metadata file, it helps during scenarios such as:</p>
 <p>Concurrent writes (i.e., multiple engines writing data simultaneously).
 Also, during read operations, engines will always see the latest version of the table.</p>
 <h2 id="data-layer">Data Layer</h2>
@@ -2960,7 +2985,7 @@ you need to write a new file.</p>
 </div>
 <p>Two ways are available in Apache Iceberg</p>
 <ul>
-<li><strong>Copy-On-Write (COW):</strong> the new file is a copy of the old file with the changfes reflected in a new copy of it</li>
+<li><strong>Copy-On-Write (COW):</strong> the new file is a copy of the old file with the changes reflected in a new copy of it</li>
 <li><strong>Merge-On-Read (MOR):</strong> a new file that only has the changes written, which engines reading the data then coalesce</li>
 </ul>
 <p>MOR delete methods

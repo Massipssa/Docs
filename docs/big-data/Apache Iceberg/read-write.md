@@ -2,23 +2,32 @@
 sidebar_position: 3
 ---
 
-## Writing Query in Iceberg
+# Reading and Writing in Apache Iceberg
 
-Writing process in Iceberg goes through a series of steps that help query engines to efficiently insert and update data.
+Apache Iceberg provides a robust process for reading and writing data, ensuring consistency, scalability, and efficient query performance.
 
-1. Send the query to the engine 
-2. Get the latest metadata file 
-3. Write data to datafiles 
-4. Create Manifest file 
-5. Create Manifest list 
-6. Write metadata file 
-7. Update latest metadata file
+## Writing Data in Iceberg
 
-## Reading Query inIceberg
+The writing workflow in Iceberg involves several coordinated steps:
 
-The query engine interacts with the catalog to get the current metadata file.
+1. **Submit the query:** The query engine receives an insert, update, or delete request.
+2. **Fetch the latest metadata file:** The engine retrieves the most recent metadata file to ensure it operates on the latest table state.
+3. **Write data files:** New or updated data is written to data files in supported formats (e.g., Parquet, Avro, ORC).
+4. **Create manifest files:** Manifest files are generated to track the new data and delete files, including relevant statistics.
+5. **Create manifest list:** A manifest list is assembled, referencing all manifest files for the current operation.
+6. **Write new metadata file:** A new metadata file is created, capturing the updated table schema, partitioning, and snapshot information.
+7. **Update the metadata pointer:** The catalog is updated to point to the latest metadata file, making the changes visible to readers.
 
-It then gets the current-snapshot-id (S2 in this case) and the manifest list location for that snapshot.
-The manifest file path is then retrieved from the manifest list.
-The engine determines the datafile path based on the partition filter from the manifest file.
-The matching data from the required datafile is then returned to the user.
+## Reading Data in Iceberg
+
+The reading workflow ensures that queries access the most up-to-date and relevant data:
+
+1. **Query the catalog:** The query engine requests the current metadata file from the catalog.
+2. **Retrieve the current snapshot:** The engine obtains the current snapshot ID and the location of its manifest list.
+3. **Access manifest files:** Manifest files are read from the manifest list to identify relevant data and delete files.
+4. **Apply partition filters:** The engine uses partition information and statistics from manifest files to prune unnecessary data files.
+5. **Read matching data files:** Only the required data files are read, returning the filtered results to the user.
+
+---
+
+Iceberg’s read and write processes are designed for reliability, atomicity, and performance, supporting concurrent operations and efficient analytics at scale.

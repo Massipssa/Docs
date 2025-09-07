@@ -5,13 +5,10 @@
 >
     Don’t implement something until it’s actually needed.
 
-
 ## Core Idea
 
 - Don’t build features, methods, or abstractions ***just in case***.
 - Only write code when there’s a real, immediate need.
-
-
 
 ## Example
 
@@ -29,16 +26,15 @@ def send_notification(user: User, method: int="email", retries: int=3) -> None:
 You spent time building support for sms and retries, but you don’t use them.
 This is extra logic to maintain, test, and potentially fix in the future — **wasted effort**.
 
-
--  **YAGNI Applied**
+- **YAGNI Applied**
 
 ```python
 def send_email(user: User):
     print(f"Sending email to {user}")
 ```
+
 You can always refactor later if you do need SMS or retries. But until then, this is simpler, easier to test, and easier
 to maintain.
-
 
 ## Common Violations
 

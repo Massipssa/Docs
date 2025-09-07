@@ -66,7 +66,6 @@ Best to coordinate with consumers or provide an alias
 
 - Use schema versioning for rollback if needed Iceberg tracks each schema change in its versioned metadata. By referencing an earlier schema snapshot, you can roll back a problematic rename or drop. This practice ensures you can recover if downstream systems break after a change.
 
-
 ## Reorder Columns
 
 - Purely logical change in metadata; physical file layout remains the same

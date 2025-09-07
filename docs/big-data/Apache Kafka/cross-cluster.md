@@ -1,0 +1,11 @@
+- **Mirror:** copying data between Kafka clusters
+- **MirrorMaker:** built-in-cross-cluster replicator in Kafka
+- Useful: 
+  - Multiple data centers
+  - Redundancy
+  - Cloud migrations
+ 
+- Three difficulties should be considered when we have to deal with cross-cluster 
+  - High latencies
+  - Limited bandwidth
+  - Higer costs

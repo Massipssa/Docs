@@ -1,0 +1,4 @@
+- Services type
+  - Managed service: respo for infra an ha and scaling
+  - Fully managed: no access to infra but responsible for high availabilyt an scaling
+  - Serverless 

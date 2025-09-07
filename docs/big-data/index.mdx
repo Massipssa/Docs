@@ -1,0 +1,21 @@
+---
+title: Big Data
+slug: /big-data
+---
+
+import React from 'react';
+import DocCardList from '@theme/DocCardList';
+import { useAllDocsData } from '@docusaurus/plugin-content-docs/client';
+
+export default function BigDataCards() {
+  // 1. Récupère tous les docs du plugin "docs"
+  const allDocs = useAllDocsData()['docs'].docs;
+
+  // 2. Filtre ceux dont le dossier source est "big-data"
+  const items = allDocs.filter(
+    (doc) => doc.sourceDirName === 'big-data'
+  );
+
+  // 3. Affiche-les sous forme de cards
+  return <DocCardList items={items} />;
+}

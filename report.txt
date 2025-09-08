@@ -1,27 +1,166 @@
-# Always fetch remote tags freshly
-git fetch --tags --force
+Great question—catching breaking changes at write time is exactly where your data contract meets Iceberg’s schema rules. Here’s a practical, battle-tested approach that works in CI and at runtime.
 
-# Compute latest from remote
-latest_tag=$(git ls-remote --tags origin | \
-             grep -oE 'refs/tags/[0-9]+\.[0-9]+\.[0-9]+$' | \
-             sed 's#refs/tags/##' | \
-             sort -V | tail -n1)
+What counts as “breaking” (quick rules)
 
-if [ -z "$latest_tag" ]; then
-  latest_tag="0.0.0"
-fi
+Treat changes as breaking if they would make existing consumers fail:
 
-IFS=. read -r major minor patch <<<"$latest_tag"
-new_tag="$major.$minor.$((patch + 1))"
+Removing a required column
 
-echo "New tag candidate: $new_tag"
+Renaming a column without alias/backfill
 
-# Check if it exists on remote, not local
-if git ls-remote --tags origin | grep -q "refs/tags/$new_tag$"; then
-  echo "Tag $new_tag already exists on remote. Skipping."
-  exit 0
-fi
+Narrowing a type (e.g., long → int, string → int)
 
-# Push safely
-git tag "$new_tag"
-git push origin "$new_tag"
+Changing nullability from nullable → non-nullable
+
+Tightening constraints (shorter max length, stricter enum, etc.)
+
+Changing semantic meaning (units/codes) without versioning/migration
+
+Often non-breaking:
+
+Add a nullable column (with sensible default)
+
+Widen a type (e.g., int → long, float → double)
+
+Add enum values (if your consumers tolerate unknowns)
+
+Column reorder (Iceberg is name-based)
+
+Layered defense: detect & block before data lands
+1) In CI (contract-only check)
+
+Fail the MR before it gets deployed.
+
+Contract diff (JSON Schema / Avro / Protobuf):
+
+Compare previous released contract vs proposed one
+
+Classify changes via rules above
+
+If breaking → CI fails
+
+If non-breaking → CI passes and publishes contract vX.Y.Z
+
+Tools/ideas: jsonschema-diff, custom Avro SchemaCompatibility (Java), Protobuf field rules (no id reuse), your own rule set for enums/constraints.
+
+Pseudo-CI snippet (Python):
+
+from my_contract_diff import classify_changes
+
+old = load_contract("contracts/order/v1.2.0/contract.json")
+new = load_contract("contracts/order/v1.3.0/contract.json")
+
+report = classify_changes(old, new)
+if report.has_breaking:
+    print(report.pretty())
+    raise SystemExit("BREAKING CHANGE: MR blocked")
+
+2) At runtime (writer safety check against Iceberg)
+
+Even with CI, double-check against the live table right before writing.
+
+A) Compare contract schema vs Iceberg table schema
+
+Load current Iceberg schema
+
+Load contract schema (by version) used by the producer
+
+Run compatibility: allow only safe evolutions; otherwise abort
+
+Scala (Spark + Iceberg) example:
+
+import org.apache.iceberg.{Table, CatalogUtil}
+import org.apache.iceberg.hadoop.HadoopCatalog
+import org.apache.iceberg.types.Types
+import org.apache.iceberg.Schema
+
+val table: Table = /* load via catalog: Glue/Hadoop/REST */
+val current: Schema = table.schema()
+
+val contract: Schema = Schema(List(
+  Types.NestedField.required(1, "order_id", Types.StringType.get()),
+  Types.NestedField.required(2, "order_date", Types.TimestampType.withoutZone()),
+  Types.NestedField.required(3, "status", Types.StringType.get()),
+  Types.NestedField.required(4, "amount", Types.DoubleType.get()),
+  Types.NestedField.optional(5, "customer_email", Types.StringType.get())
+).asJava)
+
+// 1) Validate compatibility (custom rules)
+val diff = SchemaDiff.compare(current, contract)  // your impl
+if (diff.isBreaking) {
+  sys.error(s"Breaking schema change detected: ${diff.humanReadable}")
+}
+
+// 2) If non-breaking and needs evolution, apply via UpdateSchema
+val updater = table.updateSchema()
+diff.toIcebergOps(updater)        // add optional cols, widen, etc.
+updater.commit()
+
+// 3) Proceed to write ONLY after successful commit
+df.writeTo("db.orders")
+  .option("snapshot-property.contract_version", "v1.3.0")
+  .append()
+
+
+Notes:
+
+Implement SchemaDiff once; reuse everywhere.
+
+Let Iceberg enforce impossible mutations (e.g., illegal type swaps) — it will fail commit().
+
+B) Use Iceberg’s update validation for data writes
+
+Even when schema didn’t change, use validation to prevent racing/bad writes:
+
+import org.apache.iceberg.spark.SparkWriteOptions
+
+df.writeTo("db.orders")
+  .option(SparkWriteOptions.VALIDATE_APPENDS, "true")
+  .option(SparkWriteOptions.EXPECTED_CONTAINS_ONLY, "order_id,order_date,status,amount,customer_email")
+  .option("snapshot-property.contract_version", "v1.3.0")
+  .append()
+
+
+VALIDATE_APPENDS ensures no unexpected files or overlapping deletes
+
+You can also validate from a known snapshot-id to detect concurrent conflicting commits
+
+3) For event streams (Kafka) use a registry guardrail
+
+If your producers publish events that land in Iceberg later:
+
+Avro/Protobuf + Schema Registry
+
+Set compatibility to BACKWARD_TRANSITIVE or FULL_TRANSITIVE
+
+The registry rejects a producer schema that breaks existing consumers
+
+Your sink (e.g., Kafka Connect → Iceberg, or custom Spark job) can trust that upstream schemas are already safe
+
+Bonus: enforce constraints beyond schema
+
+Schema compatibility isn’t enough for semantics. Add contract-driven quality checks:
+
+Great Expectations / Deequ at write time:
+
+Non-null, ranges, regexes, uniqueness, referential checks
+
+Treat tightening constraints as breaking unless versioned and coordinated
+
+Fail the job (no data landed) or route invalid rows to DLQ/quarantine
+
+Minimal “break-blocker” checklist
+
+✅ CI compares old vs new contract and fails on breaking
+
+✅ Runtime compares contract vs live table schema and aborts on breaking
+
+✅ If allowed changes exist, evolve the table via Iceberg UpdateSchema then write
+
+✅ Stamp each snapshot with contract_version for auditability
+
+✅ (Streaming) Enforce registry compatibility on topics
+
+✅ Add data quality checks for semantic constraints
+
+If you want, I can share a small SchemaDiff utility (Scala) and a GitLab CI job template that classifies: added optional, widened type, removed required, nullability tightened, enum tightened, etc., and fails the pipeline only for the breaking ones.

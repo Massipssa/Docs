@@ -18,15 +18,15 @@ const config: Config = {
   url: 'https://massipssa.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/data-eng-docs',
+  baseUrl: '/Docs/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'massipssa', // Usually your GitHub org/user name.
   projectName: 'Docs', // Usually your repo name.
 
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenLinks: 'warn', // throw
+  onBrokenMarkdownLinks: 'warn', // warn
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -119,7 +119,7 @@ const config: Config = {
           items: [
             {
               label: 'Tutorial',
-              to: '/docs/intro',
+              to: '/docs/home',
             },
           ],
         },

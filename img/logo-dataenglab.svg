@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="600" height="160" viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1E90FF"/>
+      <stop offset="100%" stop-color="#0B66E5"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22C55E"/>
+      <stop offset="100%" stop-color="#16A34A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon scaled down; original center-y=60 -> after scale(0.7) => 42; +translateY(20) => 62 -->
+  <g transform="translate(40,20) scale(0.7)">
+    <circle cx="70" cy="10" r="16" fill="url(#blue)"/>
+    <circle cx="10" cy="60" r="16" fill="url(#blue)"/>
+    <circle cx="70" cy="110" r="16" fill="url(#blue)"/>
+    <circle cx="170" cy="110" r="16" fill="url(#green)"/>
+    <circle cx="230" cy="60" r="16" fill="url(#green)"/>
+    <circle cx="170" cy="10" r="16" fill="url(#blue)"/>
+    <path d="M70,10 L170,10 L230,60 L170,110 L70,110 L10,60 Z" 
+          fill="none" stroke="#1E90FF" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
+    <path d="M70,110 L120,60 L170,110" fill="none" stroke="#22C55E" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="120" cy="60" r="16" fill="url(#green)"/>
+  </g>
+
+  <!-- Brand text: smaller size, aligned to the icon's vertical center (y=62) -->
+  <g font-family="Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+    <text x="220" y="62" font-size="48" font-weight="800" fill="#111827"
+          dominant-baseline="middle" alignment-baseline="middle">
+      DataEng<tspan fill="#16A34A">Lab</tspan>
+    </text>
+  </g>
+</svg>

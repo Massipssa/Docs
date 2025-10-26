@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'DataEng Docs',
+  title: 'DataEngLab',
   tagline: 'Make Data Simple',
   favicon: 'img/favicon.ico',
 
@@ -73,18 +73,19 @@ const config: Config = {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     navbar: {
-      title: 'DataEng Docs',
+      //title: 'DataEngLab',
       logo: {
-        alt: 'TODO',
-        src: 'img/logo.png',
+        alt: 'dataeng docs logo',
+        src: 'img/logo-dataenglab.svg',
       },
       items: [
-        {
+        { 
           type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
+          sidebarId: 'homeSidebar',
           position: 'left',
-          label: 'Tutorial',
+          label: 'Docs',
         },
+        
         {
           type: 'docSidebar',
           sidebarId: 'bigdataSidebar',
@@ -103,9 +104,18 @@ const config: Config = {
           position: 'left',
           label: 'Cloud',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/facebook/docusaurus',
+          type: 'docSidebar',
+          sidebarId: 'securitySidebar',
+          position: 'left',
+          label: 'Security',
+        },
+        {
+          type: 'docsVersionDropdown',
+          position: 'right',
+        },
+        {
+          href: 'https://github.com/Massipssa/Docs',
           label: 'GitHub',
           position: 'right',
         },
@@ -145,17 +155,31 @@ const config: Config = {
           items: [
             {
               label: 'Blog',
-              to: '/blog',
+              to: 'https://dataenglab.com/community/blog/',
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
+              href: 'https://github.com/Massipssa/Docs.git',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} DataEngLab.`,
     },
+    algolia: {
+    appId: 'YOUR_APP_ID',
+    apiKey: 'YOUR_SEARCH_API_KEY', // search-only, never admin
+    indexName: 'YOUR_INDEX_NAME',
+
+    // Good defaults
+    contextualSearch: true, // auto-filter by current context (lang/version)
+    searchParameters: {},   // add facets here if you use i18n/versions later
+
+    // You’re deploying to /Docs/ on GitHub Pages:
+    // If search results ever drop you at wrong paths,
+    // uncomment the following line to normalize result URLs.
+    // replaceSearchResultPathname: '/Docs/',
+  },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,

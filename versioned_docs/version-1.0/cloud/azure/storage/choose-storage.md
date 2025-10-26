@@ -1,0 +1,3 @@
+- How to classify data 
+- How data will be used
+- How to get the best performance for data

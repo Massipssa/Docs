@@ -1,0 +1,6 @@
+- **Queues** 
+   - *FIFO*: 
+     - Does not need any configuration. 
+     - Runs applications in submission order.      
+   - *Capacity Scheduler*
+   - *Fair Scheduler*

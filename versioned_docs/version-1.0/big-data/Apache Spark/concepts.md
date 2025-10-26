@@ -1,0 +1,11 @@
+- Solve the problem of iterative algorithm
+ - MR pb: repetead access to HDFS, no data caching in between iteration 
+ - MPI: no support for fault tolerance
+- What does spark
+  - Iterative algorithm 
+  - Interactive data mining 
+  - Use RDD
+  - Keep features of MR: fault tolerance, data locality, scalability 
+ - Data Model
+  - RDD
+ - Logistic regression ? 

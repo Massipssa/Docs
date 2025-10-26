@@ -1,6 +1,22 @@
 # Identity Access Management (IAM)
 
+- [Identity Access Management (IAM)](#identity-access-management-iam)
+  - [Root account](#root-account)
+  - [Permission](#permission)
+  - [User](#user)
+  - [Group](#group)
+  - [Role](#role)
+  - [Principal](#principal)
+  - [Policy](#policy)
+    - [Policy Types](#policy-types)
+  - [Credentials](#credentials)
+    - [Access Keys](#access-keys)
+    - [Multi-Factor Authentication](#multi-factor-authentication)
+  - [Monitoring](#monitoring)
+  - [Best practices](#best-practices)
+
 ## Root account
+
 - Has full access to all services
 - The account must be secured (Use MFA to do it)
 
@@ -22,13 +38,44 @@
 - Set of users
 
 ## Role
+
 - Is an IAM entity that defines a set of permissions for making AWS service request
 - Ex: give access to EC2 full access to S3
 
-### Policy
+## Principal
+
+An entity that can perform action or access a service (an IAM user, a role session, a federated user, or an AWS service)
+
+## Policy
+
 - To assign a permission to a users, group, or resource we create a policy, which is a document which explicitly lists permissions (the actions)
-- Identity based policy: attached to IAM user, group or role
-- Resource based policy: attached to a resource
+- **Identity based policy:** attached to IAM user, group, or role define their allocated permissions
+
+```json
+  {
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": ["arn:aws:s3:::my-bucket/*"]
+    }]
+  }
+```
+
+- **Resource based policy:** attached to a resource defining who can access it and perform what actions
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "AllowAccountBRead",
+    "Effect": "Allow",
+    "Principal": {"AWS": "arn:aws:iam::222222222222:root"},
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::my-bucket/*"
+  }]
+}
+```
 
 ### Policy Types
 
@@ -43,8 +90,6 @@
 - ***Inline***
   - Attached directly to the user
   - Useful for exception permissions
-
-- **Principal**: an entity that can perform action or access a service 
 
 ## Credentials
 
@@ -63,7 +108,6 @@
 
 - User to turn it on, administrator can not enable it
 - Administrator can restrict access for example to user that only have MFA
-
 
 ## Monitoring
 

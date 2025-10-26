@@ -1,8 +1,30 @@
 # Virtual Private Cloud (VPC)
 
-- Logically isolated part of cloud where you can define your owen network
-- You can create up to 5 VPC per region
-- Can have 200 subnets per VPC
+
+- [Virtual Private Cloud (VPC)](#virtual-private-cloud-vpc)
+  - [Subnet](#subnet)
+  - [Internet Gateway](#internet-gateway)
+  - [Route Table](#route-table)
+  - [Security group](#security-group)
+  - [Network Access Control Lists (NACLs)](#network-access-control-lists-nacls)
+  - [NAT Gateway](#nat-gateway)
+  - [VPC Endpoints](#vpc-endpoints)
+  - [VPC Flow logs](#vpc-flow-logs)
+  - [Difference Security Group and NACLs](#difference-security-group-and-nacls)
+  - [VPC Peering](#vpc-peering)
+  - [PrivateLinks](#privatelinks)
+  - [Direct Connect (DX)](#direct-connect-dx)
+  - [Site-To-Site (VPN Connection)](#site-to-site-vpn-connection)
+  - [AWS Wavelength](#aws-wavelength)
+  - [Bastion (Jumpbox)](#bastion-jumpbox)
+  - [Endpoints](#endpoints)
+    - [Interface Endpoints](#interface-endpoints)
+    - [Gateway Endpoints](#gateway-endpoints)
+  - [CloudHub](#cloudhub)
+  - [Transit Gateway](#transit-gateway)
+  - [Egress-only Internet Gateway](#egress-only-internet-gateway)
+
+![archi](./img/archi.png)
 
 ## Subnet
 
@@ -27,7 +49,7 @@
 
 - We can add any **_allowing_** rules (open ports)
 - It's linked to instances
-- They are stateful
+- They are **stateful**
 - Default SG can't be deleted
 - You can assign up to five security groups to the instance
 - Can allow traffic from:
@@ -45,7 +67,7 @@
 - It is used to **block** specific IP address or range of IP address
 - Can **_allow_** and **_deny_** rules
 - It can have multiple subnets but a subnet is only associated to only one NACLs
-- They are stateless
+- They are **stateless**
 - Default rule cannot be updated
 
 ## NAT Gateway

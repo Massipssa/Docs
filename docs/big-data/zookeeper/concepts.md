@@ -38,21 +38,21 @@
 - Have ACL (create, write, read, delete and admin)
 - Support authentication username / password
 - Client can set **watcher** on znode to get notified when change occurs
-    - Data change
-    - Change an any znode
-    - Child znode created or deleted
-    
+  - Data change
+  - Change an any znode
+  - Child znode created or deleted
+
 - **Types**
   1. **Persistence:** permanent node they are only deleted manually (default)  
   2. **Ephemeral:** delete by Zookeeper when (-e flag to create)
-          * Client who created it close the session
-          * No request from client after timeout session (use by Kafka to maintain brokers)
-  3. **Sequential:** same as ephemeral just Zoopkeeper assigns number of 10 digits during the creation and increment 
+      - Client who created it close the session
+      - No request from client after timeout session (use by Kafka to maintain brokers)
+  3. **Sequential:** same as ephemeral just Zoopkeeper assigns number of 10 digits during the creation and increment
     this number when other sequential is created (-s flag to create)
 
 - **Session:** create between client and zookeeper
-    - Client sends heartbeats
-    - Fails If no heartbeat was sent after certain period (timeout)
+  - Client sends heartbeats
+  - Fails If no heartbeat was sent after certain period (timeout)
 
 - Watchers: mechanism used by client to get changes in Zookeeper
 
@@ -80,4 +80,5 @@
 - Herd effet
 
 ### Useful links
+
 - [Link-1](https://medium.com/@bikas.katwal10/zookeeper-introduction-designing-a-distributed-system-using-zookeeper-and-java-7f1b108e236e)

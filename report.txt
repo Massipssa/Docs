@@ -1,46 +1,51 @@
 import org.yaml.snakeyaml.{DumperOptions, Yaml}
-import org.yaml.snakeyaml.nodes._
+import org.yaml.snakeyaml.nodes.{MappingNode, Node, Tag}
 import org.yaml.snakeyaml.representer.Representer
 
 import java.util.{Map => JMap}
 
-// → détecte la map "storage_descriptor.value"
+// détecte la map correspondant à la value de storage_descriptor
 def isStorageDescriptorMap(m: JMap[_, _]): Boolean =
   m.containsKey("input_format") &&
     m.containsKey("output_format") &&
     m.containsKey("ser_de_info")
 
 val options = new DumperOptions()
-options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
+options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)   // BLOCK par défaut
 options.setIndent(2)
 options.setIndicatorIndent(2)
-options.setPrettyFlow(true)        // permet FLOW multi-ligne propre
+options.setPrettyFlow(true)                                  // joli FLOW multi-ligne
 
 class StorageDescriptorRepresenter(options: DumperOptions)
-    extends Representer(options) {
+  extends Representer(options) {
 
-  // Indique si nous sommes actuellement dans la section storage_descriptor
-  private var insideStorageDescriptor = false
+  // flag pour savoir si on est en train de représenter storage_descriptor
+  private var insideStorageDescriptor: Boolean = false
 
   override protected def representMapping(
       tag: Tag,
       mapping: JMap[_, _],
       flowStyle: DumperOptions.FlowStyle
-  ): MappingNode = {
+  ): Node = {
 
-    val previousState = insideStorageDescriptor
-    if (isStorageDescriptorMap(mapping))
+    val previous = insideStorageDescriptor
+
+    // si cette map est la value de storage_descriptor
+    if (isStorageDescriptorMap(mapping)) {
       insideStorageDescriptor = true
+    }
 
     val node = super.representMapping(tag, mapping, flowStyle)
       .asInstanceOf[MappingNode]
 
+    // style FLOW uniquement pour la map storage_descriptor
     if (insideStorageDescriptor)
       node.setFlowStyle(DumperOptions.FlowStyle.FLOW)
     else
       node.setFlowStyle(DumperOptions.FlowStyle.BLOCK)
 
-    insideStorageDescriptor = previousState
+    // on restaure l’état pour la remontée de récursion
+    insideStorageDescriptor = previous
     node
   }
 
@@ -50,16 +55,18 @@ class StorageDescriptorRepresenter(options: DumperOptions)
       style: DumperOptions.ScalarStyle
   ): Node = {
 
-    // si on est dans storage_descriptor → quotes
     if (insideStorageDescriptor)
+      // dans storage_descriptor → "..."
       super.representScalar(tag, value, DumperOptions.ScalarStyle.DOUBLE_QUOTED)
     else
+      // ailleurs → pas de guillemets
       super.representScalar(tag, value, DumperOptions.ScalarStyle.PLAIN)
   }
 }
 
 val representer = new StorageDescriptorRepresenter(options)
-val yaml = new Yaml(representer, options)
+val yaml        = new Yaml(representer, options)
 
-val output = yaml.dump(root)   // root = ta Map racine
-println(output)
+// root : ta Map[String, Any] / Java Map racine
+val out: String = yaml.dump(root)
+println(out)

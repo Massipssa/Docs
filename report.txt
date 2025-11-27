@@ -45,6 +45,7 @@ class ContractRepresenter(options: DumperOptions) extends Representer(options) {
   /**
    * On détecte UNIQUEMENT la map de type :
    * { "property": "storage_descriptor", "value": <Map> }
+   * qui correspond à un élément de la liste customProperties.
    */
   private def isStorageDescriptorCustomPropMap(data: Any): Boolean =
     data match {
@@ -58,7 +59,18 @@ class ContractRepresenter(options: DumperOptions) extends Representer(options) {
 
   /**
    * Représentation FLOW { ... } + guillemets
-   * pour le contenu de "value" (storage_descriptor & sous-maps)
+   * pour le contenu de "value" (storage_descriptor & sous-maps).
+   * C'est elle qui produit :
+   *
+   *   {
+   *     "input_format": "...",
+   *     "output_format": "...",
+   *     "ser_de_info":
+   *       {
+   *         "serialization_library": "...",
+   *         "parameters": { "field.delim": ";" }
+   *       }
+   *   }
    */
   private def representFlowMapWithQuotes(m: JMap[_, _]): MappingNode = {
     val tuples = new JList[NodeTuple]()
@@ -67,7 +79,6 @@ class ContractRepresenter(options: DumperOptions) extends Representer(options) {
     while (it.hasNext) {
       val e = it.next()
 
-      // clé toujours en double quotes
       val keyNode = new ScalarNode(
         Tag.STR,
         String.valueOf(e.getKey),
@@ -76,10 +87,9 @@ class ContractRepresenter(options: DumperOptions) extends Representer(options) {
         ScalarStyle.DOUBLE_QUOTED
       )
 
-      // valeur en double quotes (ou map récursive)
       val valueNode: Node = e.getValue match {
         case inner: JMap[_, _] =>
-          // ser_de_info, parameters, etc. => FLOW aussi
+          // ser_de_info, parameters, etc. => FLOW aussi, récursif
           representFlowMapWithQuotes(inner)
 
         case s: String =>
@@ -99,8 +109,11 @@ class ContractRepresenter(options: DumperOptions) extends Representer(options) {
    * Surcharge de representMapping :
    *  - pour la map {property: "storage_descriptor", value: ...}
    *    on force :
-   *      property: "storage_descriptor"
-   *      value: { ... } en FLOW + quotes
+   *
+   *      - property: "storage_descriptor"
+   *        value:
+   *          { ... }   (FLOW + quotes)
+   *
    *  - sinon : comportement SnakeYAML normal
    */
   override def representMapping(tag: Tag,
@@ -127,17 +140,20 @@ class ContractRepresenter(options: DumperOptions) extends Representer(options) {
       val valueNode    = representFlowMapWithQuotes(valueMap)
       tuples.add(new NodeTuple(valueKeyNode, valueNode))
 
-      // cette map (l’élément de la liste customProperties) reste en BLOCK
+      // cet élément de customProperties reste une map BLOCK
       return new MappingNode(tag, tuples, DumperOptions.FlowStyle.BLOCK)
     }
 
-    // Toutes les autres maps (schema, properties, root, …) :
-    // on laisse SnakeYAML décider normalement -> pas de quotes parasites
+    // Toutes les autres maps : schema, properties, root, etc.
     super.representMapping(tag, mapping, flowStyle)
   }
 
-  // ⚠️ IMPORTANT : pas de override representScalar ici !
-  // On laisse SnakeYAML interpréter Boolean / Int / String normalement.
+  // ⚠️ IMPORTANT :
+  // On NE surcharge PAS representScalar.
+  // Avec defaultScalarStyle = PLAIN, SnakeYAML va écrire :
+  //   partitioned: true
+  //   partitionKeyPosition: 1
+  // et pas 'true' ou '1'.
 }
 
 // =======================
@@ -170,11 +186,11 @@ object YamlGenerator {
       m.put("name", p.name)
       m.put("logicalType", p.logicalType)
       if (p.partitioned) {
-        // => vrai booléen Java, pas "true" String
+        // booléen Java => YAML sans quotes
         m.put("partitioned", java.lang.Boolean.TRUE)
       }
       p.partitionKeyPosition.foreach { pos =>
-        // => vrai entier Java, pas "1" String
+        // entier Java => YAML sans quotes
         m.put("partitionKeyPosition", Int.box(pos))
       }
       list.add(m)
@@ -217,7 +233,7 @@ object YamlGenerator {
       "ser_de_info"   -> serDeInfo
     )
 
-    // ----- schema & contrat (adapte si besoin) -----
+    // ----- schema & contrat (adapte les noms si besoin) -----
 
     val schema = Schema(
       name = "object_5aeem_prod",
@@ -226,7 +242,7 @@ object YamlGenerator {
         CustomProperty("storage_descriptor", storageDescriptor)
       ),
       properties = List(
-        Property("ENTETE-CD-EFS", "string"),
+        Property("ENTETE-CD-EFS",   "string"),
         Property("ENTETE-CD-BOITE", "string"),
         Property("year",  "string", partitioned = true, partitionKeyPosition = Some(1)),
         Property("month", "string", partitioned = true, partitionKeyPosition = Some(2)),
@@ -260,8 +276,8 @@ object YamlGenerator {
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK) // block par défaut
     options.setPrettyFlow(true)
     options.setIndent(2)
-    // très important : style PLAIN par défaut => pas de quotes partout
-    options.setDefaultScalarStyle(ScalarStyle.PLAIN)
+    options.setWidth(120) // plus la ligne est large, moins il casse les lignes
+    options.setDefaultScalarStyle(ScalarStyle.PLAIN) // pas de quotes globales
 
     val representer = new ContractRepresenter(options)
     val yaml        = new Yaml(representer, options)

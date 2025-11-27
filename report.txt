@@ -1,49 +1,56 @@
 class StorageDescriptorRepresenter(opts: DumperOptions)
-  extends Representer(opts) {
+  extends StandardRepresenter(opts) {
 
-  private var inside = false
+  // On est dans la section storage_descriptor (property + value)
+  private var insideStorageDescriptor: Boolean = false
 
-  private def isStorageDescriptorContext(m: JMap[_, _]): Boolean =
+  // map qui contient: property = "storage_descriptor"
+  private def isStorageDescriptorContext(m: JMapBase[_, _]): Boolean =
     m.containsKey("property") &&
       "storage_descriptor" == String.valueOf(m.get("property"))
 
-  private def isStorageDescriptorValue(m: JMap[_, _]): Boolean =
+  // map qui contient: input_format / output_format / ser_de_info
+  private def isStorageDescriptorValue(m: JMapBase[_, _]): Boolean =
     m.containsKey("input_format") &&
       m.containsKey("output_format") &&
       m.containsKey("ser_de_info")
 
-  // ***** SIGNATURE EXACTE SnakeYAML 2.4 *****
+  // *** SIGNATURE OK pour snakeyaml 2.4 + StandardRepresenter ***
   override protected def representMapping(
-    tag: Tag,
-    mapping: JMap[_, _],
-    flowStyle: DumperOptions.FlowStyle
-  ): Node = {
+      tag: Tag,
+      mapping: JMapBase[_, _],
+      flowStyle: DumperOptions.FlowStyle
+  ): MappingNode = {
 
-    val prev = inside
-    if (prev || isStorageDescriptorContext(mapping))
-      inside = true
+    val prev = insideStorageDescriptor
+
+    // on active le flag dès qu'on entre dans la map avec property=storage_descriptor
+    if (prev || isStorageDescriptorContext(mapping)) {
+      insideStorageDescriptor = true
+    }
 
     val node = super.representMapping(tag, mapping, flowStyle)
-      .asInstanceOf[MappingNode]
 
+    // seule la VALUE (input_format/output_format/ser_de_info) est en FLOW { ... }
     if (isStorageDescriptorValue(mapping))
       node.setFlowStyle(DumperOptions.FlowStyle.FLOW)
     else
       node.setFlowStyle(DumperOptions.FlowStyle.BLOCK)
 
-    inside = prev
+    insideStorageDescriptor = prev
     node
   }
 
   override protected def representScalar(
-    tag: Tag,
-    value: String,
-    style: DumperOptions.ScalarStyle
+      tag: Tag,
+      value: String,
+      style: DumperOptions.ScalarStyle
   ): Node = {
-
-    if (inside)
+    if (insideStorageDescriptor)
+      // Dans storage_descriptor → "..."
       super.representScalar(tag, value, DumperOptions.ScalarStyle.DOUBLE_QUOTED)
     else
+      // ailleurs → scalaires simples (sans guillemets)
       super.representScalar(tag, value, DumperOptions.ScalarStyle.PLAIN)
   }
 }

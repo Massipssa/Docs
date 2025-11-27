@@ -1,80 +1,49 @@
-import org.yaml.snakeyaml.{DumperOptions, Yaml}
-import org.yaml.snakeyaml.nodes.{MappingNode, Node, Tag}
-import org.yaml.snakeyaml.representer.Representer
+class StorageDescriptorRepresenter(opts: DumperOptions)
+  extends Representer(opts) {
 
-import java.util.{Map => JMap}
+  private var inside = false
 
-// ---------------- options ----------------
-val options = new DumperOptions()
-options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)   // tout en BLOCK par défaut
-options.setIndent(2)
-options.setIndicatorIndent(2)
-options.setPrettyFlow(true)                                  // FLOW bien formaté
-
-// ------------- representer custom -------------
-class StorageDescriptorRepresenter(options: DumperOptions)
-  extends Representer(options) {
-
-  // savoir si on est dans le bloc storage_descriptor
-  private var insideStorageDescriptor: Boolean = false
-
-  // map qui contient: property=storage_descriptor, value=...
   private def isStorageDescriptorContext(m: JMap[_, _]): Boolean =
     m.containsKey("property") &&
       "storage_descriptor" == String.valueOf(m.get("property"))
 
-  // map interne qui contient input_format/output_format/ser_de_info
-  private def isStorageDescriptorValueMap(m: JMap[_, _]): Boolean =
+  private def isStorageDescriptorValue(m: JMap[_, _]): Boolean =
     m.containsKey("input_format") &&
       m.containsKey("output_format") &&
       m.containsKey("ser_de_info")
 
+  // ***** SIGNATURE EXACTE SnakeYAML 2.4 *****
   override protected def representMapping(
-      tag: Tag,
-      mapping: JMap[_, _],
-      flowStyle: DumperOptions.FlowStyle
+    tag: Tag,
+    mapping: JMap[_, _],
+    flowStyle: DumperOptions.FlowStyle
   ): Node = {
 
-    val previous = insideStorageDescriptor
-
-    // dès qu'on entre dans la map (property=storage_descriptor, value=...)
-    // ou qu'on est déjà dedans, on active le flag
-    if (previous || isStorageDescriptorContext(mapping)) {
-      insideStorageDescriptor = true
-    }
+    val prev = inside
+    if (prev || isStorageDescriptorContext(mapping))
+      inside = true
 
     val node = super.representMapping(tag, mapping, flowStyle)
       .asInstanceOf[MappingNode]
 
-    // seule la map value (input_format/output_format/ser_de_info) est en FLOW
-    if (isStorageDescriptorValueMap(mapping))
+    if (isStorageDescriptorValue(mapping))
       node.setFlowStyle(DumperOptions.FlowStyle.FLOW)
     else
       node.setFlowStyle(DumperOptions.FlowStyle.BLOCK)
 
-    insideStorageDescriptor = previous
+    inside = prev
     node
   }
 
   override protected def representScalar(
-      tag: Tag,
-      value: String,
-      style: DumperOptions.ScalarStyle
+    tag: Tag,
+    value: String,
+    style: DumperOptions.ScalarStyle
   ): Node = {
 
-    if (insideStorageDescriptor)
-      // dans storage_descriptor → "..."
+    if (inside)
       super.representScalar(tag, value, DumperOptions.ScalarStyle.DOUBLE_QUOTED)
     else
-      // ailleurs → pas de guillemets
       super.representScalar(tag, value, DumperOptions.ScalarStyle.PLAIN)
   }
 }
-
-// ----------------- utilisation -----------------
-val representer = new StorageDescriptorRepresenter(options)
-val yaml        = new Yaml(representer, options)
-
-// root : ta Map Java/Scala déjà construite
-val out: String = yaml.dump(root)
-println(out)

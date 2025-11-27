@@ -3,9 +3,11 @@ import org.yaml.snakeyaml.nodes._
 import org.yaml.snakeyaml.representer.Representer
 import org.yaml.snakeyaml.DumperOptions.ScalarStyle
 
-import java.util.{LinkedHashMap => JLinkedMap, ArrayList => JList}
+import java.util.{LinkedHashMap => JLinkedMap, ArrayList => JList, Map => JMap}
 
-// ====== MODELE SCALA ======
+// =======================
+//  Modèle Scala
+// =======================
 
 case class Property(
   name: String,
@@ -34,64 +36,115 @@ case class DataContract(
   schema: List[Schema]
 )
 
-// ====== REPRESENTer PERSO POUR SNAKEYAML ======
+// =======================
+//  Representer custom
+// =======================
 
 class ContractRepresenter(options: DumperOptions) extends Representer(options) {
 
-  /** On identifie les maps liées au storage_descriptor & cie */
-  private def isStorageDescriptorRelatedMap(data: Any): Boolean =
+  /**
+   * On détecte UNIQUEMENT la map :
+   * { "property": "storage_descriptor", "value": <Map> }
+   */
+  private def isStorageDescriptorCustomPropMap(data: Any): Boolean =
     data match {
-      case m: java.util.Map[_, _] =>
-        val keys = m.keySet().toArray.map(_.toString).toSet
-        (keys.contains("input_format") && keys.contains("output_format")) ||
-        (keys.contains("serialization_library") && keys.contains("parameters")) ||
-        keys.contains("field.delim")
+      case m: JMap[_, _] =>
+        m.containsKey("property") &&
+        "storage_descriptor" == String.valueOf(m.get("property")) &&
+        m.containsKey("value") &&
+        m.get("value").isInstanceOf[JMap[_, _]]
       case _ => false
     }
 
-  /** Représentation FLOW { ... } récursive pour ces maps */
-  private def representFlowMap(m: java.util.Map[_, _]): MappingNode = {
+  /**
+   * Représentation FLOW { ... } + guillemets
+   * pour le contenu de "value" (storage_descriptor & sous-maps)
+   */
+  private def representFlowMapWithQuotes(m: JMap[_, _]): MappingNode = {
     val tuples = new JList[NodeTuple]()
-    val it = m.entrySet().iterator()
+    val it     = m.entrySet().iterator()
 
     while (it.hasNext) {
       val e = it.next()
-      val keyNode   = representScalar(Tag.STR, e.getKey.toString)
+
+      // clé toujours en double quotes
+      val keyNode = new ScalarNode(
+        Tag.STR,
+        String.valueOf(e.getKey),
+        null,
+        null,
+        ScalarStyle.DOUBLE_QUOTED
+      )
+
+      // valeur en double quotes (ou map récursive)
       val valueNode: Node = e.getValue match {
-        case inner: java.util.Map[_, _] if isStorageDescriptorRelatedMap(inner) =>
-          // sous-map de storage_descriptor => FLOW aussi
-          representFlowMap(inner)
-        case inner: java.util.Map[_, _] =>
-          // autres maps => block normal
-          super.representMapping(Tag.MAP, inner, DumperOptions.FlowStyle.BLOCK)
+        case inner: JMap[_, _] =>
+          // ser_de_info, parameters, etc. => FLOW aussi
+          representFlowMapWithQuotes(inner)
+
         case s: String =>
-          representScalar(Tag.STR, s)
+          new ScalarNode(Tag.STR, s, null, null, ScalarStyle.DOUBLE_QUOTED)
+
         case other =>
-          representScalar(Tag.STR, String.valueOf(other))
+          new ScalarNode(Tag.STR, String.valueOf(other), null, null, ScalarStyle.DOUBLE_QUOTED)
       }
+
       tuples.add(new NodeTuple(keyNode, valueNode))
     }
 
     new MappingNode(Tag.MAP, tuples, DumperOptions.FlowStyle.FLOW)
   }
 
-  /** On force FLOW uniquement pour les maps "storage_descriptor & co" */
+  /**
+   * Surcharge de representMapping :
+   * - pour la map {property: "storage_descriptor", value: ...}
+   *   * property: "storage_descriptor"
+   *   * value: { ... } en FLOW + quotes
+   * - sinon : comportement SnakeYAML normal
+   */
   override def representMapping(tag: Tag,
-                                mapping: java.util.Map[_, _],
+                                mapping: JMap[_, _],
                                 flowStyle: DumperOptions.FlowStyle): Node = {
 
-    if (isStorageDescriptorRelatedMap(mapping)) {
-      return representFlowMap(mapping)
+    if (isStorageDescriptorCustomPropMap(mapping)) {
+      val tuples = new JList[NodeTuple]()
+
+      // ---- entry "property": "storage_descriptor"
+      val propKeyNode = new ScalarNode(Tag.STR, "property", null, null, ScalarStyle.PLAIN)
+      val propValNode = new ScalarNode(
+        Tag.STR,
+        String.valueOf(mapping.get("property")),
+        null,
+        null,
+        ScalarStyle.DOUBLE_QUOTED
+      )
+      tuples.add(new NodeTuple(propKeyNode, propValNode))
+
+      // ---- entry "value": { ... } (FLOW + quotes)
+      val valueKeyNode = new ScalarNode(Tag.STR, "value", null, null, ScalarStyle.PLAIN)
+      val valueMap     = mapping.get("value").asInstanceOf[JMap[_, _]]
+      val valueNode    = representFlowMapWithQuotes(valueMap)
+      tuples.add(new NodeTuple(valueKeyNode, valueNode))
+
+      // Cette map (l’élément de la liste customProperties) reste en BLOCK
+      return new MappingNode(tag, tuples, DumperOptions.FlowStyle.BLOCK)
     }
+
+    // Autres maps => comportement normal
     super.representMapping(tag, mapping, flowStyle)
   }
 
-  /** Tous les scalaires sont en double quotes */
+  /**
+   * Par défaut : scalaires en style PLAIN (sans guillemets)
+   * Les guillemets sont gérés manuellement là où il faut.
+   */
   override def representScalar(tag: Tag, value: String): Node =
-    new ScalarNode(Tag.STR, value, null, null, ScalarStyle.DOUBLE_QUOTED)
+    new ScalarNode(Tag.STR, value, null, null, ScalarStyle.PLAIN)
 }
 
-// ====== HELPERS CONVERSION SCALA -> JAVA (pour SnakeYAML) ======
+// =======================
+//  Helpers Scala -> Java
+// =======================
 
 object YamlGenerator {
 
@@ -141,11 +194,13 @@ object YamlGenerator {
     list
   }
 
-  // ====== MAIN ======
+  // =======================
+  //  main
+  // =======================
 
   def main(args: Array[String]): Unit = {
 
-    // ----- Construction de ton storage_descriptor -----
+    // ----- construction du storage_descriptor -----
 
     val serDeParams: JLinkedMap[String, Any] = linkedMap(
       "field.delim" -> ";"
@@ -162,7 +217,7 @@ object YamlGenerator {
       "ser_de_info"   -> serDeInfo
     )
 
-    // ----- Schéma & DataContract comme dans ta capture -----
+    // ----- schema & contrat (adapte si besoin) -----
 
     val schema = Schema(
       name = "object_5aeem_prod",
@@ -173,14 +228,14 @@ object YamlGenerator {
       properties = List(
         Property("ENTETE-CD-EFS", "string"),
         Property("ENTETE-CD-BOITE", "string"),
-        Property("year", "string", partitioned = true, partitionKeyPosition = Some(1)),
+        Property("year",  "string", partitioned = true, partitionKeyPosition = Some(1)),
         Property("month", "string", partitioned = true, partitionKeyPosition = Some(2)),
-        Property("day", "string", partitioned = true, partitionKeyPosition = Some(3))
+        Property("day",   "string", partitioned = true, partitionKeyPosition = Some(3))
       )
     )
 
     val contract = DataContract(
-      kind      = "DataContract",
+      kind       = "DataContract",
       apiVersion = "v3.0.2",
       id         = "ignored",
       status     = "active",
@@ -188,28 +243,27 @@ object YamlGenerator {
       schema     = List(schema)
     )
 
-    // ----- Conversion en Map Java pour SnakeYAML -----
+    // ----- racine pour SnakeYAML -----
 
     val root: JLinkedMap[String, Any] = linkedMap(
-      "kind"      -> contract.kind,
-      "apiVersion"-> contract.apiVersion,
-      "id"        -> contract.id,
-      "status"    -> contract.status,
-      "version"   -> contract.version,
-      "schema"    -> toSchemaList(contract.schema)
+      "kind"       -> contract.kind,
+      "apiVersion" -> contract.apiVersion,
+      "id"         -> contract.id,
+      "status"     -> contract.status,
+      "version"    -> contract.version,
+      "schema"     -> toSchemaList(contract.schema)
     )
 
-    // ----- Options YAML + representer custom -----
+    // ----- options + dump -----
 
     val options = new DumperOptions()
-    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK) // block partout par défaut
+    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK) // block par défaut
     options.setPrettyFlow(true)
     options.setIndent(2)
 
     val representer = new ContractRepresenter(options)
     val yaml        = new Yaml(representer, options)
 
-    // ----- Dump -----
     println(yaml.dump(root))
   }
 }

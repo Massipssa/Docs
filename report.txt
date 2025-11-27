@@ -43,7 +43,7 @@ case class DataContract(
 class ContractRepresenter(options: DumperOptions) extends Representer(options) {
 
   /**
-   * On détecte UNIQUEMENT la map :
+   * On détecte UNIQUEMENT la map de type :
    * { "property": "storage_descriptor", "value": <Map> }
    */
   private def isStorageDescriptorCustomPropMap(data: Any): Boolean =
@@ -97,10 +97,11 @@ class ContractRepresenter(options: DumperOptions) extends Representer(options) {
 
   /**
    * Surcharge de representMapping :
-   * - pour la map {property: "storage_descriptor", value: ...}
-   *   * property: "storage_descriptor"
-   *   * value: { ... } en FLOW + quotes
-   * - sinon : comportement SnakeYAML normal
+   *  - pour la map {property: "storage_descriptor", value: ...}
+   *    on force :
+   *      property: "storage_descriptor"
+   *      value: { ... } en FLOW + quotes
+   *  - sinon : comportement SnakeYAML normal
    */
   override def representMapping(tag: Tag,
                                 mapping: JMap[_, _],
@@ -126,20 +127,17 @@ class ContractRepresenter(options: DumperOptions) extends Representer(options) {
       val valueNode    = representFlowMapWithQuotes(valueMap)
       tuples.add(new NodeTuple(valueKeyNode, valueNode))
 
-      // Cette map (l’élément de la liste customProperties) reste en BLOCK
+      // cette map (l’élément de la liste customProperties) reste en BLOCK
       return new MappingNode(tag, tuples, DumperOptions.FlowStyle.BLOCK)
     }
 
-    // Autres maps => comportement normal
+    // Toutes les autres maps (schema, properties, root, …) :
+    // on laisse SnakeYAML décider normalement -> pas de quotes parasites
     super.representMapping(tag, mapping, flowStyle)
   }
 
-  /**
-   * Par défaut : scalaires en style PLAIN (sans guillemets)
-   * Les guillemets sont gérés manuellement là où il faut.
-   */
-  override def representScalar(tag: Tag, value: String): Node =
-    new ScalarNode(Tag.STR, value, null, null, ScalarStyle.PLAIN)
+  // ⚠️ IMPORTANT : pas de override representScalar ici !
+  // On laisse SnakeYAML interpréter Boolean / Int / String normalement.
 }
 
 // =======================
@@ -172,11 +170,13 @@ object YamlGenerator {
       m.put("name", p.name)
       m.put("logicalType", p.logicalType)
       if (p.partitioned) {
+        // => vrai booléen Java, pas "true" String
         m.put("partitioned", java.lang.Boolean.TRUE)
       }
-      p.partitionKeyPosition.foreach(pos =>
+      p.partitionKeyPosition.foreach { pos =>
+        // => vrai entier Java, pas "1" String
         m.put("partitionKeyPosition", Int.box(pos))
-      )
+      }
       list.add(m)
     }
     list
@@ -260,6 +260,8 @@ object YamlGenerator {
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK) // block par défaut
     options.setPrettyFlow(true)
     options.setIndent(2)
+    // très important : style PLAIN par défaut => pas de quotes partout
+    options.setDefaultScalarStyle(ScalarStyle.PLAIN)
 
     val representer = new ContractRepresenter(options)
     val yaml        = new Yaml(representer, options)

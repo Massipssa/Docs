@@ -1,10 +1,213 @@
-private def prettyFlow(node: MappingNode): MappingNode = {
-  node.setBlockComments(
-    java.util.Arrays.asList(
-      new CommentLine(null, null, "", CommentType.BLANK_LINE),
-      new CommentLine(null, null, "", CommentType.BLANK_LINE)
-    )
-  )
-  node
+import org.yaml.snakeyaml.{DumperOptions, Yaml}
+import org.yaml.snakeyaml.nodes._
+import org.yaml.snakeyaml.representer.Representer
+import org.yaml.snakeyaml.DumperOptions.ScalarStyle
+
+import java.util.{LinkedHashMap => JLinkedMap, ArrayList => JList, Map => JMap}
+
+// =======================
+//  Modèle
+// =======================
+
+case class Property(
+  name: String,
+  logicalType: String,
+  partitioned: Boolean = false,
+  partitionKeyPosition: Option[Int] = None
+)
+
+case class CustomProperty(
+  property: String,
+  value: Any
+)
+
+case class Schema(
+  name: String,
+  customProperties: List[CustomProperty],
+  properties: List[Property]
+)
+
+case class DataContract(
+  kind: String,
+  apiVersion: String,
+  id: String,
+  status: String,
+  version: String,
+  schema: List[Schema]
+)
+
+// =======================
+//  Representer custom
+// =======================
+
+class ContractRepresenter(options: DumperOptions) extends Representer(options) {
+
+  /** On reconnaît la map storage_descriptor (et ser_de_info / parameters) */
+  private def isStorageDescriptorMap(data: Any): Boolean =
+    data match {
+      case m: JMap[_, _] =>
+        m.containsKey("input_format") && m.containsKey("output_format") ||
+        m.containsKey("serialization_library") && m.containsKey("parameters") ||
+        m.containsKey("field.delim")
+      case _ => false
+    }
+
+  /** On représente storage_descriptor et sous-maps en FLOW + guillemets */
+  private def representStorageDescriptor(m: JMap[_, _]): MappingNode = {
+    val tuples = new JList[NodeTuple]()
+    val it     = m.entrySet().iterator()
+
+    while (it.hasNext) {
+      val e = it.next()
+      val keyNode = new ScalarNode(
+        Tag.STR,
+        e.getKey.toString,
+        null,
+        null,
+        ScalarStyle.DOUBLE_QUOTED
+      )
+
+      val valueNode: Node = e.getValue match {
+        case inner: JMap[_, _] if isStorageDescriptorMap(inner) =>
+          representStorageDescriptor(inner)
+        case s: String =>
+          new ScalarNode(Tag.STR, s, null, null, ScalarStyle.DOUBLE_QUOTED)
+        case other =>
+          new ScalarNode(Tag.STR, other.toString, null, null, ScalarStyle.DOUBLE_QUOTED)
+      }
+
+      tuples.add(new NodeTuple(keyNode, valueNode))
+    }
+
+    new MappingNode(Tag.MAP, tuples, DumperOptions.FlowStyle.FLOW)
+  }
+
+  /** Hook global : si c’est une map storage_descriptor, on applique notre logique */
+  override protected def representData(data: Any): Node = {
+    if (isStorageDescriptorMap(data))
+      return representStorageDescriptor(data.asInstanceOf[JMap[_, _]])
+    super.representData(data)
+  }
+
+  // ⚠️ on NE surcharge PAS representScalar → bool/int restent sans quotes
 }
-prettyFlow(new MappingNode(Tag.MAP, tuples, DumperOptions.FlowStyle.FLOW))
+
+// =======================
+//  Helpers Scala -> Java
+// =======================
+
+object YamlGenerator {
+
+  private def linkedMap(entries: (String, Any)*): JLinkedMap[String, Any] = {
+    val m = new JLinkedMap[String, Any]()
+    entries.foreach { case (k, v) => m.put(k, v) }
+    m
+  }
+
+  private def toCustomPropsList(props: List[CustomProperty]): JList[Any] = {
+    val list = new JList[Any]()
+    props.foreach { cp =>
+      val m = new JLinkedMap[String, Any]()
+      m.put("property", cp.property)
+      m.put("value", cp.value)
+      list.add(m)
+    }
+    list
+  }
+
+  private def toPropertiesList(props: List[Property]): JList[Any] = {
+    val list = new JList[Any]()
+    props.foreach { p =>
+      val m = new JLinkedMap[String, Any]()
+      m.put("name", p.name)
+      m.put("logicalType", p.logicalType)
+      if (p.partitioned)
+        m.put("partitioned", java.lang.Boolean.TRUE)
+      p.partitionKeyPosition.foreach(pos =>
+        m.put("partitionKeyPosition", Int.box(pos))
+      )
+      list.add(m)
+    }
+    list
+  }
+
+  private def toSchemaList(schemas: List[Schema]): JList[Any] = {
+    val list = new JList[Any]()
+    schemas.foreach { s =>
+      val schemaMap = new JLinkedMap[String, Any]()
+      schemaMap.put("name", s.name)
+      schemaMap.put("customProperties", toCustomPropsList(s.customProperties))
+      schemaMap.put("properties", toPropertiesList(s.properties))
+      list.add(schemaMap)
+    }
+    list
+  }
+
+  // =======================
+  //  main
+  // =======================
+
+  def main(args: Array[String]): Unit = {
+
+    val serDeParams = linkedMap(
+      "field.delim" -> ";"
+    )
+
+    val serDeInfo = linkedMap(
+      "serialization_library" -> "org.apache.hadoop.hive.serde2.OpenCSVSerde",
+      "parameters"            -> serDeParams
+    )
+
+    val storageDescriptor = linkedMap(
+      "input_format"  -> "org.apache.hadoop.mapred.TextInputFormat",
+      "output_format" -> "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat",
+      "ser_de_info"   -> serDeInfo
+    )
+
+    val schema = Schema(
+      name = "object_5aeem_prod",
+      customProperties = List(
+        CustomProperty("type", "glue"),
+        CustomProperty("storage_descriptor", storageDescriptor)
+      ),
+      properties = List(
+        Property("ENTETE-CD-EFS",   "string"),
+        Property("ENTETE-CD-BOITE", "string"),
+        Property("year",  "string", partitioned = true, partitionKeyPosition = Some(1)),
+        Property("month", "string", partitioned = true, partitionKeyPosition = Some(2)),
+        Property("day",   "string", partitioned = true, partitionKeyPosition = Some(3))
+      )
+    )
+
+    val contract = DataContract(
+      kind       = "DataContract",
+      apiVersion = "v3.0.2",
+      id         = "ignored",
+      status     = "active",
+      version    = "1.0.0",
+      schema     = List(schema)
+    )
+
+    val root = linkedMap(
+      "kind"       -> contract.kind,
+      "apiVersion" -> contract.apiVersion,
+      "id"         -> contract.id,
+      "status"     -> contract.status,
+      "version"    -> contract.version,
+      "schema"     -> toSchemaList(contract.schema)
+    )
+
+    val options = new DumperOptions()
+    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK) // block par défaut
+    options.setPrettyFlow(true)
+    options.setIndent(2)
+    options.setWidth(80)                     // ↓ plus petit = plus de retours à la ligne
+    options.setDefaultScalarStyle(ScalarStyle.PLAIN)
+
+    val representer = new ContractRepresenter(options)
+    val yaml        = new Yaml(representer, options)
+
+    val out = yaml.dump(root)
+    println(out)
+  }
+}

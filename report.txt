@@ -1,28 +1,20 @@
-CREATE OR REPLACE VIEW v_vacation_7h AS
+CREATE OR REPLACE VIEW v_no_vacation_before_7 AS
 SELECT
     file_date,
-    vacation_id,
-    MIN(file_time) AS first_reception_time,
-    (MIN(file_time) <= time '07:00') AS received_by_07h
+    COUNT(*) FILTER (WHERE file_time <= time '07:00') AS nb_vacations_before_7,
+    CASE
+        WHEN COUNT(*) FILTER (WHERE file_time <= time '07:00') = 0
+            THEN 1           -- aucune vacation avant 7h
+        ELSE 0               -- au moins une vacation avant 7h
+    END AS no_vacation_before_7
 FROM v_vacation_status
-GROUP BY file_date, vacation_id;
-
-
-SELECT *
-FROM v_vacation_7h
-WHERE received_by_07h = false;
-
-
-CREATE OR REPLACE VIEW v_vacation_7h_summary AS
-SELECT
-    file_date,
-    COUNT(*) AS total_vacations,
-    COUNT(*) FILTER (WHERE received_by_07h)     AS vacations_received_by_07h,
-    COUNT(*) FILTER (WHERE NOT received_by_07h) AS vacations_missing_at_07h
-FROM v_vacation_7h
 GROUP BY file_date;
 
 
-SELECT *
-FROM v_vacation_7h_summary
-ORDER BY file_date DESC;
+NoVacationToday =
+VAR TodayDate = TODAY()
+RETURN
+CALCULATE (
+    MAX ( 'v_no_vacation_before_7'[no_vacation_before_7] ),
+    'v_no_vacation_before_7'[file_date] = TodayDate
+)

@@ -1,33 +1,28 @@
-WITH parsed AS (
-    SELECT
-        vacation_name,
-        regexp_replace(vacation_name, '.*_([0-9]{8})_.*', '\1')::date AS file_date,
-        regexp_replace(vacation_name, '.*_([0-9]{1,2})\.tar\.bz2\.pgp', '\1')::int AS vacation_id,
-        create_hour::time AS file_time
-    FROM your_table
-),
-joined AS (
-    SELECT
-        p.*,
-        v.start_time,
-        CASE
-            WHEN v.end_time < v.start_time
-                THEN (v.end_time + interval '24 hours')  -- vacations crossing midnight
-            ELSE v.end_time
-        END AS real_end_time
-    FROM parsed p
-    JOIN vacations v ON v.vacation_id = p.vacation_id
-)
+CREATE OR REPLACE VIEW v_vacation_7h AS
 SELECT
-    vacation_name,
-    vacation_id,
     file_date,
-    file_time,
-    start_time,
-    real_end_time,
-    CASE
-        WHEN file_time > real_end_time THEN 'RETARD'
-        ELSE 'OK'
-    END AS status
-FROM joined
-ORDER BY file_date, vacation_id;
+    vacation_id,
+    MIN(file_time) AS first_reception_time,
+    (MIN(file_time) <= time '07:00') AS received_by_07h
+FROM v_vacation_status
+GROUP BY file_date, vacation_id;
+
+
+SELECT *
+FROM v_vacation_7h
+WHERE received_by_07h = false;
+
+
+CREATE OR REPLACE VIEW v_vacation_7h_summary AS
+SELECT
+    file_date,
+    COUNT(*) AS total_vacations,
+    COUNT(*) FILTER (WHERE received_by_07h)     AS vacations_received_by_07h,
+    COUNT(*) FILTER (WHERE NOT received_by_07h) AS vacations_missing_at_07h
+FROM v_vacation_7h
+GROUP BY file_date;
+
+
+SELECT *
+FROM v_vacation_7h_summary
+ORDER BY file_date DESC;

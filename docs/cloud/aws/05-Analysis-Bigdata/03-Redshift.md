@@ -1,11 +1,5 @@
 # Redshift
 
-- [Redshift](#redshift)
-  - [Architecture](#architecture)
-  - [Snapshots and DR](#snapshots-and-dr)
-  - [COPY command](#copy-command)
-  - [Redshift Spectrum](#redshift-spectrum)
-
 ## Architecture
 
 ![redshift_archi](screenshots/redshift_archi.PNG)

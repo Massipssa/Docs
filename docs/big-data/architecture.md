@@ -54,11 +54,12 @@
 - What are the typical access patterns
 
 ## Steps to mount cluster
+
 - Chose OS
 - Select the FS to use with disk
- 	- ext3
- 	- ext4
- 	- XFS
+  - ext3
+  - ext4
+  - XFS
 
 ## Managing risk
 

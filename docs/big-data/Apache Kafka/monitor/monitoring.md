@@ -1,5 +1,5 @@
 
-* Add exporter to prometheus
+- Add exporter to prometheus
 
 JAR_PATH=/home/massi/monitoring/jars/jmx_prometheus_javaagent-0.12.0.jar
 EXPORTER=/home/massi/monitoring/kafka.yml

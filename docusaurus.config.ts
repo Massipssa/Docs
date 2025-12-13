@@ -76,7 +76,7 @@ const config: Config = {
       //title: 'DataEngLab',
       logo: {
         alt: 'dataeng docs logo',
-        src: 'img/logo-dataenglab.svg',
+        src: 'img/logo-dataenglab.png',
       },
       items: [
         { 
@@ -84,6 +84,7 @@ const config: Config = {
           sidebarId: 'homeSidebar',
           position: 'left',
           label: 'Docs',
+          className: 'navbar-item-center',
         },
         
         {

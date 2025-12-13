@@ -1,10 +1,11 @@
-# ACLs 
-* Kafka uses Zookeeper to store ACLs 
-* If no ACL is defined no user is authozided to access resource, except super user
-* AdminClient API can be used to manage ACLs 
-* ACLs are stored in Zookeeper and then propaged to broker there may be delay before take effect  
+# ACLs
 
---transactional-id ?? 
---idempotent ?? 
+- Kafka uses Zookeeper to store ACLs
+- If no ACL is defined no user is authozided to access resource, except super user
+- AdminClient API can be used to manage ACLs
+- ACLs are stored in Zookeeper and then propaged to broker there may be delay before take effect  
 
-* **P**rincipal (Allow/Denied) **O**peration From **H**ost on **R**esource matches **R**esources**P**attern 
+--transactional-id ??
+--idempotent ??
+
+- **P**rincipal (Allow/Denied) **O**peration From **H**ost on **R**esource matches **R**esources**P**attern 

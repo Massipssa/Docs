@@ -1,20 +1,5 @@
 # Identity Access Management (IAM)
 
-- [Identity Access Management (IAM)](#identity-access-management-iam)
-  - [Root account](#root-account)
-  - [Permission](#permission)
-  - [User](#user)
-  - [Group](#group)
-  - [Role](#role)
-  - [Principal](#principal)
-  - [Policy](#policy)
-    - [Policy Types](#policy-types)
-  - [Credentials](#credentials)
-    - [Access Keys](#access-keys)
-    - [Multi-Factor Authentication](#multi-factor-authentication)
-  - [Monitoring](#monitoring)
-  - [Best practices](#best-practices)
-
 ## Root account
 
 - Has full access to all services

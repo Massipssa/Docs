@@ -1,29 +1,5 @@
 # Virtual Private Cloud (VPC)
 
-
-- [Virtual Private Cloud (VPC)](#virtual-private-cloud-vpc)
-  - [Subnet](#subnet)
-  - [Internet Gateway](#internet-gateway)
-  - [Route Table](#route-table)
-  - [Security group](#security-group)
-  - [Network Access Control Lists (NACLs)](#network-access-control-lists-nacls)
-  - [NAT Gateway](#nat-gateway)
-  - [VPC Endpoints](#vpc-endpoints)
-  - [VPC Flow logs](#vpc-flow-logs)
-  - [Difference Security Group and NACLs](#difference-security-group-and-nacls)
-  - [VPC Peering](#vpc-peering)
-  - [PrivateLinks](#privatelinks)
-  - [Direct Connect (DX)](#direct-connect-dx)
-  - [Site-To-Site (VPN Connection)](#site-to-site-vpn-connection)
-  - [AWS Wavelength](#aws-wavelength)
-  - [Bastion (Jumpbox)](#bastion-jumpbox)
-  - [Endpoints](#endpoints)
-    - [Interface Endpoints](#interface-endpoints)
-    - [Gateway Endpoints](#gateway-endpoints)
-  - [CloudHub](#cloudhub)
-  - [Transit Gateway](#transit-gateway)
-  - [Egress-only Internet Gateway](#egress-only-internet-gateway)
-
 ![archi](./img/archi.png)
 
 ## Subnet
@@ -35,15 +11,18 @@
 
 ## Internet Gateway
 
-- A virtual router to connect VPC to internet
-- VPC can only have one Internet Gateway
+- Allows resources (e.g: EC2 instances) inside VPC to connect to internet
+- High available and scale horizontally
+- VPC can be only attatch to one Internet Gateway and vice-versa
+- IGT in their owen they do not allow access to internet they need to to associated to the [Route Table](#route-table)
 - It's responsible for a **_Static Network Address Translation_** (translate private ip to public ip)
 
 ## Route Table
 
-- Used to determine where network traffic is **directed**
-- One route table per VPC
-- Controls what's VPC router does with traffic leaving subnet
+- Determines where network traffic is directed in a VPC
+- A VPC can have multiple route tables
+- Each subnet must be associated with exactly one route table. If no association is made, the subnet uses the main route table
+- Controls how the VPC Router forwards traffic leaving a subnet
 
 ## Security group
 
@@ -70,6 +49,16 @@
 - They are **stateless**
 - Default rule cannot be updated
 
+## VPC Peering
+
+- Link VPCs together using private network
+- Allows you to connect 1 VPC with another via a direct network route using private IP address
+- Instances behave as they were in the same VPC
+- We can peer between different AWS account (cross-account) and different regions
+- Transitive peering is not supported
+- No overlapping CIDR address ranges
+- Data is encrypted
+
 ## NAT Gateway
 
 - Access internet from private subnet
@@ -80,12 +69,14 @@
 - No associated to Security Group
 - Automatically assigned a public IP address
 
-## VPC Endpoints
+## VPC Endpoints (AWS PrivateLink)
 
-- Access AWS services from private subnet
+- Access AWS services privately from private subnet, without public IP, IGW or NAT.
 - Two types
   - Interface endpoints
   - Gateways endpoints (Support connection to S3 and DynamoDB)
+- Doesn't need VPC Peering, public internet, NAT Gateway, Route Tables
+- Must be used with Network Load Balancer & ENI
 
 ## VPC Flow logs
 
@@ -104,21 +95,6 @@
 - Security groups do not allow explicit denies, while NACLs do
 - Security groups are stateful, while NACLs are stateless
 
-## VPC Peering
-
-- Link VPCs together
-- Allows you to connect 1 VPC with another via a direct network route using private IP address
-- Instances behave as they were in the same VPC
-- We can peer between region
-- Transitive peering is not supported
-- No overlapping CIDR address ranges
-- Data is encrypted
-
-## PrivateLinks
-
-- Connect services privately from your service VPC to customers VPC
-- Doesn't need VPC Peering, public internet, NAT Gateway, Route Tables
-- Must be used with Network Load Balancer & ENI
 
 ## Direct Connect (DX)
 
@@ -168,7 +144,7 @@
 
 - Connects VPCs and on-premise networks through a central hub (single gateway)
 - Scales elastically based on the volume of network traffic
-- Routing through a transit gateway operates at layer 3, where the packets are sent to a specific next-hop attachment, based on their destination IP addresses
+- Routing through a transit gateway operates at **layer 3**, where the packets are sent to a specific next-hop attachment, based on their destination IP addresses
 
 ## Egress-only Internet Gateway
 

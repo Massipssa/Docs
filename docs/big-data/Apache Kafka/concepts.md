@@ -5,12 +5,12 @@
 
 ## Broker
 
-- Knows all about topics and partitions metadata 
-- Is bootstrap broker 
-- Stores some topics and partitions 
-- Receive messages from Producer 
-- Assign offsets to messages 
-- Commit messages to disk 
+- Knows all about topics and partitions metadata
+- Is bootstrap broker
+- Stores some topics and partitions
+- Receive messages from Producer
+- Assign offsets to messages
+- Commit messages to disk
 - Responds to consumers with messages
 
 ## Controller
@@ -28,7 +28,7 @@
 - Order is guaranteed within the partition, and once data is wrote to partition is immutable
 - Key used:
   - As additional information that gets stored with the message
-  - To decide to which one of the topic partitions the message will be writen to. All the message with the same key 
+  - To decide to which one of the topic partitions the message will be writen to. All the message with the same key
   will go to same partition
 
 ## Retention
@@ -87,7 +87,7 @@
 - ```close()```: on consumer immediately triggers a partition re-balance as the consumer will not be available anymore
 
 ## Producer
-- KafkaProducer is thread safe 
+- KafkaProducer is thread safe
 
 ## Consuming strategies
 

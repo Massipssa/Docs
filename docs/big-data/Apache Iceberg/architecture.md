@@ -45,56 +45,14 @@ The metadata layer contains all metadata files for an Iceberg table. It forms a 
 Manifest files track data files and delete files, along with statistics such as minimum and maximum column values. These files are generated incrementally during writes, making statistics collection efficient compared to legacy formats like Hive.
 
 :::info
-    - Separate manifest files track data files and delete files, but both use the same schema.
-    - Manifest files store statistics at write time, avoiding expensive full-table scans required by older formats.
-    - Query engines use manifest file statistics (e.g., upper/lower bounds, null counts, partition data) for file pruning, improving query performance.
+  
+- Separate manifest files track data files and delete files, but both use the same schema.
+- Manifest files store statistics at write time, avoiding expensive full-table scans required by older formats.
+- Query engines use manifest file statistics (e.g., upper/lower bounds, null counts, partition data) for file pruning, improving query performance.
+
 :::
 
-```json
-{
-  "manifest_path": "warehouse/db/persons/metadata/d9b53757-55a3-4f7e-80b6-926ce7edac4b-m0.avro",
-  "manifest_length": 6930,
-  "partition_spec_id": 0,
-  "content": 0,
-  "sequence_number": 1,
-  "min_sequence_number": 1,
-  "added_snapshot_id": 2093926769621697207,
-  "added_data_files_count": 1,
-  "existing_data_files_count": 0,
-  "deleted_data_files_count": 0,
-  "added_rows_count": 1,
-  "existing_rows_count": 0,
-  "deleted_rows_count": 0,
-  "partitions": {
-    "array": [
-      {
-        "contains_null": false,
-        "contains_nan": {
-          "boolean": false
-        },
-        "lower_bound": {
-          "bytes": "2\u0000\u0000\u0000"
-        },
-        "upper_bound": {
-          "bytes": "2\u0000\u0000\u0000"
-        }
-      }
-    ]
-  }
-}
-```
-
-### Manifest List
-
-A manifest list captures the state of an Iceberg table at a specific point in time. It contains a list of manifest files, each describing:
-
-- Data file locations
-- Partition information
-- Upper and lower bounds of partition columns
-
-Query engines use manifest lists to evaluate partition specs and skip irrelevant files, enabling fast, efficient reads.
-
-```json
+```json title="metadata/d9b53757-55a3-4f7e-80b6-926ce7edac4b-m0.avro"
 {
   "status": 1,
   "snapshot_id": {
@@ -210,14 +168,152 @@ Query engines use manifest lists to evaluate partition specs and skip irrelevant
 }
 ```
 
+### Manifest List
+
+A manifest list captures the state of an Iceberg table at a specific point in time (a snapshot). It contains a list of [manifest files](#manifest-file), each describing:
+
+- Data file locations
+- Partition information
+- Upper and lower bounds of partition columns
+
+Query engines use manifest lists to evaluate partition specs and skip irrelevant files (exclude nonrequired), enabling fast, efficient reads.
+
+```json title="metadata/snap-d9b53757-55a3-4f7e-80b6-926ce7edac4b-m0.avro"
+{
+  "manifest_path": "warehouse/db/persons/metadata/d9b53757-55a3-4f7e-80b6-926ce7edac4b-m0.avro",
+  "manifest_length": 6930,
+  "partition_spec_id": 0,
+  "content": 0,
+  "sequence_number": 1,
+  "min_sequence_number": 1,
+  "added_snapshot_id": 2093926769621697207,
+  "added_data_files_count": 1,
+  "existing_data_files_count": 0,
+  "deleted_data_files_count": 0,
+  "added_rows_count": 1,
+  "existing_rows_count": 0,
+  "deleted_rows_count": 0,
+  "partitions": {
+    "array": [
+      {
+        "contains_null": false,
+        "contains_nan": {
+          "boolean": false
+        },
+        "lower_bound": {
+          "bytes": "2\u0000\u0000\u0000"
+        },
+        "upper_bound": {
+          "bytes": "2\u0000\u0000\u0000"
+        }
+      }
+    ]
+  }
+}
+```
+
 ### Metadata File
 
-The metadata file tracks manifest lists and contains the table’s schema, partitioning details, snapshots, and the identifier of the current snapshot. Each table modification creates a new metadata file, registered as the latest version.
+The metadata file tracks [manifest lists](#manifest-list) and contains the table’s schema, partitioning details, snapshots, and the identifier of the current snapshot. Each table modification creates a new metadata file, registered as the latest version.
 
 This design supports:
 
 - **Concurrent writes:** Multiple engines can write data simultaneously without conflict.
 - **Consistent reads:** Readers always access the latest committed version of the table.
+
+```json title="v1.metadata.json"
+{
+  "format-version" : 2,
+  "table-uuid" : "806687b9-5fc8-462b-b399-b8c909029d19",
+  "location" : "warehouse/ecommerce_db/emp_partitioned_month",
+  "last-sequence-number" : 1,
+  "last-updated-ms" : 1762106187670,
+  "last-column-id" : 4,
+  "current-schema-id" : 0,
+  "schemas" : [ {
+    "type" : "struct",
+    "schema-id" : 0,
+    "fields" : [ {
+      "id" : 1,
+      "name" : "id",
+      "required" : false,
+      "type" : "int"
+    }, {
+      "id" : 2,
+      "name" : "role",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 3,
+      "name" : "department",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 4,
+      "name" : "join_date",
+      "required" : false,
+      "type" : "date"
+    } ]
+  } ],
+  "default-spec-id" : 0,
+  "partition-specs" : [ {
+    "spec-id" : 0,
+    "fields" : [ {
+      "name" : "join_date_day",
+      "transform" : "day",
+      "source-id" : 4,
+      "field-id" : 1000
+    } ]
+  } ],
+  "last-partition-id" : 1000,
+  "default-sort-order-id" : 0,
+  "sort-orders" : [ {
+    "order-id" : 0,
+    "fields" : [ ]
+  } ],
+  "properties" : {
+    "owner" : "Utilisateur",
+    "write.parquet.compression-codec" : "zstd"
+  },
+  "current-snapshot-id" : 1223704394949634677,
+  "refs" : {
+    "main" : {
+      "snapshot-id" : 1223704394949634677,
+      "type" : "branch"
+    }
+  },
+  "snapshots" : [ {
+    "sequence-number" : 1,
+    "snapshot-id" : 1223704394949634677,
+    "timestamp-ms" : 1762106187670,
+    "summary" : {
+      "operation" : "append",
+      "spark.app.id" : "local-1762106163760",
+      "added-data-files" : "5",
+      "added-records" : "5",
+      "added-files-size" : "5894",
+      "changed-partition-count" : "5",
+      "total-records" : "5",
+      "total-files-size" : "5894",
+      "total-data-files" : "5",
+      "total-delete-files" : "0",
+      "total-position-deletes" : "0",
+      "total-equality-deletes" : "0"
+    },
+    "manifest-list" : "warehouse/ecommerce_db/emp_partitioned_month/metadata/snap-1223704394949634677-1-ada3cd92-0df5-4680-8392-45073ebc4757.avro",
+    "schema-id" : 0
+  } ],
+  "statistics" : [ ],
+  "snapshot-log" : [ {
+    "timestamp-ms" : 1762106187670,
+    "snapshot-id" : 1223704394949634677
+  } ],
+  "metadata-log" : [ {
+    "timestamp-ms" : 1762106184906,
+    "metadata-file" : "warehouse/ecommerce_db/emp_partitioned_month/metadata/v1.metadata.json"
+  } ]
+}
+```
 
 ---
 
@@ -229,7 +325,7 @@ The data layer holds the actual table data, consisting of **data files** and **d
 - **Delete Files:** Track rows deleted from the dataset without rewriting underlying data files, enabling efficient deletes.
 
 :::info
-    Data in a data lake should be immutable. Updates are handled by writing new files rather than modifying existing ones.
+  Data in a data lake should be immutable. Updates are handled by writing new files rather than modifying existing ones.
 :::
 
 ### Data Modification Approaches

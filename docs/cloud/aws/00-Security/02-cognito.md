@@ -18,7 +18,6 @@
   - Provides ***temporary AWS credentials*** to access services eg. S3, DynamoDB, ...
   - It is generated using SDK
 
-  
 ## Cognito Workflow
 
 1. Authenticate and get tokens
@@ -33,8 +32,6 @@
   - SAML is of type Single Sign On (SSO)
   - OpenID
   - OAuth
-
-
 
   ![identity_pool](../Other/Cognito/identy_pool.png)
 

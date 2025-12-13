@@ -1,16 +1,10 @@
 # CloudFront
 
-- [CloudFront](#cloudfront)
-  - [Origins](#origins)
-  - [CloudFront vs S3 Cross Region Replication](#cloudfront-vs-s3-cross-region-replication)
-  - [Pricing](#pricing)
-  - [Cache Invalidation](#cache-invalidation)
-
 ## Origins
 
 - S3 Buckets
   - For distributing files and caching them at the edge
-  - Enhanced security with CloudFront Origin Access Control (OAC)
+  - Enhanced security with CloudFront **Origin Access Control (OAC)**
 - Custom Origin (HTTP)
   - Application Load Balancer
   - EC2 instance

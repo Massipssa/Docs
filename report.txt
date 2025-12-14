@@ -61,3 +61,15 @@ object BatchBuilder {
     )
   }
 }
+
+private def artifactTypeFromKey(key: String): ArtifactType = {
+  key.toUpperCase match {
+    case k if k.contains("/DATA/")        => ArtifactType.DATA
+    case k if k.contains("/PARAMETRAGE/") => ArtifactType.PARAMETRAGE
+    case k if k.contains("/METADATA/")    => ArtifactType.METADATA
+    case k if k.contains("/MONITORING/")  => ArtifactType.MONITORING
+    case k if k.contains("/AUTRES/")      => ArtifactType.AUTRES
+    case _                                => ArtifactType.UNKNOWN
+  }
+}
+

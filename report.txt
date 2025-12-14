@@ -1,56 +1,69 @@
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
+import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
 
 import java.io._
 import java.nio.file.{Files, Path, StandardOpenOption}
 
-def decompressGzFile(
+def extractTarGz(
   s3Service: S3Service,
   bucket: String,
-  inputKey: String,
-  outputKey: String
+  inputStream: InputStream,
+  outputPrefix: String,
+  foldersToExtract: Option[Set[String]] = None
 ): Unit = {
 
-  val s3ObjectContent = s3Service.read(bucket, inputKey)
-
-  // ✅ fichier temporaire local (évite ByteArrayOutputStream donc évite OOM)
-  val tmp: Path = Files.createTempFile("decompress-", ".tmp")
+  val tarIn = new TarArchiveInputStream(new BufferedInputStream(inputStream))
 
   try {
-    val gzIn = new GzipCompressorInputStream(new BufferedInputStream(s3ObjectContent))
-    val fileOut = new BufferedOutputStream(Files.newOutputStream(tmp, StandardOpenOption.WRITE))
+    var entry: TarArchiveEntry = tarIn.getNextTarEntry
 
-    try {
-      val buffer = new Array[Byte](1024 * 1024) // 1MB buffer (bien mieux que 1024)
-      var n = gzIn.read(buffer)
-      while (n != -1) {
-        fileOut.write(buffer, 0, n)
-        n = gzIn.read(buffer)
+    while (entry != null) {
+      val entryName = entry.getName
+
+      val shouldExtract = foldersToExtract match {
+        case Some(folders) => folders.exists(folder => entryName.contains(s"$folder/"))
+        case None          => true
       }
-      fileOut.flush()
-    } finally {
-      // important: fermer dans tous les cas
-      fileOut.close()
-      gzIn.close()
+
+      // ✅ On extrait uniquement les fichiers (pas les dossiers)
+      if (!entry.isDirectory && shouldExtract) {
+        val outKey = s"$outputPrefix/$entryName"
+        logInfo(s"Extracting: s3://$bucket/$outKey")
+
+        // ✅ write entry content to temp file (streaming, no heap blow)
+        val tmp: Path = Files.createTempFile("untar-", ".tmp")
+        try {
+          val fileOut = new BufferedOutputStream(Files.newOutputStream(tmp, StandardOpenOption.WRITE))
+
+          try {
+            val buffer = new Array[Byte](1024 * 1024) // 1MB buffer
+            var n = tarIn.read(buffer)
+            while (n != -1) {
+              fileOut.write(buffer, 0, n)
+              n = tarIn.read(buffer)
+            }
+            fileOut.flush()
+          } finally {
+            fileOut.close()
+          }
+
+          // ✅ upload via existing multipart method
+          val inFile = new BufferedInputStream(Files.newInputStream(tmp, StandardOpenOption.READ))
+          try {
+            s3Service.putMultiPart(bucket, outKey, inFile)
+          } finally {
+            inFile.close()
+          }
+
+        } finally {
+          try Files.deleteIfExists(tmp)
+          catch { case _: Throwable => () }
+        }
+      }
+
+      entry = tarIn.getNextTarEntry
     }
-
-    // ✅ upload multipart via ton API existante
-    val inFile = new BufferedInputStream(Files.newInputStream(tmp, StandardOpenOption.READ))
-    try {
-      logInfo(s"Uploading decompressed file to s3://$bucket/$outputKey")
-      s3Service.putMultiPart(bucket, outputKey, inFile)
-    } finally {
-      inFile.close()
-    }
-
-    // optionnel : delete l'input gz seulement si upload OK
-    logInfo(s"Deleting source object s3://$bucket/$inputKey")
-    s3Service.delete(bucket, inputKey)
-
   } finally {
-    // ✅ cleanup temp file
-    try Files.deleteIfExists(tmp)
-    catch { case _: Throwable => () }
-    try s3ObjectContent.close()
+    try tarIn.close()
     catch { case _: Throwable => () }
   }
 }

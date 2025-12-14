@@ -1,69 +1,63 @@
-import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
+object BatchBuilder {
 
-import java.io._
-import java.nio.file.{Files, Path, StandardOpenOption}
+  private def artifactTypeFromKey(key: String): ArtifactType =
+    if (key.contains("/DATA/")) ArtifactType.DATA
+    else if (key.contains("/PARAMETRAGE/")) ArtifactType.PARAMETRAGE
+    else if (key.contains("/METADATA/")) ArtifactType.METADATA
+    else if (key.contains("/MONITORING/")) ArtifactType.MONITORING
+    else ArtifactType.AUTRES
 
-def extractTarGz(
-  s3Service: S3Service,
-  bucket: String,
-  inputStream: InputStream,
-  outputPrefix: String,
-  foldersToExtract: Option[Set[String]] = None
-): Unit = {
+  private def fileName(key: String): String =
+    key.split("/").last
 
-  val tarIn = new TarArchiveInputStream(new BufferedInputStream(inputStream))
+  private def s3Path(bucket: String, key: String): String =
+    s"s3://$bucket/$key"
 
-  try {
-    var entry: TarArchiveEntry = tarIn.getNextTarEntry
+  private def isValidName(name: String): Boolean =
+    name.matches("^[A-Z0-9_.-]+$")
 
-    while (entry != null) {
-      val entryName = entry.getName
+  def createBatch(
+    s3: S3Service,
+    bucket: String,
+    batchId: String,
+    source: String,
+    untarredPrefixKey: String
+  ): Batch = {
 
-      val shouldExtract = foldersToExtract match {
-        case Some(folders) => folders.exists(folder => entryName.contains(s"$folder/"))
-        case None          => true
+    val keys = s3.listKeys(bucket, untarredPrefixKey)
+
+    val artifacts = keys.map { key =>
+      val tpe = artifactTypeFromKey(key)
+      val name = fileName(key)
+      val path = s3Path(bucket, key)
+
+      tpe match {
+        case ArtifactType.METADATA | ArtifactType.MONITORING =>
+          Artifact(name, tpe, path, None)
+
+        case _ =>
+          if (isValidName(name))
+            Artifact(name, tpe, path, Some(ArtifactStatus.IN_PROGRESS))
+          else
+            Artifact(name, tpe, path, Some(ArtifactStatus.IGNORED), Some("invalid name"))
       }
-
-      // ✅ On extrait uniquement les fichiers (pas les dossiers)
-      if (!entry.isDirectory && shouldExtract) {
-        val outKey = s"$outputPrefix/$entryName"
-        logInfo(s"Extracting: s3://$bucket/$outKey")
-
-        // ✅ write entry content to temp file (streaming, no heap blow)
-        val tmp: Path = Files.createTempFile("untar-", ".tmp")
-        try {
-          val fileOut = new BufferedOutputStream(Files.newOutputStream(tmp, StandardOpenOption.WRITE))
-
-          try {
-            val buffer = new Array[Byte](1024 * 1024) // 1MB buffer
-            var n = tarIn.read(buffer)
-            while (n != -1) {
-              fileOut.write(buffer, 0, n)
-              n = tarIn.read(buffer)
-            }
-            fileOut.flush()
-          } finally {
-            fileOut.close()
-          }
-
-          // ✅ upload via existing multipart method
-          val inFile = new BufferedInputStream(Files.newInputStream(tmp, StandardOpenOption.READ))
-          try {
-            s3Service.putMultiPart(bucket, outKey, inFile)
-          } finally {
-            inFile.close()
-          }
-
-        } finally {
-          try Files.deleteIfExists(tmp)
-          catch { case _: Throwable => () }
-        }
-      }
-
-      entry = tarIn.getNextTarEntry
     }
-  } finally {
-    try tarIn.close()
-    catch { case _: Throwable => () }
+
+    val now = Time.now
+
+    Batch(
+      batchId = batchId,
+      source = source,
+      status = BatchStatus.RUNNING,
+      createdAt = now,
+      updatedAt = now,
+      untarredPrefix = s3Path(bucket, untarredPrefixKey),
+
+      cre = artifacts.filter(_.artifactType == ArtifactType.DATA),
+      gesparam = artifacts.filter(_.artifactType == ArtifactType.PARAMETRAGE),
+      autres = artifacts.filter(_.artifactType == ArtifactType.AUTRES),
+      metadata = artifacts.filter(_.artifactType == ArtifactType.METADATA),
+      monitoring = artifacts.filter(_.artifactType == ArtifactType.MONITORING)
+    )
   }
 }

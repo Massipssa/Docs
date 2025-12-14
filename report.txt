@@ -1,20 +1,56 @@
-CREATE OR REPLACE VIEW v_no_vacation_before_7 AS
-SELECT
-    file_date,
-    COUNT(*) FILTER (WHERE file_time <= time '07:00') AS nb_vacations_before_7,
-    CASE
-        WHEN COUNT(*) FILTER (WHERE file_time <= time '07:00') = 0
-            THEN 1           -- aucune vacation avant 7h
-        ELSE 0               -- au moins une vacation avant 7h
-    END AS no_vacation_before_7
-FROM v_vacation_status
-GROUP BY file_date;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 
+import java.io._
+import java.nio.file.{Files, Path, StandardOpenOption}
 
-NoVacationToday =
-VAR TodayDate = TODAY()
-RETURN
-CALCULATE (
-    MAX ( 'v_no_vacation_before_7'[no_vacation_before_7] ),
-    'v_no_vacation_before_7'[file_date] = TodayDate
-)
+def decompressGzFile(
+  s3Service: S3Service,
+  bucket: String,
+  inputKey: String,
+  outputKey: String
+): Unit = {
+
+  val s3ObjectContent = s3Service.read(bucket, inputKey)
+
+  // ✅ fichier temporaire local (évite ByteArrayOutputStream donc évite OOM)
+  val tmp: Path = Files.createTempFile("decompress-", ".tmp")
+
+  try {
+    val gzIn = new GzipCompressorInputStream(new BufferedInputStream(s3ObjectContent))
+    val fileOut = new BufferedOutputStream(Files.newOutputStream(tmp, StandardOpenOption.WRITE))
+
+    try {
+      val buffer = new Array[Byte](1024 * 1024) // 1MB buffer (bien mieux que 1024)
+      var n = gzIn.read(buffer)
+      while (n != -1) {
+        fileOut.write(buffer, 0, n)
+        n = gzIn.read(buffer)
+      }
+      fileOut.flush()
+    } finally {
+      // important: fermer dans tous les cas
+      fileOut.close()
+      gzIn.close()
+    }
+
+    // ✅ upload multipart via ton API existante
+    val inFile = new BufferedInputStream(Files.newInputStream(tmp, StandardOpenOption.READ))
+    try {
+      logInfo(s"Uploading decompressed file to s3://$bucket/$outputKey")
+      s3Service.putMultiPart(bucket, outputKey, inFile)
+    } finally {
+      inFile.close()
+    }
+
+    // optionnel : delete l'input gz seulement si upload OK
+    logInfo(s"Deleting source object s3://$bucket/$inputKey")
+    s3Service.delete(bucket, inputKey)
+
+  } finally {
+    // ✅ cleanup temp file
+    try Files.deleteIfExists(tmp)
+    catch { case _: Throwable => () }
+    try s3ObjectContent.close()
+    catch { case _: Throwable => () }
+  }
+}

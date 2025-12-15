@@ -591,3 +591,93 @@ object PipelineMainExample {
     runner.run(new DataTransferStep(transfer), stateKey)
   }
 }
+
+override def process(batch: Batch): Batch = {
+
+  val keys =
+    s3.getPrefixSummary(batch.paths.bucket, batch.paths.untarredPrefix)
+      .map(_.getKey)
+
+  val discovered = keys.flatMap { k =>
+    ArtifactTyping.artifactTypeFromKey(k) match {
+
+      case ArtifactType.UNKNOWN =>
+        None // ignoré complètement
+
+      case ArtifactType.DATA =>
+        Some(
+          CreArtifact(
+            name = ArtifactTyping.fileName(k),
+            relativePath = ArtifactTyping.toRelative(batch.paths.untarredPrefix, k),
+            status = Some(ArtifactStatus.IN_PROGRESS)
+          )
+        )
+
+      case ArtifactType.PARAMETRAGE =>
+        Some(
+          SimpleArtifact(
+            name = ArtifactTyping.fileName(k),
+            relativePath = ArtifactTyping.toRelative(batch.paths.untarredPrefix, k),
+            status = Some(ArtifactStatus.IN_PROGRESS)
+          )
+        )
+
+      case ArtifactType.AUTRES =>
+        Some(
+          SimpleArtifact(
+            name = ArtifactTyping.fileName(k),
+            relativePath = ArtifactTyping.toRelative(batch.paths.untarredPrefix, k),
+            status = Some(ArtifactStatus.IN_PROGRESS)
+          )
+        )
+
+      case ArtifactType.METADATA =>
+        Some(
+          SimpleArtifact(
+            name = ArtifactTyping.fileName(k),
+            relativePath = ArtifactTyping.toRelative(batch.paths.untarredPrefix, k),
+            status = None // ❗ sans état
+          )
+        )
+
+      case ArtifactType.MONITORING =>
+        Some(
+          SimpleArtifact(
+            name = ArtifactTyping.fileName(k),
+            relativePath = ArtifactTyping.toRelative(batch.paths.untarredPrefix, k),
+            status = None // ❗ sans état
+          )
+        )
+    }
+  }
+
+  batch.copy(
+    status = BatchStatus.DECOMPRESSED,
+    updatedAt = Time.nowIso,
+
+    cre = discovered.collect { case c: CreArtifact => c },
+
+    parametrageFile =
+      discovered.collectFirst {
+        case a: SimpleArtifact if a.relativePath.startsWith("PARAMETRAGE/") => a
+      },
+
+    autres =
+      discovered.collect {
+        case a: SimpleArtifact if a.relativePath.startsWith("AUTRES/") => a
+      },
+
+    metadata =
+      discovered.collect {
+        case a: SimpleArtifact if a.relativePath.startsWith("METADATA/") => a
+      },
+
+    monitoring =
+      discovered.collect {
+        case a: SimpleArtifact if a.relativePath.startsWith("MONITORING/") => a
+      },
+
+    gesparam = Nil
+  )
+}
+

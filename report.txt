@@ -681,3 +681,67 @@ override def process(batch: Batch): Batch = {
   )
 }
 
+
+trait StateStore {
+
+  def read(bucket: String, stateKey: String): Batch
+
+  def write(bucket: String, stateKey: String, batch: Batch): Unit
+}
+
+
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.model.{ObjectMetadata, S3ObjectInputStream}
+
+import java.io.ByteArrayInputStream
+import java.nio.charset.StandardCharsets
+
+final class S3StateStore(
+  s3: AmazonS3,
+  json: JsonCodec
+) extends StateStore {
+
+  override def read(bucket: String, stateKey: String): Batch = {
+    val is: S3ObjectInputStream =
+      s3.getObject(bucket, stateKey).getObjectContent
+
+    try {
+      json.fromJson[Batch](is)
+    } finally {
+      is.close()
+    }
+  }
+
+  override def write(bucket: String, stateKey: String, batch: Batch): Unit = {
+    val content = json.toJson(batch)
+    val bytes   = content.getBytes(StandardCharsets.UTF_8)
+
+    val metadata = new ObjectMetadata()
+    metadata.setContentType("application/json")
+    metadata.setContentLength(bytes.length.toLong)
+
+    val is = new ByteArrayInputStream(bytes)
+
+    s3.putObject(bucket, stateKey, is, metadata)
+  }
+}
+
+
+import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
+import com.fasterxml.jackson.module.scala.{DefaultScalaModule, ScalaObjectMapper}
+
+import java.io.InputStream
+
+final class JsonCodec {
+
+  private val mapper = new ObjectMapper() with ScalaObjectMapper
+  mapper.registerModule(DefaultScalaModule)
+  mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+
+  def toJson[A](value: A): String =
+    mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value)
+
+  def fromJson[A: Manifest](is: InputStream): A =
+    mapper.readValue[A](is)
+}
+

@@ -1,75 +1,116 @@
-object BatchBuilder {
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.model._
+import scala.jdk.CollectionConverters._
+import scala.util.control.NonFatal
 
-  private def artifactTypeFromKey(key: String): ArtifactType =
-    if (key.contains("/DATA/")) ArtifactType.DATA
-    else if (key.contains("/PARAMETRAGE/")) ArtifactType.PARAMETRAGE
-    else if (key.contains("/METADATA/")) ArtifactType.METADATA
-    else if (key.contains("/MONITORING/")) ArtifactType.MONITORING
-    else ArtifactType.AUTRES
+trait Logging {
+  def logInfo(msg: String): Unit = println(msg)
+  def logWarn(msg: String): Unit = println(s"[WARN] $msg")
+  def logError(msg: String): Unit = println(s"[ERROR] $msg")
+}
 
-  private def fileName(key: String): String =
-    key.split("/").last
+class RobustS3Service(val s3: AmazonS3) extends Logging {
 
-  private def s3Path(bucket: String, key: String): String =
-    s"s3://$bucket/$key"
+  private val MinPartSize: Long = 5L * 1024 * 1024          // 5 MB (min S3)
+  private val MaxSingleCopy: Long = 5L * 1024 * 1024 * 1024 // 5 GB (single CopyObject limit)
 
-  private def isValidName(name: String): Boolean =
-    name.matches("^[A-Z0-9_.-]+$")
+  /** Robust server-side copy.
+    * - 0 bytes -> PutObject empty
+    * - <= 5 GB -> CopyObject
+    * - > 5 GB -> Multipart Copy
+    */
+  def copy(bucket: String, keySource: String, keyDest: String, partSize: Long = 128L * 1024 * 1024): Unit = {
+    val meta = s3.getObjectMetadata(bucket, keySource)
+    val size = meta.getContentLength
 
-  def createBatch(
-    s3: S3Service,
-    bucket: String,
-    batchId: String,
-    source: String,
-    untarredPrefixKey: String
-  ): Batch = {
-
-    val keys = s3.listKeys(bucket, untarredPrefixKey)
-
-    val artifacts = keys.map { key =>
-      val tpe = artifactTypeFromKey(key)
-      val name = fileName(key)
-      val path = s3Path(bucket, key)
-
-      tpe match {
-        case ArtifactType.METADATA | ArtifactType.MONITORING =>
-          Artifact(name, tpe, path, None)
-
-        case _ =>
-          if (isValidName(name))
-            Artifact(name, tpe, path, Some(ArtifactStatus.IN_PROGRESS))
-          else
-            Artifact(name, tpe, path, Some(ArtifactStatus.IGNORED), Some("invalid name"))
-      }
+    if (size == 0L) {
+      logInfo(s"Copy empty object: s3://$bucket/$keySource -> s3://$bucket/$keyDest")
+      val empty = new java.io.ByteArrayInputStream(Array.emptyByteArray)
+      val putReq = new PutObjectRequest(bucket, keyDest, empty, new ObjectMetadata())
+      s3.putObject(putReq)
+      return
     }
 
-    val now = Time.now
+    if (size <= MaxSingleCopy) {
+      logInfo(s"CopyObject (server-side): size=$size bytes, src=$keySource dest=$keyDest")
+      val req = new CopyObjectRequest(bucket, keySource, bucket, keyDest)
+      // Optionnel: si tu veux conserver metadata/content-type explicitement:
+      // req.setNewObjectMetadata(meta)
+      s3.copyObject(req)
+      return
+    }
 
-    Batch(
-      batchId = batchId,
-      source = source,
-      status = BatchStatus.RUNNING,
-      createdAt = now,
-      updatedAt = now,
-      untarredPrefix = s3Path(bucket, untarredPrefixKey),
+    // > 5GB => multipart copy obligatoire
+    multipartCopy(bucket, keySource, bucket, keyDest, size, normalizePartSize(partSize))
+  }
 
-      cre = artifacts.filter(_.artifactType == ArtifactType.DATA),
-      gesparam = artifacts.filter(_.artifactType == ArtifactType.PARAMETRAGE),
-      autres = artifacts.filter(_.artifactType == ArtifactType.AUTRES),
-      metadata = artifacts.filter(_.artifactType == ArtifactType.METADATA),
-      monitoring = artifacts.filter(_.artifactType == ArtifactType.MONITORING)
-    )
+  private def normalizePartSize(desired: Long): Long = {
+    val p = math.max(desired, MinPartSize)
+    // garder un multiple de 5MB (recommandé)
+    (p / MinPartSize) * MinPartSize
+  }
+
+  private def multipartCopy(
+      srcBucket: String,
+      srcKey: String,
+      destBucket: String,
+      destKey: String,
+      contentLength: Long,
+      partSize: Long
+  ): Unit = {
+    logInfo(s"MultipartCopy: size=$contentLength bytes partSize=$partSize src=$srcKey dest=$destKey")
+
+    val initReq = new InitiateMultipartUploadRequest(destBucket, destKey)
+    val initRes = s3.initiateMultipartUpload(initReq)
+    val uploadId = initRes.getUploadId
+
+    val partETags = new java.util.ArrayList[PartETag]()
+
+    try {
+      var partNumber = 1
+      var bytePosition = 0L
+
+      while (bytePosition < contentLength) {
+        val lastByte = math.min(bytePosition + partSize - 1, contentLength - 1)
+
+        val copyReq = new CopyPartRequest()
+          .withSourceBucketName(srcBucket)
+          .withSourceKey(srcKey)
+          .withDestinationBucketName(destBucket)
+          .withDestinationKey(destKey)
+          .withUploadId(uploadId)
+          .withFirstByte(bytePosition)
+          .withLastByte(lastByte)
+          .withPartNumber(partNumber)
+
+        val copyRes = s3.copyPart(copyReq)
+        val etag = copyRes.getPartETag
+
+        if (etag == null || etag.getETag == null) {
+          throw new IllegalStateException(s"Missing ETag for part=$partNumber range=[$bytePosition-$lastByte]")
+        }
+
+        partETags.add(etag)
+
+        bytePosition = lastByte + 1
+        partNumber += 1
+      }
+
+      if (partETags.isEmpty) {
+        // Sécurité absolue: jamais compléter un multipart sans parts
+        throw new IllegalStateException(s"No parts created for multipart copy: s3://$srcBucket/$srcKey -> s3://$destBucket/$destKey")
+      }
+
+      val completeReq = new CompleteMultipartUploadRequest(destBucket, destKey, uploadId, partETags)
+      s3.completeMultipartUpload(completeReq)
+      logInfo(s"MultipartCopy completed: dest=s3://$destBucket/$destKey parts=${partETags.size}")
+
+    } catch {
+      case NonFatal(e) =>
+        logError(s"MultipartCopy failed -> abort. uploadId=$uploadId, reason=${e.getMessage}")
+        try s3.abortMultipartUpload(new AbortMultipartUploadRequest(destBucket, destKey, uploadId))
+        catch { case NonFatal(abortErr) => logWarn(s"Abort failed: ${abortErr.getMessage}") }
+        throw e
+    }
   }
 }
-
-private def artifactTypeFromKey(key: String): ArtifactType = {
-  key.toUpperCase match {
-    case k if k.contains("/DATA/")        => ArtifactType.DATA
-    case k if k.contains("/PARAMETRAGE/") => ArtifactType.PARAMETRAGE
-    case k if k.contains("/METADATA/")    => ArtifactType.METADATA
-    case k if k.contains("/MONITORING/")  => ArtifactType.MONITORING
-    case k if k.contains("/AUTRES/")      => ArtifactType.AUTRES
-    case _                                => ArtifactType.UNKNOWN
-  }
-}
-

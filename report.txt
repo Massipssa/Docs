@@ -745,3 +745,50 @@ final class JsonCodec {
     mapper.readValue[A](is)
 }
 
+
+
+import com.fasterxml.jackson.annotation.{JsonCreator, JsonValue}
+
+sealed trait BatchStatus { def order: Int; @JsonValue def code: String }
+object BatchStatus {
+
+  case object DECRYPTED    extends BatchStatus { val order = 0;  val code = "DECRYPTED" }
+  case object DECOMPRESSED extends BatchStatus { val order = 5;  val code = "DECOMPRESSED" }
+  case object DATA_CHECK   extends BatchStatus { val order = 10; val code = "DATA_CHECK" }
+  case object DONE         extends BatchStatus { val order = 100;val code = "DONE" }
+  case object FAILED       extends BatchStatus { val order = -1; val code = "FAILED" }
+
+  @JsonCreator
+  def fromCode(code: String): BatchStatus =
+    code.toUpperCase match {
+      case "DECRYPTED"    => DECRYPTED
+      case "DECOMPRESSED" => DECOMPRESSED
+      case "DATA_CHECK"   => DATA_CHECK
+      case "DONE"         => DONE
+      case "FAILED"       => FAILED
+      case other => throw new IllegalArgumentException(s"Unknown BatchStatus: $other")
+    }
+}
+
+
+import com.fasterxml.jackson.annotation.{JsonCreator, JsonValue}
+
+sealed trait ArtifactStatus { @JsonValue def code: String }
+object ArtifactStatus {
+
+  case object IN_PROGRESS extends ArtifactStatus { val code = "IN_PROGRESS" }
+  case object DONE        extends ArtifactStatus { val code = "DONE" }
+  case object FAILED      extends ArtifactStatus { val code = "FAILED" }
+  case object IGNORED     extends ArtifactStatus { val code = "IGNORED" }
+
+  @JsonCreator
+  def fromCode(code: String): ArtifactStatus =
+    code.toUpperCase match {
+      case "IN_PROGRESS" => IN_PROGRESS
+      case "DONE"        => DONE
+      case "FAILED"      => FAILED
+      case "IGNORED"     => IGNORED
+      case other => throw new IllegalArgumentException(s"Unknown ArtifactStatus: $other")
+    }
+}
+

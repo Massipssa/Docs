@@ -1,116 +1,79 @@
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model._
+import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
+import java.io.{InputStream, ByteArrayInputStream}
 
-trait Logging {
-  def logInfo(msg: String): Unit = println(msg)
-  def logWarn(msg: String): Unit = println(s"[WARN] $msg")
-  def logError(msg: String): Unit = println(s"[ERROR] $msg")
-}
+def putMultiPart(
+    s3Client: AmazonS3,
+    bucket: String,
+    key: String,
+    inputStream: InputStream,
+    uploadPartSize: Int
+): Unit = {
 
-class RobustS3Service(val s3: AmazonS3) extends Logging {
+  val partSize = math.max(uploadPartSize.toLong, 5L * 1024 * 1024) // S3: min 5MB (sauf last part)
+  val buffer = new Array[Byte](partSize.toInt)
 
-  private val MinPartSize: Long = 5L * 1024 * 1024          // 5 MB (min S3)
-  private val MaxSingleCopy: Long = 5L * 1024 * 1024 * 1024 // 5 GB (single CopyObject limit)
+  // Lis 1ère fois AVANT d'initier le multipart pour éviter multipart "vide"
+  var bytesRead = inputStream.read(buffer)
 
-  /** Robust server-side copy.
-    * - 0 bytes -> PutObject empty
-    * - <= 5 GB -> CopyObject
-    * - > 5 GB -> Multipart Copy
-    */
-  def copy(bucket: String, keySource: String, keyDest: String, partSize: Long = 128L * 1024 * 1024): Unit = {
-    val meta = s3.getObjectMetadata(bucket, keySource)
-    val size = meta.getContentLength
-
-    if (size == 0L) {
-      logInfo(s"Copy empty object: s3://$bucket/$keySource -> s3://$bucket/$keyDest")
-      val empty = new java.io.ByteArrayInputStream(Array.emptyByteArray)
-      val putReq = new PutObjectRequest(bucket, keyDest, empty, new ObjectMetadata())
-      s3.putObject(putReq)
-      return
-    }
-
-    if (size <= MaxSingleCopy) {
-      logInfo(s"CopyObject (server-side): size=$size bytes, src=$keySource dest=$keyDest")
-      val req = new CopyObjectRequest(bucket, keySource, bucket, keyDest)
-      // Optionnel: si tu veux conserver metadata/content-type explicitement:
-      // req.setNewObjectMetadata(meta)
-      s3.copyObject(req)
-      return
-    }
-
-    // > 5GB => multipart copy obligatoire
-    multipartCopy(bucket, keySource, bucket, keyDest, size, normalizePartSize(partSize))
+  // stream vide => créer objet vide (ou tu peux choisir de ne rien faire)
+  if (bytesRead == -1) {
+    val meta = new ObjectMetadata()
+    meta.setContentLength(0)
+    s3Client.putObject(new PutObjectRequest(bucket, key, new ByteArrayInputStream(Array.emptyByteArray), meta))
+    return
   }
 
-  private def normalizePartSize(desired: Long): Long = {
-    val p = math.max(desired, MinPartSize)
-    // garder un multiple de 5MB (recommandé)
-    (p / MinPartSize) * MinPartSize
-  }
+  val initRes = s3Client.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucket, key))
+  val uploadId = initRes.getUploadId
 
-  private def multipartCopy(
-      srcBucket: String,
-      srcKey: String,
-      destBucket: String,
-      destKey: String,
-      contentLength: Long,
-      partSize: Long
-  ): Unit = {
-    logInfo(s"MultipartCopy: size=$contentLength bytes partSize=$partSize src=$srcKey dest=$destKey")
+  val partETags = ListBuffer.empty[PartETag]
+  var partNumber = 1
 
-    val initReq = new InitiateMultipartUploadRequest(destBucket, destKey)
-    val initRes = s3.initiateMultipartUpload(initReq)
-    val uploadId = initRes.getUploadId
+  try {
+    while (bytesRead != -1) {
+      // IMPORTANT: ne pas réutiliser le buffer brut (il sera réécrit). On crée un stream stable.
+      val partStream = new ByteArrayInputStream(buffer, 0, bytesRead)
 
-    val partETags = new java.util.ArrayList[PartETag]()
+      val req = new UploadPartRequest()
+        .withBucketName(bucket)
+        .withKey(key)
+        .withUploadId(uploadId)
+        .withPartNumber(partNumber)
+        .withPartSize(bytesRead.toLong)
+        .withInputStream(partStream)
 
-    try {
-      var partNumber = 1
-      var bytePosition = 0L
-
-      while (bytePosition < contentLength) {
-        val lastByte = math.min(bytePosition + partSize - 1, contentLength - 1)
-
-        val copyReq = new CopyPartRequest()
-          .withSourceBucketName(srcBucket)
-          .withSourceKey(srcKey)
-          .withDestinationBucketName(destBucket)
-          .withDestinationKey(destKey)
-          .withUploadId(uploadId)
-          .withFirstByte(bytePosition)
-          .withLastByte(lastByte)
-          .withPartNumber(partNumber)
-
-        val copyRes = s3.copyPart(copyReq)
-        val etag = copyRes.getPartETag
-
-        if (etag == null || etag.getETag == null) {
-          throw new IllegalStateException(s"Missing ETag for part=$partNumber range=[$bytePosition-$lastByte]")
-        }
-
-        partETags.add(etag)
-
-        bytePosition = lastByte + 1
-        partNumber += 1
+      val res = s3Client.uploadPart(req)
+      val etag = res.getPartETag
+      if (etag == null || etag.getETag == null) {
+        throw new IllegalStateException(s"Missing ETag for part $partNumber on s3://$bucket/$key")
       }
 
-      if (partETags.isEmpty) {
-        // Sécurité absolue: jamais compléter un multipart sans parts
-        throw new IllegalStateException(s"No parts created for multipart copy: s3://$srcBucket/$srcKey -> s3://$destBucket/$destKey")
-      }
+      partETags += etag
+      partNumber += 1
 
-      val completeReq = new CompleteMultipartUploadRequest(destBucket, destKey, uploadId, partETags)
-      s3.completeMultipartUpload(completeReq)
-      logInfo(s"MultipartCopy completed: dest=s3://$destBucket/$destKey parts=${partETags.size}")
-
-    } catch {
-      case NonFatal(e) =>
-        logError(s"MultipartCopy failed -> abort. uploadId=$uploadId, reason=${e.getMessage}")
-        try s3.abortMultipartUpload(new AbortMultipartUploadRequest(destBucket, destKey, uploadId))
-        catch { case NonFatal(abortErr) => logWarn(s"Abort failed: ${abortErr.getMessage}") }
-        throw e
+      // read next
+      bytesRead = inputStream.read(buffer)
     }
+
+    // Safety: ne jamais compléter sans parts
+    if (partETags.isEmpty) {
+      throw new IllegalStateException(s"No parts uploaded for s3://$bucket/$key (uploadId=$uploadId)")
+    }
+
+    val completeReq = new CompleteMultipartUploadRequest(bucket, key, uploadId, partETags.asJava)
+    s3Client.completeMultipartUpload(completeReq)
+
+  } catch {
+    case NonFatal(e) =>
+      // Abort obligatoire pour éviter des multipart "en cours"
+      try s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId))
+      catch { case NonFatal(_) => () }
+      throw e
+  } finally {
+    try inputStream.close() catch { case NonFatal(_) => () }
   }
 }

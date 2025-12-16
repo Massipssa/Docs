@@ -1,56 +1,10 @@
-final case class ArtifactState(name: String, state: String, error: Option[String])
-final case class BatchState(
-  batchId: String,
-  status: String,
-  updatedAt: String,
-  cre: List[ArtifactState],
-  gesparam: List[ArtifactState],
-  autres: List[ArtifactState],
-  metadata: List[String],
-  monitoring: List[String]
-)
-
-
-object StateMapper {
-  def toArtifactState(a: Artifact): Option[ArtifactState] =
-    a.status.map(s => ArtifactState(a.name, s.code, a.error))
-
-  def toBatchState(b: Batch): BatchState =
-    BatchState(
-      batchId = b.batchId,
-      status = b.status.code,
-      updatedAt = b.updatedAt,
-      cre = b.cre.flatMap(toArtifactState),
-      gesparam = b.gesparam.flatMap(toArtifactState),
-      autres = b.autres.flatMap(toArtifactState),
-      metadata = b.metadata.map(_.name),
-      monitoring = b.monitoring.map(_.name)
-    )
-}
-
-
-final class DualS3StateStore(s3: AmazonS3, json: JsonCodec) {
-
-  private def stateKey(batch: Batch) = s"${batch.paths.statePrefix}state.json"
-  private def batchKey(batch: Batch) = s"${batch.paths.statePrefix}batch.json"
-
-  def writeAll(batch: Batch): Unit = {
-    val state = StateMapper.toBatchState(batch)
-
-    putJson(batch.paths.bucket, stateKey(batch), json.toJson(state))
-    putJson(batch.paths.bucket, batchKey(batch), json.toJson(batch)) // ✅ complet
-  }
-
-  def readBatch(bucket: String, batchJsonKey: String): Batch = {
-    val is = s3.getObject(bucket, batchJsonKey).getObjectContent
-    try json.fromJson[Batch](is) finally is.close()
-  }
-
-  private def putJson(bucket: String, key: String, payload: String): Unit = {
-    val bytes = payload.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-    val meta = new ObjectMetadata()
-    meta.setContentType("application/json")
-    meta.setContentLength(bytes.length.toLong)
-    s3.putObject(bucket, key, new java.io.ByteArrayInputStream(bytes), meta)
-  }
-}
+s3://bucket/
+  zone=state/
+    batch=ARK_20250101/
+      manifest.json
+      state_00_DECRYPT.json
+      state_05_DECOMPRESS.json
+      state_10_DATA_CHECK.json
+      state_20_CRE_TRANSFORM.json
+      state_21_CRE_TRANSFER.json
+      ...

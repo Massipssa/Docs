@@ -1,19 +1,163 @@
-import java.nio.file.{Files, Path, StandardCopyOption}
-import com.amazonaws.services.s3.model.{ObjectMetadata, PutObjectRequest}
+state_00_DECRYPT.json
+state_05_DECOMPRESS.json
+state_10_DATA_CHECK.json
+state_11_PARAMETRAGE_CHECK.json
+state_12_METADATA_CHECK.json
+state_13_MONITORING_CHECK.json
+state_20_CRE_TRANSFORM.json
+state_21_CRE_TRANSFER.json
+state_30_GESPARAM_TRANSFORM.json
+state_31_GESPARAM_TRANSFER.json
+state_40_AUTRES_TRANSFORM.json
+state_41_AUTRES_TRANSFER.json
 
-def putSafe(bucket: String, key: String, in: java.io.InputStream, contentType: String): Unit = {
-  val tmp: Path = Files.createTempFile("s3-put-", ".tmp")
-  try {
-    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING)
-    val size = Files.size(tmp)
+Voilà les avantages concrets (dans TON contexte : 600 CRE + 400 gesparam, 10+ steps, S3, reprise) d’un fichier de state par step vs un fichier global.
 
-    val md = new ObjectMetadata()
-    md.setContentLength(size)
-    md.setContentType(contentType)
+1) Conflits d’écriture et risques de corruption (le plus important)
+Fichier global
 
-    s3Client.putObject(new PutObjectRequest(bucket, key, tmp.toFile).withMetadata(md))
-  } finally {
-    try in.close() catch { case _: Throwable => () }
-    try Files.deleteIfExists(tmp) catch { case _: Throwable => () }
-  }
-}
+Chaque step doit lire → modifier → réécrire le même gros JSON.
+
+Si 2 traitements tournent (ou reprise / retry / relance) : risque de lost update (un écrase l’autre).
+
+Sur S3 tu n’as pas de vrai “lock” simple.
+
+Un fichier par step
+
+Chaque step écrit son fichier, donc :
+
+pas d’écrasement entre steps
+
+beaucoup moins de risques de corruption
+
+reprise plus sûre
+
+2) Reprise/rattrapage ciblé (ton besoin)
+Fichier global
+
+Si un CRE échoue à DATA_CHECK, tu dois “démêler” dans un seul document :
+
+où il en est dans chaque step
+
+ce qu’il faut rejouer
+
+Souvent tu finis par “réinitialiser” trop large, ou tu te plantes.
+
+Un fichier par step
+
+Tu modifies un seul fichier : celui du step où tu veux rejouer.
+
+Les steps suivants repartent automatiquement via propagation.
+
+Exemple : tu remets CRE_X à IN_PROGRESS uniquement dans state_DATA_CHECK.json.
+
+3) Debug ultra rapide (tu gagnes du temps)
+Fichier global
+
+Gros JSON, difficile à lire.
+
+Pour comprendre pourquoi CRE_127 est bloqué, tu dois chercher partout.
+
+Un fichier par step
+
+Pour un incident “DATA_CHECK”, tu ouvres uniquement state_DATA_CHECK.json.
+
+Pour un incident “CRE_TRANSFER”, tu ouvres uniquement state_CRE_TRANSFER.json.
+
+Diagnostic beaucoup plus rapide.
+
+4) Performance / coût S3 (sur la durée)
+Fichier global
+
+JSON énorme (1000 artifacts × 10 steps = vite très gros).
+
+À chaque step : tu télécharges/updates/réuploades un gros fichier → coûteux et lent.
+
+Un fichier par step
+
+Chaque step lit/écrit un fichier de taille proportionnelle à ce step.
+
+Et surtout : écrit une seule fois “son état”, sans rewriter tout l’historique.
+
+5) Séparation claire des responsabilités (moins de code fragile)
+Fichier global
+
+Toute la logique de “quel champ appartient à quel step” devient un bordel :
+
+collisions de noms
+
+conventions à respecter partout
+
+énormément de if(step==...)
+
+Un fichier par step
+
+Chaque step est propriétaire de son état.
+
+Le code devient très uniforme :
+
+load my state
+
+update my artifacts
+
+write my state
+
+6) Évolution du pipeline (ajouter/supprimer un step)
+Fichier global
+
+Ajouter un step = modifier le schéma global + rétrocompatibilité + migration.
+
+Un fichier par step
+
+Ajouter un step = ajouter un nouveau fichier state_<NEWSTEP>.json.
+
+Les anciens steps restent inchangés.
+
+7) Observabilité “par étape”
+Fichier global
+
+Difficile d’avoir une vision : “combien de CRE en erreur à DATA_CHECK ?”
+
+Il faut parser un gros document multi-dimension.
+
+Un fichier par step
+
+Tu peux faire des stats simples :
+
+compter FAILED dans state_DATA_CHECK.json
+
+compter DONE dans state_CRE_TRANSFER.json
+
+Très simple à brancher dans un dashboard.
+
+Le seul vrai avantage d’un fichier global (pour être honnête)
+
+Une seule lecture te donne toute la photo du batch.
+
+Mais dans la pratique, avec S3 + reprises + plusieurs steps, ça devient vite :
+
+plus risqué
+
+plus gros
+
+plus dur à maintenir
+
+Conclusion adaptée à ton cas
+
+Avec 1000 artifacts et 10+ steps, le fichier global devient rapidement :
+
+gros
+
+fragile
+
+compliqué pour la reprise
+
+Le fichier par step est mieux parce qu’il te donne :
+
+isolation
+
+reprise ciblée
+
+debug simple
+
+moins de risques S3

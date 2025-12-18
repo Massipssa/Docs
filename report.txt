@@ -1,126 +1,336 @@
-package arkea.ingestion.app
+src/main/scala/fr/ccf/job/ingest/
+  IngestRunner.scala
+  IngestService.scala
+  ReportReader.scala
+  TableInfoService.scala
+  DataFrameLoader.scala
+  DataFrameTransformer.scala
+  TableWriter.scala
+  model.scala
 
-import arkea.ingestion.json.JsonCodec
-import arkea.ingestion.model._
-import arkea.ingestion.s3.S3SingleLister
-import arkea.ingestion.state.S3StateStore
-import arkea.ingestion.steps._
+src/test/scala/fr/ccf/job/ingest/
+  SparkTestSession.scala
+  ReportReaderSpec.scala
+  DataFrameTransformerSpec.scala
+  IngestServiceSpec.scala
 
-import com.amazonaws.services.s3.AmazonS3
+package fr.ccf.job.ingest
 
-object Bootstrap {
+final case class JobConf(rzBucket: String)
+final case class DbConf(/* ... */)
 
-  def buildManifest(batchId: String): Manifest =
-    Manifest(
-      pipeline = "arkea-ingestion",
-      version = "v1",
-      batchId = batchId,
-      steps = List(
-        StepDef(0,  "DECRYPT",    "state_00_DECRYPT.json"),
-        StepDef(5,  "DECOMPRESS", "state_05_DECOMPRESS.json", dependsOn = List("DECRYPT")),
+final case class TableInfo(tableName: String, keyInRz: String)
 
-        StepDef(10, "DATA_CHECK", "state_10_DATA_CHECK.json", dependsOn = List("DECOMPRESS")),
-        StepDef(11, "PARAMETRAGE_CHECK", "state_11_PARAMETRAGE_CHECK.json", dependsOn = List("DECOMPRESS")),
-        StepDef(12, "METADATA_CHECK", "state_12_METADATA_CHECK.json", dependsOn = List("DECOMPRESS")),
-        StepDef(13, "MONITORING_CHECK", "state_13_MONITORING_CHECK.json", dependsOn = List("DECOMPRESS")),
+final case class IngestionConfig(
+  formatVersion: String = "2",
+  targetFileSizeBytes: Long = 536870912L, // 512MB
+  castColumnsToString: Seq[String] = Seq("year", "month", "day")
+)
 
-        StepDef(20, "CRE_TRANSFORM", "state_20_CRE_TRANSFORM.json", dependsOn = List("DATA_CHECK")),
-        StepDef(21, "CRE_TRANSFER",  "state_21_CRE_TRANSFER.json",  dependsOn = List("CRE_TRANSFORM")),
+final case class IngestResult(success: List[String], failed: Map[String, String])
 
-        StepDef(30, "GESPARAM_TRANSFORM", "state_30_GESPARAM_TRANSFORM.json", dependsOn = List("PARAMETRAGE_CHECK")),
-        StepDef(31, "GESPARAM_TRANSFER",  "state_31_GESPARAM_TRANSFER.json",  dependsOn = List("GESPARAM_TRANSFORM")),
 
-        StepDef(40, "METADATA_TRANSFER",   "state_40_METADATA_TRANSFER.json",   dependsOn = List("METADATA_CHECK")),
-        StepDef(41, "MONITORING_TRANSFER", "state_41_MONITORING_TRANSFER.json", dependsOn = List("MONITORING_CHECK")),
+package fr.ccf.job.ingest
 
-        StepDef(50, "AUTRES_TRANSFORM", "state_50_AUTRES_TRANSFORM.json", dependsOn = List("DECOMPRESS")),
-        StepDef(51, "AUTRES_TRANSFER",  "state_51_AUTRES_TRANSFER.json", dependsOn = List("AUTRES_TRANSFORM", "METADATA_TRANSFER", "MONITORING_TRANSFER"))
-      )
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions.col
+
+trait ReportReader {
+  def listIngestedKeys(reportPath: String): List[String]
+}
+
+final class SparkCsvReportReader(
+  implicit spark: SparkSession,
+  keyCol: String = "key_in_raw_zone",
+  statusCol: String = "status",
+  ingestedValue: String = "Ingested",
+  delimiter: String = ",",
+  header: Boolean = true
+) extends ReportReader {
+
+  override def listIngestedKeys(reportPath: String): List[String] = {
+    import spark.implicits._
+
+    spark.read
+      .option("header", header.toString)
+      .option("delimiter", delimiter)
+      .csv(reportPath)
+      .select(col(keyCol).as("key"), col(statusCol).as("status"))
+      .filter(col("status") === ingestedValue)
+      .select("key")
+      .as[String]
+      .collect()
+      .toList
+  }
+}
+
+package fr.ccf.job.ingest
+
+trait TableInfoService {
+  def extractTableInfo(rzBucket: String, key: String): Option[TableInfo]
+}
+
+// Adapter vers ton code actuel
+final class DefaultTableInfoService extends TableInfoService {
+  override def extractTableInfo(rzBucket: String, key: String): Option[TableInfo] =
+    ObjectUtil.extractTableInfo(rzBucket, key) // <-- ton existant
+}
+
+
+package fr.ccf.job.ingest
+
+import org.apache.spark.sql.{DataFrame, SparkSession}
+
+trait DataFrameLoader {
+  def loadCsv(key: String): DataFrame
+}
+
+final class SparkUtilDataFrameLoader(implicit spark: SparkSession) extends DataFrameLoader {
+  override def loadCsv(key: String): DataFrame =
+    SparkUtil.readCsvAsDf(key) // <-- ton existant
+}
+
+package fr.ccf.job.ingest
+
+import org.apache.spark.sql.{DataFrame}
+import org.apache.spark.sql.functions.col
+
+trait DataFrameTransformer {
+  def prepare(df: DataFrame): DataFrame
+}
+
+final class CastColumnsToStringTransformer(cols: Seq[String]) extends DataFrameTransformer {
+  override def prepare(df: DataFrame): DataFrame =
+    cols.foldLeft(df) { (acc, c) =>
+      if (acc.columns.contains(c)) acc.withColumn(c, col(c).cast("string")) else acc
+    }
+}
+
+
+package fr.ccf.job.ingest
+
+import org.apache.spark.sql.DataFrame
+
+trait TableWriter {
+  def createOrAppend(dbConf: DbConf, tableName: String, df: DataFrame, tableProperties: Map[String, String]): Unit
+}
+
+final class IcebergTableWriter extends TableWriter {
+  override def createOrAppend(dbConf: DbConf, tableName: String, df: DataFrame, tableProperties: Map[String, String]): Unit =
+    TableCreator.createOrAppendTable(
+      dbConf = dbConf,
+      tableName = tableName,
+      df = df,
+      tableProperties = tableProperties
     )
+}
 
-  def run(s3: AmazonS3, runtime: BatchRuntime): Unit = {
-    val codec = new JsonCodec
-    val store = new S3StateStore(s3, codec)
-    val lister = new S3SingleLister(s3)
+package fr.ccf.job.ingest
 
-    // Create manifest once (read-only ensuite)
-    if (!s3.doesObjectExist(runtime.paths.bucket, runtime.paths.statePrefix + "manifest.json")) {
-      store.writeManifest(runtime.paths, "manifest.json", buildManifest(runtime.batchId))
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSession
+
+final class IngestService(
+  jobConf: JobConf,
+  dbConf: DbConf,
+  reportReader: ReportReader,
+  tableInfoService: TableInfoService,
+  loader: DataFrameLoader,
+  transformer: DataFrameTransformer,
+  writer: TableWriter,
+  config: IngestionConfig
+)(implicit spark: SparkSession) extends Logging {
+
+  private val tableProperties: Map[String, String] = Map(
+    "format-version" -> config.formatVersion,
+    "write.target-file-size-bytes" -> config.targetFileSizeBytes.toString
+  )
+
+  def ingestFromReport(reportPath: String): IngestResult = {
+    val keys = reportReader.listIngestedKeys(reportPath)
+
+    val (ok, ko) = keys.foldLeft((List.empty[String], Map.empty[String, String])) {
+      case ((successAcc, failedAcc), key) =>
+        ingestOneKey(key) match {
+          case Right(_)  => (key :: successAcc, failedAcc)
+          case Left(err) => (successAcc, failedAcc + (key -> err))
+        }
     }
 
-    val steps: Map[String, IngestionStep] = Map(
-      "DECRYPT" -> new DecryptStep,
-      "DECOMPRESS" -> new DecompressStep(lister),
+    IngestResult(ok.reverse, ko)
+  }
 
-      "DATA_CHECK" -> new DataCheckStep(
-        creFileNameRegex = ".*",       // TODO: mets ton regex exact
-        referential = Set.empty        // TODO: charge ton référentiel
-      ),
-      "PARAMETRAGE_CHECK" -> new ParametrageCheckStep,
-      "METADATA_CHECK" -> new MetadataCheckStep,
-      "MONITORING_CHECK" -> new MonitoringCheckStep,
+  def ingestOneKey(key: String): Either[String, Unit] = {
+    tableInfoService.extractTableInfo(jobConf.rzBucket, key) match {
+      case None =>
+        val msg = s"TableInfo introuvable pour key=$key"
+        logWarning(msg)
+        Left(msg)
 
-      "CRE_TRANSFORM" -> new CreTransformStep,
-      "CRE_TRANSFER" -> new CreTransferStep,
+      case Some(ti) =>
+        try {
+          logInfo(s"Ingesting table=${ti.tableName}, key=${ti.keyInRz}")
+          val rawDf = loader.loadCsv(ti.keyInRz)
+          val finalDf = transformer.prepare(rawDf)
 
-      "GESPARAM_TRANSFORM" -> new GesparamTransformStep(lister),
-      "GESPARAM_TRANSFER" -> new GesparamTransferStep,
+          writer.createOrAppend(dbConf, ti.tableName, finalDf, tableProperties)
+          Right(())
+        } catch {
+          case e: Throwable =>
+            val msg = s"Echec ingestion key=$key : ${e.getMessage}"
+            logError(msg, e)
+            Left(msg)
+        }
+    }
+  }
+}
 
-      "METADATA_TRANSFER" -> new MetadataTransferStep,
-      "MONITORING_TRANSFER" -> new MonitoringTransferStep,
+package fr.ccf.job.ingest
 
-      "AUTRES_TRANSFORM" -> new AutresTransformStep,
-      "AUTRES_TRANSFER" -> new AutresTransferStep
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSession
+
+object IngestRunner extends Logging {
+
+  def run(jobConf: JobConf, dbConf: DbConf, reportPath: String)(implicit spark: SparkSession): IngestResult = {
+    val config = IngestionConfig()
+
+    val service = new IngestService(
+      jobConf = jobConf,
+      dbConf = dbConf,
+      reportReader = new SparkCsvReportReader(),
+      tableInfoService = new DefaultTableInfoService(),
+      loader = new SparkUtilDataFrameLoader(),
+      transformer = new CastColumnsToStringTransformer(config.castColumnsToString),
+      writer = new IcebergTableWriter(),
+      config = config
     )
 
-    val runner = new Runner(steps, store)
-    runner.runAll(runtime, "manifest.json")
+    service.ingestFromReport(reportPath)
   }
 }
 
 
-{
-  "pipeline": "arkea-ingestion",
-  "version": "v1",
-  "batchId": "ARK_20250101",
-  "steps": [
-    { "order": 0,  "name": "DECRYPT", "stateKey": "state_00_DECRYPT.json" },
-    { "order": 5,  "name": "DECOMPRESS", "stateKey": "state_05_DECOMPRESS.json" },
+package fr.ccf.job.ingest
 
-    { "order": 10, "name": "DATA_CHECK", "stateKey": "state_10_DATA_CHECK.json" },
-    { "order": 11, "name": "PARAMETRAGE_CHECK", "stateKey": "state_11_PARAMETRAGE_CHECK.json" },
-    { "order": 12, "name": "METADATA_CHECK", "stateKey": "state_12_METADATA_CHECK.json" },
-    { "order": 13, "name": "MONITORING_CHECK", "stateKey": "state_13_MONITORING_CHECK.json" },
+import org.apache.spark.sql.SparkSession
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
 
-    { "order": 20, "name": "CRE_TRANSFORM", "stateKey": "state_20_CRE_TRANSFORM.json", "dependsOn": ["DATA_CHECK"] },
-    { "order": 21, "name": "CRE_TRANSFER",  "stateKey": "state_21_CRE_TRANSFER.json",  "dependsOn": ["CRE_TRANSFORM"] },
+trait SparkTestSession extends AnyFunSuite with BeforeAndAfterAll {
+  implicit var spark: SparkSession = _
 
-    { "order": 30, "name": "GESPARAM_TRANSFORM", "stateKey": "state_30_GESPARAM_TRANSFORM.json", "dependsOn": ["PARAMETRAGE_CHECK"] },
-    { "order": 31, "name": "GESPARAM_TRANSFER",  "stateKey": "state_31_GESPARAM_TRANSFER.json",  "dependsOn": ["GESPARAM_TRANSFORM"] },
+  override def beforeAll(): Unit = {
+    spark = SparkSession.builder()
+      .appName("ingest-tests")
+      .master("local[2]")
+      .config("spark.ui.enabled", "false")
+      .getOrCreate()
+  }
 
-    { "order": 40, "name": "AUTRES_TRANSFORM", "stateKey": "state_40_AUTRES_TRANSFORM.json" },
-    { "order": 41, "name": "AUTRES_TRANSFER",  "stateKey": "state_41_AUTRES_TRANSFER.json", "dependsOn": ["AUTRES_TRANSFORM", "METADATA_TRANSFER", "MONITORING_TRANSFER"] }
-  ]
+  override def afterAll(): Unit = {
+    if (spark != null) spark.stop()
+  }
 }
 
 
-{
-  "batchId": "B1",
-  "step": "DECOMPRESS",
-  "artifacts": [
-    { "name": "DATA/CRE_A.csv.gz", "state": "IN_PROGRESS", "error": null },
-    { "name": "PARAMETRAGE/params.csv", "state": "IN_PROGRESS", "error": null },
-    { "name": "METADATA/metadata.json", "state": "IN_PROGRESS", "error": null },
-    { "name": "MONITORING/mon1.xml", "state": "IN_PROGRESS", "error": null }
-  ]
+package fr.ccf.job.ingest
+
+import java.nio.file.Files
+
+final class ReportReaderSpec extends SparkTestSession {
+
+  test("listIngestedKeys retourne uniquement les keys en status=Ingested") {
+    val dir = Files.createTempDirectory("report-test")
+    val report = dir.resolve("report.csv")
+
+    val content =
+      """key_in_raw_zone,status
+        |a.csv,Ingested
+        |b.csv,Error
+        |c.csv,Ingested
+        |""".stripMargin
+
+    Files.write(report, content.getBytes("UTF-8"))
+
+    val reader = new SparkCsvReportReader()
+    val keys = reader.listIngestedKeys(report.toString)
+
+    assert(keys.sorted == List("a.csv", "c.csv"))
+  }
 }
 
-{
-  "batchId": "B1",
-  "step": "DATA_CHECK",
-  "artifacts": [
-    { "name": "DATA/CRE_A.csv.gz", "state": "DONE", "error": null },
-    { "name": "DATA/CRE_B.csv.gz", "state": "FAILED", "error": "INVALID_NAME" }
-  ]
+package fr.ccf.job.ingest
+
+import org.apache.spark.sql.types.StringType
+
+final class DataFrameTransformerSpec extends SparkTestSession {
+
+  test("CastColumnsToStringTransformer caste seulement les colonnes existantes") {
+    import spark.implicits._
+
+    val df = Seq((2025, 12, 18, "x")).toDF("year", "month", "day", "payload")
+
+    val transformer = new CastColumnsToStringTransformer(Seq("year", "month", "day", "missing_col"))
+    val out = transformer.prepare(df)
+
+    assert(out.schema("year").dataType == StringType)
+    assert(out.schema("month").dataType == StringType)
+    assert(out.schema("day").dataType == StringType)
+    assert(out.schema("payload").dataType != StringType) // payload reste tel quel
+  }
+}
+
+package fr.ccf.job.ingest
+
+import org.apache.spark.sql.{DataFrame}
+
+final class IngestServiceSpec extends SparkTestSession {
+
+  test("ingestOneKey appelle le writer avec les bonnes propriétés") {
+    val jobConf = JobConf(rzBucket = "rz-bucket")
+    val dbConf = DbConf()
+
+    val reportReader = new ReportReader {
+      override def listIngestedKeys(reportPath: String): List[String] = List("k1")
+    }
+
+    val tableInfoService = new TableInfoService {
+      override def extractTableInfo(rzBucket: String, key: String): Option[TableInfo] =
+        Some(TableInfo("my_table", "s3://rz/path/file.csv"))
+    }
+
+    val loader = new DataFrameLoader {
+      override def loadCsv(key: String): DataFrame = {
+        import spark.implicits._
+        Seq((1, 2, 3)).toDF("year", "month", "day")
+      }
+    }
+
+    val transformer = new CastColumnsToStringTransformer(Seq("year", "month", "day"))
+
+    final class CapturingWriter extends TableWriter {
+      var called = false
+      var props: Map[String, String] = Map.empty
+      override def createOrAppend(dbConf: DbConf, tableName: String, df: DataFrame, tableProperties: Map[String, String]): Unit = {
+        called = true
+        props = tableProperties
+        assert(tableName == "my_table")
+      }
+    }
+
+    val writer = new CapturingWriter
+    val config = IngestionConfig()
+
+    val service = new IngestService(
+      jobConf, dbConf, reportReader, tableInfoService, loader, transformer, writer, config
+    )
+
+    val res = service.ingestOneKey("k1")
+    assert(res.isRight)
+    assert(writer.called)
+    assert(writer.props("format-version") == "2")
+    assert(writer.props("write.target-file-size-bytes") == "536870912")
+  }
 }
 

@@ -333,4 +333,224 @@ final class IngestServiceSpec extends SparkTestSession {
     assert(writer.props("write.target-file-size-bytes") == "536870912")
   }
 }
+-------------------------------------------
 
+package fr.ccf.job.app
+
+import fr.ccf.job.ingest.{DbConf, IngestRunner, JobConf}
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSession
+
+object App extends Logging {
+
+  def main(sysArgs: Array[String]): Unit = {
+    val argsMap = GlueArgsResolver.resolve(sysArgs)
+
+    val config = AppConfigLoader.fromArgs(argsMap) match {
+      case Left(err) =>
+        logError(err.message)
+        System.exit(2)
+        return
+      case Right(c) => c
+    }
+
+    implicit val spark: SparkSession =
+      SessionCreator.createSparkSession(
+        config.jobConf.appName,
+        config.warehousePath,
+        config.dbConf.catalog,
+        isLocal = config.isLocal
+      )
+
+    try {
+      val objectsToIngest: List[String] =
+        config.objectsToIngest.getOrElse {
+          // fallback report obligatoire (sinon on ingère rien => erreur explicite)
+          val reportPath = config.reportPath.getOrElse {
+            throw new IllegalArgumentException(
+              "Ni --objects-to-ingest ni --report-path fournis. Impossible de déterminer quoi ingérer."
+            )
+          }
+          IngestRunner.listObjectFromRZ(reportPath) // ta méthode existante (ou à ajouter)
+        }
+
+      IngestRunner.run(config.jobConf, config.dbConf, objectsToIngest)
+    } finally {
+      spark.stop()
+    }
+  }
+}
+
+package fr.ccf.job.app
+
+object GlueArgsResolver {
+
+  private val Required: Array[String] =
+    Array("context", "app-name", "rz-bucket", "sz-bucket", "glue-db-name")
+
+  private val Optional: Seq[String] =
+    Seq("objects-to-ingest", "report-path", "is-local")
+
+  def resolve(sysArgs: Array[String]): Map[String, String] = {
+    val optionalFound = Optional.filter(k => sysArgs.contains(s"--$k"))
+    val keys = Required ++ optionalFound
+
+    val raw = GlueArgParser.getResolvedOptions(sysArgs, keys) // ton util existant
+
+    // Normalisation: on garde une seule forme interne en snake_case
+    raw.map { case (k, v) => normalizeKey(k) -> v }.toMap
+  }
+
+  private def normalizeKey(k: String): String =
+    k.trim.toLowerCase.replace("-", "_")
+}
+
+
+package fr.ccf.job.app
+
+import fr.ccf.job.ingest.{DbConf, JobConf}
+
+final case class AppConfig(
+  jobConf: JobConf,
+  dbConf: DbConf,
+  isLocal: Boolean,
+  warehousePath: String,
+  objectsToIngest: Option[List[String]],
+  reportPath: Option[String]
+)
+
+final case class ConfigError(message: String)
+
+
+
+
+package fr.ccf.job.app
+
+import fr.ccf.job.ingest.{DbConf, JobConf}
+
+object AppConfigLoader {
+
+  def fromArgs(args: Map[String, String]): Either[ConfigError, AppConfig] = {
+    def required(key: String): Either[ConfigError, String] =
+      args.get(key).map(_.trim).filter(_.nonEmpty)
+        .toRight(ConfigError(s"Argument requis manquant: --${key.replace("_", "-")}"))
+
+    def optional(key: String): Option[String] =
+      args.get(key).map(_.trim).filter(_.nonEmpty)
+
+    def optionalBoolean(key: String, default: Boolean = false): Boolean =
+      args.get(key).exists(v => v.trim.equalsIgnoreCase("true") || v.trim == "1")
+
+    val contextE   = required("context")
+    val appNameE   = required("app_name")
+    val rzBucketE  = required("rz_bucket")
+    val szBucketE  = required("sz_bucket")
+    val glueDbE    = required("glue_db_name")
+
+    for {
+      context  <- contextE
+      appName  <- appNameE
+      rzBucket <- rzBucketE
+      szBucket <- szBucketE
+      glueDb   <- glueDbE
+    } yield {
+      val jobConf = JobConf(
+        context = context,
+        appName = appName,
+        rzBucket = rzBucket,
+        szBucket = szBucket
+      )
+
+      val isLocal = optionalBoolean("is_local", default = false)
+      val dbConf = DbConf("glue", glueDb)
+
+      val warehousePath =
+        WarehousePathBuilder.build(szBucket = jobConf.szBucket, appName = jobConf.appName)
+
+      val objectsToIngest = optional("objects_to_ingest").map(ObjectsParser.parse)
+
+      AppConfig(
+        jobConf = jobConf,
+        dbConf = dbConf,
+        isLocal = isLocal,
+        warehousePath = warehousePath,
+        objectsToIngest = objectsToIngest.filter(_.nonEmpty),
+        reportPath = optional("report_path")
+      )
+    }
+  }
+}
+
+
+package fr.ccf.job.app
+
+object ObjectsParser {
+  /** Supporte: "a|b|c" ou "a,b,c" ou "a; b ; c" */
+  def parse(raw: String): List[String] = {
+    raw
+      .split("[|,;]")
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .toList
+  }
+}
+
+
+package fr.ccf.job.app
+
+object WarehousePathBuilder {
+  def build(szBucket: String, appName: String): String =
+    s"s3a://$szBucket/type=projected/daap/$appName/warehouse/"
+}
+
+
+
+package fr.ccf.job.app
+
+import org.scalatest.funsuite.AnyFunSuite
+
+final class ObjectsParserSpec extends AnyFunSuite {
+
+  test("parse supporte pipe") {
+    assert(ObjectsParser.parse("a|b|c") == List("a","b","c"))
+  }
+
+  test("parse supporte virgule et trim") {
+    assert(ObjectsParser.parse(" a,  b ,c ") == List("a","b","c"))
+  }
+
+  test("parse ignore vides") {
+    assert(ObjectsParser.parse("a|| |b; ;c") == List("a","b","c"))
+  }
+}
+
+
+package fr.ccf.job.app
+
+import org.scalatest.funsuite.AnyFunSuite
+
+final class AppConfigLoaderSpec extends AnyFunSuite {
+
+  test("fromArgs construit une config valide + warehouse + isLocal") {
+    val args = Map(
+      "context" -> "dev",
+      "app_name" -> "ingestion",
+      "rz_bucket" -> "rz",
+      "sz_bucket" -> "sz",
+      "glue_db_name" -> "db",
+      "is_local" -> "true",
+      "objects_to_ingest" -> "o1|o2"
+    )
+
+    val cfg = AppConfigLoader.fromArgs(args).toOption.get
+    assert(cfg.isLocal)
+    assert(cfg.warehousePath.contains("s3a://sz"))
+    assert(cfg.objectsToIngest.contains(List("o1", "o2")))
+  }
+
+  test("fromArgs retourne une erreur si args requis manquants") {
+    val args = Map("context" -> "dev")
+    val err = AppConfigLoader.fromArgs(args).left.toOption.get
+    assert(err.message.contains("Argument requis manquant"))
+  }
+}

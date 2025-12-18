@@ -1,163 +1,126 @@
-state_00_DECRYPT.json
-state_05_DECOMPRESS.json
-state_10_DATA_CHECK.json
-state_11_PARAMETRAGE_CHECK.json
-state_12_METADATA_CHECK.json
-state_13_MONITORING_CHECK.json
-state_20_CRE_TRANSFORM.json
-state_21_CRE_TRANSFER.json
-state_30_GESPARAM_TRANSFORM.json
-state_31_GESPARAM_TRANSFER.json
-state_40_AUTRES_TRANSFORM.json
-state_41_AUTRES_TRANSFER.json
+package arkea.ingestion.app
+
+import arkea.ingestion.json.JsonCodec
+import arkea.ingestion.model._
+import arkea.ingestion.s3.S3SingleLister
+import arkea.ingestion.state.S3StateStore
+import arkea.ingestion.steps._
+
+import com.amazonaws.services.s3.AmazonS3
+
+object Bootstrap {
+
+  def buildManifest(batchId: String): Manifest =
+    Manifest(
+      pipeline = "arkea-ingestion",
+      version = "v1",
+      batchId = batchId,
+      steps = List(
+        StepDef(0,  "DECRYPT",    "state_00_DECRYPT.json"),
+        StepDef(5,  "DECOMPRESS", "state_05_DECOMPRESS.json", dependsOn = List("DECRYPT")),
+
+        StepDef(10, "DATA_CHECK", "state_10_DATA_CHECK.json", dependsOn = List("DECOMPRESS")),
+        StepDef(11, "PARAMETRAGE_CHECK", "state_11_PARAMETRAGE_CHECK.json", dependsOn = List("DECOMPRESS")),
+        StepDef(12, "METADATA_CHECK", "state_12_METADATA_CHECK.json", dependsOn = List("DECOMPRESS")),
+        StepDef(13, "MONITORING_CHECK", "state_13_MONITORING_CHECK.json", dependsOn = List("DECOMPRESS")),
+
+        StepDef(20, "CRE_TRANSFORM", "state_20_CRE_TRANSFORM.json", dependsOn = List("DATA_CHECK")),
+        StepDef(21, "CRE_TRANSFER",  "state_21_CRE_TRANSFER.json",  dependsOn = List("CRE_TRANSFORM")),
+
+        StepDef(30, "GESPARAM_TRANSFORM", "state_30_GESPARAM_TRANSFORM.json", dependsOn = List("PARAMETRAGE_CHECK")),
+        StepDef(31, "GESPARAM_TRANSFER",  "state_31_GESPARAM_TRANSFER.json",  dependsOn = List("GESPARAM_TRANSFORM")),
+
+        StepDef(40, "METADATA_TRANSFER",   "state_40_METADATA_TRANSFER.json",   dependsOn = List("METADATA_CHECK")),
+        StepDef(41, "MONITORING_TRANSFER", "state_41_MONITORING_TRANSFER.json", dependsOn = List("MONITORING_CHECK")),
+
+        StepDef(50, "AUTRES_TRANSFORM", "state_50_AUTRES_TRANSFORM.json", dependsOn = List("DECOMPRESS")),
+        StepDef(51, "AUTRES_TRANSFER",  "state_51_AUTRES_TRANSFER.json", dependsOn = List("AUTRES_TRANSFORM", "METADATA_TRANSFER", "MONITORING_TRANSFER"))
+      )
+    )
+
+  def run(s3: AmazonS3, runtime: BatchRuntime): Unit = {
+    val codec = new JsonCodec
+    val store = new S3StateStore(s3, codec)
+    val lister = new S3SingleLister(s3)
+
+    // Create manifest once (read-only ensuite)
+    if (!s3.doesObjectExist(runtime.paths.bucket, runtime.paths.statePrefix + "manifest.json")) {
+      store.writeManifest(runtime.paths, "manifest.json", buildManifest(runtime.batchId))
+    }
+
+    val steps: Map[String, IngestionStep] = Map(
+      "DECRYPT" -> new DecryptStep,
+      "DECOMPRESS" -> new DecompressStep(lister),
+
+      "DATA_CHECK" -> new DataCheckStep(
+        creFileNameRegex = ".*",       // TODO: mets ton regex exact
+        referential = Set.empty        // TODO: charge ton référentiel
+      ),
+      "PARAMETRAGE_CHECK" -> new ParametrageCheckStep,
+      "METADATA_CHECK" -> new MetadataCheckStep,
+      "MONITORING_CHECK" -> new MonitoringCheckStep,
+
+      "CRE_TRANSFORM" -> new CreTransformStep,
+      "CRE_TRANSFER" -> new CreTransferStep,
+
+      "GESPARAM_TRANSFORM" -> new GesparamTransformStep(lister),
+      "GESPARAM_TRANSFER" -> new GesparamTransferStep,
+
+      "METADATA_TRANSFER" -> new MetadataTransferStep,
+      "MONITORING_TRANSFER" -> new MonitoringTransferStep,
+
+      "AUTRES_TRANSFORM" -> new AutresTransformStep,
+      "AUTRES_TRANSFER" -> new AutresTransferStep
+    )
+
+    val runner = new Runner(steps, store)
+    runner.runAll(runtime, "manifest.json")
+  }
+}
+
+
+{
+  "pipeline": "arkea-ingestion",
+  "version": "v1",
+  "batchId": "ARK_20250101",
+  "steps": [
+    { "order": 0,  "name": "DECRYPT", "stateKey": "state_00_DECRYPT.json" },
+    { "order": 5,  "name": "DECOMPRESS", "stateKey": "state_05_DECOMPRESS.json" },
+
+    { "order": 10, "name": "DATA_CHECK", "stateKey": "state_10_DATA_CHECK.json" },
+    { "order": 11, "name": "PARAMETRAGE_CHECK", "stateKey": "state_11_PARAMETRAGE_CHECK.json" },
+    { "order": 12, "name": "METADATA_CHECK", "stateKey": "state_12_METADATA_CHECK.json" },
+    { "order": 13, "name": "MONITORING_CHECK", "stateKey": "state_13_MONITORING_CHECK.json" },
+
+    { "order": 20, "name": "CRE_TRANSFORM", "stateKey": "state_20_CRE_TRANSFORM.json", "dependsOn": ["DATA_CHECK"] },
+    { "order": 21, "name": "CRE_TRANSFER",  "stateKey": "state_21_CRE_TRANSFER.json",  "dependsOn": ["CRE_TRANSFORM"] },
+
+    { "order": 30, "name": "GESPARAM_TRANSFORM", "stateKey": "state_30_GESPARAM_TRANSFORM.json", "dependsOn": ["PARAMETRAGE_CHECK"] },
+    { "order": 31, "name": "GESPARAM_TRANSFER",  "stateKey": "state_31_GESPARAM_TRANSFER.json",  "dependsOn": ["GESPARAM_TRANSFORM"] },
+
+    { "order": 40, "name": "AUTRES_TRANSFORM", "stateKey": "state_40_AUTRES_TRANSFORM.json" },
+    { "order": 41, "name": "AUTRES_TRANSFER",  "stateKey": "state_41_AUTRES_TRANSFER.json", "dependsOn": ["AUTRES_TRANSFORM", "METADATA_TRANSFER", "MONITORING_TRANSFER"] }
+  ]
+}
+
+
+{
+  "batchId": "B1",
+  "step": "DECOMPRESS",
+  "artifacts": [
+    { "name": "DATA/CRE_A.csv.gz", "state": "IN_PROGRESS", "error": null },
+    { "name": "PARAMETRAGE/params.csv", "state": "IN_PROGRESS", "error": null },
+    { "name": "METADATA/metadata.json", "state": "IN_PROGRESS", "error": null },
+    { "name": "MONITORING/mon1.xml", "state": "IN_PROGRESS", "error": null }
+  ]
+}
+
+{
+  "batchId": "B1",
+  "step": "DATA_CHECK",
+  "artifacts": [
+    { "name": "DATA/CRE_A.csv.gz", "state": "DONE", "error": null },
+    { "name": "DATA/CRE_B.csv.gz", "state": "FAILED", "error": "INVALID_NAME" }
+  ]
+}
 
-Voilà les avantages concrets (dans TON contexte : 600 CRE + 400 gesparam, 10+ steps, S3, reprise) d’un fichier de state par step vs un fichier global.
-
-1) Conflits d’écriture et risques de corruption (le plus important)
-Fichier global
-
-Chaque step doit lire → modifier → réécrire le même gros JSON.
-
-Si 2 traitements tournent (ou reprise / retry / relance) : risque de lost update (un écrase l’autre).
-
-Sur S3 tu n’as pas de vrai “lock” simple.
-
-Un fichier par step
-
-Chaque step écrit son fichier, donc :
-
-pas d’écrasement entre steps
-
-beaucoup moins de risques de corruption
-
-reprise plus sûre
-
-2) Reprise/rattrapage ciblé (ton besoin)
-Fichier global
-
-Si un CRE échoue à DATA_CHECK, tu dois “démêler” dans un seul document :
-
-où il en est dans chaque step
-
-ce qu’il faut rejouer
-
-Souvent tu finis par “réinitialiser” trop large, ou tu te plantes.
-
-Un fichier par step
-
-Tu modifies un seul fichier : celui du step où tu veux rejouer.
-
-Les steps suivants repartent automatiquement via propagation.
-
-Exemple : tu remets CRE_X à IN_PROGRESS uniquement dans state_DATA_CHECK.json.
-
-3) Debug ultra rapide (tu gagnes du temps)
-Fichier global
-
-Gros JSON, difficile à lire.
-
-Pour comprendre pourquoi CRE_127 est bloqué, tu dois chercher partout.
-
-Un fichier par step
-
-Pour un incident “DATA_CHECK”, tu ouvres uniquement state_DATA_CHECK.json.
-
-Pour un incident “CRE_TRANSFER”, tu ouvres uniquement state_CRE_TRANSFER.json.
-
-Diagnostic beaucoup plus rapide.
-
-4) Performance / coût S3 (sur la durée)
-Fichier global
-
-JSON énorme (1000 artifacts × 10 steps = vite très gros).
-
-À chaque step : tu télécharges/updates/réuploades un gros fichier → coûteux et lent.
-
-Un fichier par step
-
-Chaque step lit/écrit un fichier de taille proportionnelle à ce step.
-
-Et surtout : écrit une seule fois “son état”, sans rewriter tout l’historique.
-
-5) Séparation claire des responsabilités (moins de code fragile)
-Fichier global
-
-Toute la logique de “quel champ appartient à quel step” devient un bordel :
-
-collisions de noms
-
-conventions à respecter partout
-
-énormément de if(step==...)
-
-Un fichier par step
-
-Chaque step est propriétaire de son état.
-
-Le code devient très uniforme :
-
-load my state
-
-update my artifacts
-
-write my state
-
-6) Évolution du pipeline (ajouter/supprimer un step)
-Fichier global
-
-Ajouter un step = modifier le schéma global + rétrocompatibilité + migration.
-
-Un fichier par step
-
-Ajouter un step = ajouter un nouveau fichier state_<NEWSTEP>.json.
-
-Les anciens steps restent inchangés.
-
-7) Observabilité “par étape”
-Fichier global
-
-Difficile d’avoir une vision : “combien de CRE en erreur à DATA_CHECK ?”
-
-Il faut parser un gros document multi-dimension.
-
-Un fichier par step
-
-Tu peux faire des stats simples :
-
-compter FAILED dans state_DATA_CHECK.json
-
-compter DONE dans state_CRE_TRANSFER.json
-
-Très simple à brancher dans un dashboard.
-
-Le seul vrai avantage d’un fichier global (pour être honnête)
-
-Une seule lecture te donne toute la photo du batch.
-
-Mais dans la pratique, avec S3 + reprises + plusieurs steps, ça devient vite :
-
-plus risqué
-
-plus gros
-
-plus dur à maintenir
-
-Conclusion adaptée à ton cas
-
-Avec 1000 artifacts et 10+ steps, le fichier global devient rapidement :
-
-gros
-
-fragile
-
-compliqué pour la reprise
-
-Le fichier par step est mieux parce qu’il te donne :
-
-isolation
-
-reprise ciblée
-
-debug simple
-
-moins de risques S3

@@ -1,126 +1,116 @@
 import org.apache.spark.sql.SparkSession
 import org.apache.iceberg.spark.actions.SparkActions
 
-import java.time.{Instant, ZoneOffset}
+import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 // -----------------------------
-// Configuration
+// 1) Configs par type de maintenance
 // -----------------------------
-final case class IcebergMaintenanceConfig(
-  // Compaction
-  rewriteDataFiles: Boolean = true,
-  targetFileSizeBytes: Long = 512L * 1024 * 1024,  // 512MB
-  minFileSizeBytes: Long = 128L * 1024 * 1024,     // ne réécrit que les fichiers < 128MB
-  maxFileSizeBytes: Long = 1024L * 1024 * 1024,    // 1GB (évite des énormes fichiers)
-  strategy: String = "binpack",                    // "binpack" ou "sort"
-  sortColumns: Seq[String] = Seq.empty,            // si strategy="sort"
-  shufflePartitions: Option[Int] = Some(48),
-
-  // Manifests
-  rewriteManifests: Boolean = true,
-
-  // Delete files (selon version Iceberg)
-  rewriteDeleteFiles: Boolean = true,
-
-  // Snapshots
-  expireSnapshots: Boolean = true,
-  expireOlderThanDays: Int = 14,                   // expire snapshots plus vieux que 14 jours
-  retainLast: Int = 10,                            // garde au moins N snapshots
-
-  // Orphans (attention: à exécuter avec marge)
-  removeOrphanFiles: Boolean = true,
-  orphanOlderThanDays: Int = 3,                    // supprime les orphelins plus vieux que 3 jours
-
-  // Spark tuning
+final case class SparkTuningConfig(
   enableAQE: Boolean = true,
   coalesceAQE: Boolean = true,
+  shufflePartitions: Option[Int] = Some(48)
+)
 
-  // Catalog refresh
+final case class RewriteDataFilesConfig(
+  enabled: Boolean = true,
+  targetFileSizeBytes: Long = 512L * 1024 * 1024, // 512MB
+  minFileSizeBytes: Long = 128L * 1024 * 1024,    // rewrite seulement < 128MB
+  maxFileSizeBytes: Long = 1024L * 1024 * 1024,   // 1GB
+  strategy: String = "binpack",                   // "binpack" | "sort"
+  sortColumns: Seq[String] = Seq.empty,           // si strategy="sort"
+  shufflePartitions: Option[Int] = None           // override local, sinon prendre SparkTuningConfig
+)
+
+final case class RewriteManifestsConfig(
+  enabled: Boolean = true
+)
+
+final case class RewriteDeleteFilesConfig(
+  enabled: Boolean = true,
+  // certaines versions Iceberg exposent rewriteDeleteFiles, d'autres rewritePositionDeleteFiles
+  // on tente les deux via reflection
+  targetFileSizeBytes: Option[Long] = Some(512L * 1024 * 1024),
+  shufflePartitions: Option[Int] = None
+)
+
+final case class ExpireSnapshotsConfig(
+  enabled: Boolean = true,
+  expireOlderThanDays: Int = 14,
+  retainLast: Int = 10
+)
+
+final case class RemoveOrphanFilesConfig(
+  enabled: Boolean = true,
+  orphanOlderThanDays: Int = 3
+)
+
+final case class MaintenanceConfig(
+  spark: SparkTuningConfig = SparkTuningConfig(),
+  dataFiles: RewriteDataFilesConfig = RewriteDataFilesConfig(),
+  manifests: RewriteManifestsConfig = RewriteManifestsConfig(),
+  deleteFiles: RewriteDeleteFilesConfig = RewriteDeleteFilesConfig(),
+  snapshots: ExpireSnapshotsConfig = ExpireSnapshotsConfig(),
+  orphans: RemoveOrphanFilesConfig = RemoveOrphanFilesConfig(),
   refreshSparkTable: Boolean = true
 )
 
 // -----------------------------
-// Runner
+// 2) Runner
 // -----------------------------
-object IcebergMaintenanceRunner {
+object IcebergMaintenance {
 
-  final case class MaintenanceReport(steps: Seq[(String, String)]) {
-    override def toString: String =
-      steps.map { case (s, r) => s"- $s: $r" }.mkString("\n")
+  final case class Report(steps: Seq[(String, String)]) {
+    override def toString: String = steps.map { case (s, r) => s"- $s: $r" }.mkString("\n")
   }
 
-  def runAll(spark: SparkSession, tableIdent: String, cfg: IcebergMaintenanceConfig): MaintenanceReport = {
+  def run(spark: SparkSession, tableIdent: String, cfg: MaintenanceConfig): Report = {
     val steps = scala.collection.mutable.ArrayBuffer.empty[(String, String)]
 
-    // Spark tuning recommandé pour compaction
-    if (cfg.enableAQE) spark.conf.set("spark.sql.adaptive.enabled", "true")
-    if (cfg.coalesceAQE) spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
-    cfg.shufflePartitions.foreach(p => spark.conf.set("spark.sql.shuffle.partitions", p.toString))
+    applySparkTuning(spark, cfg.spark)
 
-    // 0) Refresh (utile si table modifiée ailleurs)
     if (cfg.refreshSparkTable) {
       spark.catalog.refreshTable(tableIdent)
-      steps += "refreshTable" -> "OK"
+      steps += "refreshTable(start)" -> "OK"
     }
 
-    // 1) Rewrite Data Files (compaction)
-    if (cfg.rewriteDataFiles) {
-      val action = SparkActions.get(spark)
-        .rewriteDataFiles(tableIdent)
-        .option("target-file-size-bytes", cfg.targetFileSizeBytes.toString)
-        .option("min-file-size-bytes", cfg.minFileSizeBytes.toString)
-        .option("max-file-size-bytes", cfg.maxFileSizeBytes.toString)
-
-      cfg.shufflePartitions.foreach(p => action.option("shuffle-partitions", p.toString))
-
-      val res = cfg.strategy.toLowerCase match {
-        case "sort" =>
-          // Exemple: tri pour regrouper (meilleur scan séquentiel, z-order pas natif ici)
-          // NOTE: nécessite de donner sortColumns
-          if (cfg.sortColumns.isEmpty)
-            throw new IllegalArgumentException("strategy=sort mais sortColumns est vide.")
-          action.sort(cfg.sortColumns: _*).execute()
-
-        case _ =>
-          action.binPack().execute()
-      }
-
-      steps += "rewriteDataFiles" -> s"rewrittenDataFiles=${res.rewrittenDataFilesCount()}, addedDataFiles=${res.addedDataFilesCount()}"
+    // 1) Data files
+    if (cfg.dataFiles.enabled) {
+      val res = rewriteDataFiles(spark, tableIdent, cfg.dataFiles, cfg.spark)
+      steps += "rewriteDataFiles" -> res
     }
 
-    // 2) Rewrite Manifests
-    if (cfg.rewriteManifests) {
+    // 2) Manifests
+    if (cfg.manifests.enabled) {
       val res = SparkActions.get(spark).rewriteManifests(tableIdent).execute()
       steps += "rewriteManifests" -> s"rewrittenManifests=${res.rewrittenManifestsCount()}"
     }
 
-    // 3) Rewrite Delete Files (selon version Iceberg: rewriteDeleteFiles ou rewritePositionDeleteFiles)
-    if (cfg.rewriteDeleteFiles) {
-      val msg =
-        if (tryRewriteDeleteFiles(spark, tableIdent, cfg)) "OK"
-        else "SKIPPED (action non supportée par ta version Iceberg)"
-      steps += "rewriteDeleteFiles" -> msg
+    // 3) Delete files (si supporté)
+    if (cfg.deleteFiles.enabled) {
+      val ok = tryRewriteDeleteFiles(spark, tableIdent, cfg.deleteFiles, cfg.spark)
+      steps += "rewriteDeleteFiles" -> (if (ok) "OK" else "SKIPPED (non supporté par ta version Iceberg)")
     }
 
-    // 4) Expire snapshots (et cleanup metadata associé)
-    if (cfg.expireSnapshots) {
+    // 4) Expire snapshots
+    if (cfg.snapshots.enabled) {
       val olderThanMillis =
-        Instant.now().minus(cfg.expireOlderThanDays.toLong, ChronoUnit.DAYS).toEpochMilli
+        Instant.now().minus(cfg.snapshots.expireOlderThanDays.toLong, ChronoUnit.DAYS).toEpochMilli
 
       val res = SparkActions.get(spark)
         .expireSnapshots(tableIdent)
         .expireOlderThan(olderThanMillis)
-        .retainLast(cfg.retainLast)
+        .retainLast(cfg.snapshots.retainLast)
         .execute()
 
       steps += "expireSnapshots" -> s"deletedSnapshots=${res.deletedSnapshotsCount()}, deletedDataFiles=${res.deletedDataFilesCount()}"
     }
 
-    // 5) Remove orphan files (à exécuter avec une marge de sécurité !)
-    if (cfg.removeOrphanFiles) {
+    // 5) Remove orphan files
+    if (cfg.orphans.enabled) {
       val olderThanMillis =
-        Instant.now().minus(cfg.orphanOlderThanDays.toLong, ChronoUnit.DAYS).toEpochMilli
+        Instant.now().minus(cfg.orphans.orphanOlderThanDays.toLong, ChronoUnit.DAYS).toEpochMilli
 
       val res = SparkActions.get(spark)
         .removeOrphanFiles(tableIdent)
@@ -130,50 +120,84 @@ object IcebergMaintenanceRunner {
       steps += "removeOrphanFiles" -> s"deletedFiles=${res.orphanFileCount()}"
     }
 
-    // Final refresh
     if (cfg.refreshSparkTable) {
       spark.catalog.refreshTable(tableIdent)
       steps += "refreshTable(end)" -> "OK"
     }
 
-    MaintenanceReport(steps.toSeq)
+    Report(steps.toSeq)
   }
 
-  /**
-   * Essaie différentes actions selon les versions Iceberg.
-   * - rewriteDeleteFiles (plus récent)
-   * - rewritePositionDeleteFiles (selon version)
-   */
-  private def tryRewriteDeleteFiles(spark: SparkSession, tableIdent: String, cfg: IcebergMaintenanceConfig): Boolean = {
-    // 1) rewriteDeleteFiles (si disponible)
-    val ok1 = tryInvokeSparkActions(spark, "rewriteDeleteFiles", tableIdent, cfg)
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  private def applySparkTuning(spark: SparkSession, tuning: SparkTuningConfig): Unit = {
+    if (tuning.enableAQE) spark.conf.set("spark.sql.adaptive.enabled", "true")
+    if (tuning.coalesceAQE) spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+    tuning.shufflePartitions.foreach(p => spark.conf.set("spark.sql.shuffle.partitions", p.toString))
+  }
+
+  private def rewriteDataFiles(
+    spark: SparkSession,
+    tableIdent: String,
+    cfg: RewriteDataFilesConfig,
+    globalTuning: SparkTuningConfig
+  ): String = {
+    val shuffleP = cfg.shufflePartitions.orElse(globalTuning.shufflePartitions)
+
+    val action = SparkActions.get(spark)
+      .rewriteDataFiles(tableIdent)
+      .option("target-file-size-bytes", cfg.targetFileSizeBytes.toString)
+      .option("min-file-size-bytes", cfg.minFileSizeBytes.toString)
+      .option("max-file-size-bytes", cfg.maxFileSizeBytes.toString)
+
+    shuffleP.foreach(p => action.option("shuffle-partitions", p.toString))
+
+    val res = cfg.strategy.toLowerCase match {
+      case "sort" =>
+        if (cfg.sortColumns.isEmpty) throw new IllegalArgumentException("strategy=sort mais sortColumns est vide.")
+        action.sort(cfg.sortColumns: _*).execute()
+      case _ =>
+        action.binPack().execute()
+    }
+
+    s"rewrittenDataFiles=${res.rewrittenDataFilesCount()}, addedDataFiles=${res.addedDataFilesCount()}"
+  }
+
+  private def tryRewriteDeleteFiles(
+    spark: SparkSession,
+    tableIdent: String,
+    cfg: RewriteDeleteFilesConfig,
+    globalTuning: SparkTuningConfig
+  ): Boolean = {
+    val shuffleP = cfg.shufflePartitions.orElse(globalTuning.shufflePartitions)
+    val targetSize = cfg.targetFileSizeBytes
+
+    // selon version Iceberg : rewriteDeleteFiles OU rewritePositionDeleteFiles
+    val ok1 = tryInvokeActionWithOptions(spark, "rewriteDeleteFiles", tableIdent, targetSize, shuffleP)
     if (ok1) return true
-
-    // 2) rewritePositionDeleteFiles (si disponible)
-    val ok2 = tryInvokeSparkActions(spark, "rewritePositionDeleteFiles", tableIdent, cfg)
-    ok2
+    tryInvokeActionWithOptions(spark, "rewritePositionDeleteFiles", tableIdent, targetSize, shuffleP)
   }
 
-  private def tryInvokeSparkActions(
+  private def tryInvokeActionWithOptions(
     spark: SparkSession,
     methodName: String,
     tableIdent: String,
-    cfg: IcebergMaintenanceConfig
+    targetSize: Option[Long],
+    shuffleP: Option[Int]
   ): Boolean = {
     try {
       val actions = SparkActions.get(spark)
-      val m = actions.getClass.getMethods.find(m => m.getName == methodName && m.getParameterCount == 1)
-      m match {
-        case Some(mm) =>
-          val actionObj = mm.invoke(actions, tableIdent) // retourne une Action
-          // Optionnel: target size + shuffle-partitions si l'action supporte option(key,val)
-          cfg.shufflePartitions.foreach(p => invokeOptionIfExists(actionObj, "shuffle-partitions", p.toString))
-          invokeOptionIfExists(actionObj, "target-file-size-bytes", cfg.targetFileSizeBytes.toString)
-          // execute()
+      val mOpt = actions.getClass.getMethods.find(m => m.getName == methodName && m.getParameterCount == 1)
+      mOpt match {
+        case None => false
+        case Some(m) =>
+          val actionObj = m.invoke(actions, tableIdent).asInstanceOf[AnyRef]
+          targetSize.foreach(sz => invokeOptionIfExists(actionObj, "target-file-size-bytes", sz.toString))
+          shuffleP.foreach(p => invokeOptionIfExists(actionObj, "shuffle-partitions", p.toString))
           val exec = actionObj.getClass.getMethods.find(_.getName == "execute").get
           exec.invoke(actionObj)
           true
-        case None => false
       }
     } catch {
       case _: Throwable => false
@@ -189,3 +213,22 @@ object IcebergMaintenanceRunner {
     opt.foreach(_.invoke(actionObj, k, v))
   }
 }
+
+
+val cfg = MaintenanceConfig(
+  spark = SparkTuningConfig(shufflePartitions = Some(48)),
+  dataFiles = RewriteDataFilesConfig(
+    enabled = true,
+    targetFileSizeBytes = 512L * 1024 * 1024,
+    minFileSizeBytes = 128L * 1024 * 1024,
+    strategy = "binpack"
+  ),
+  manifests = RewriteManifestsConfig(enabled = true),
+  deleteFiles = RewriteDeleteFilesConfig(enabled = true),
+  snapshots = ExpireSnapshotsConfig(enabled = true, expireOlderThanDays = 30, retainLast = 20),
+  orphans = RemoveOrphanFilesConfig(enabled = true, orphanOlderThanDays = 3)
+)
+
+val report = IcebergMaintenance.run(spark, "glue_catalog.db.table", cfg)
+println(report)
+

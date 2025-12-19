@@ -1,556 +1,191 @@
-src/main/scala/fr/ccf/job/ingest/
-  IngestRunner.scala
-  IngestService.scala
-  ReportReader.scala
-  TableInfoService.scala
-  DataFrameLoader.scala
-  DataFrameTransformer.scala
-  TableWriter.scala
-  model.scala
+import org.apache.spark.sql.SparkSession
+import org.apache.iceberg.spark.actions.SparkActions
 
-src/test/scala/fr/ccf/job/ingest/
-  SparkTestSession.scala
-  ReportReaderSpec.scala
-  DataFrameTransformerSpec.scala
-  IngestServiceSpec.scala
+import java.time.{Instant, ZoneOffset}
+import java.time.temporal.ChronoUnit
 
-package fr.ccf.job.ingest
+// -----------------------------
+// Configuration
+// -----------------------------
+final case class IcebergMaintenanceConfig(
+  // Compaction
+  rewriteDataFiles: Boolean = true,
+  targetFileSizeBytes: Long = 512L * 1024 * 1024,  // 512MB
+  minFileSizeBytes: Long = 128L * 1024 * 1024,     // ne réécrit que les fichiers < 128MB
+  maxFileSizeBytes: Long = 1024L * 1024 * 1024,    // 1GB (évite des énormes fichiers)
+  strategy: String = "binpack",                    // "binpack" ou "sort"
+  sortColumns: Seq[String] = Seq.empty,            // si strategy="sort"
+  shufflePartitions: Option[Int] = Some(48),
 
-final case class JobConf(rzBucket: String)
-final case class DbConf(/* ... */)
+  // Manifests
+  rewriteManifests: Boolean = true,
 
-final case class TableInfo(tableName: String, keyInRz: String)
+  // Delete files (selon version Iceberg)
+  rewriteDeleteFiles: Boolean = true,
 
-final case class IngestionConfig(
-  formatVersion: String = "2",
-  targetFileSizeBytes: Long = 536870912L, // 512MB
-  castColumnsToString: Seq[String] = Seq("year", "month", "day")
+  // Snapshots
+  expireSnapshots: Boolean = true,
+  expireOlderThanDays: Int = 14,                   // expire snapshots plus vieux que 14 jours
+  retainLast: Int = 10,                            // garde au moins N snapshots
+
+  // Orphans (attention: à exécuter avec marge)
+  removeOrphanFiles: Boolean = true,
+  orphanOlderThanDays: Int = 3,                    // supprime les orphelins plus vieux que 3 jours
+
+  // Spark tuning
+  enableAQE: Boolean = true,
+  coalesceAQE: Boolean = true,
+
+  // Catalog refresh
+  refreshSparkTable: Boolean = true
 )
 
-final case class IngestResult(success: List[String], failed: Map[String, String])
+// -----------------------------
+// Runner
+// -----------------------------
+object IcebergMaintenanceRunner {
 
-
-package fr.ccf.job.ingest
-
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions.col
-
-trait ReportReader {
-  def listIngestedKeys(reportPath: String): List[String]
-}
-
-final class SparkCsvReportReader(
-  implicit spark: SparkSession,
-  keyCol: String = "key_in_raw_zone",
-  statusCol: String = "status",
-  ingestedValue: String = "Ingested",
-  delimiter: String = ",",
-  header: Boolean = true
-) extends ReportReader {
-
-  override def listIngestedKeys(reportPath: String): List[String] = {
-    import spark.implicits._
-
-    spark.read
-      .option("header", header.toString)
-      .option("delimiter", delimiter)
-      .csv(reportPath)
-      .select(col(keyCol).as("key"), col(statusCol).as("status"))
-      .filter(col("status") === ingestedValue)
-      .select("key")
-      .as[String]
-      .collect()
-      .toList
+  final case class MaintenanceReport(steps: Seq[(String, String)]) {
+    override def toString: String =
+      steps.map { case (s, r) => s"- $s: $r" }.mkString("\n")
   }
-}
 
-package fr.ccf.job.ingest
+  def runAll(spark: SparkSession, tableIdent: String, cfg: IcebergMaintenanceConfig): MaintenanceReport = {
+    val steps = scala.collection.mutable.ArrayBuffer.empty[(String, String)]
 
-trait TableInfoService {
-  def extractTableInfo(rzBucket: String, key: String): Option[TableInfo]
-}
+    // Spark tuning recommandé pour compaction
+    if (cfg.enableAQE) spark.conf.set("spark.sql.adaptive.enabled", "true")
+    if (cfg.coalesceAQE) spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+    cfg.shufflePartitions.foreach(p => spark.conf.set("spark.sql.shuffle.partitions", p.toString))
 
-// Adapter vers ton code actuel
-final class DefaultTableInfoService extends TableInfoService {
-  override def extractTableInfo(rzBucket: String, key: String): Option[TableInfo] =
-    ObjectUtil.extractTableInfo(rzBucket, key) // <-- ton existant
-}
-
-
-package fr.ccf.job.ingest
-
-import org.apache.spark.sql.{DataFrame, SparkSession}
-
-trait DataFrameLoader {
-  def loadCsv(key: String): DataFrame
-}
-
-final class SparkUtilDataFrameLoader(implicit spark: SparkSession) extends DataFrameLoader {
-  override def loadCsv(key: String): DataFrame =
-    SparkUtil.readCsvAsDf(key) // <-- ton existant
-}
-
-package fr.ccf.job.ingest
-
-import org.apache.spark.sql.{DataFrame}
-import org.apache.spark.sql.functions.col
-
-trait DataFrameTransformer {
-  def prepare(df: DataFrame): DataFrame
-}
-
-final class CastColumnsToStringTransformer(cols: Seq[String]) extends DataFrameTransformer {
-  override def prepare(df: DataFrame): DataFrame =
-    cols.foldLeft(df) { (acc, c) =>
-      if (acc.columns.contains(c)) acc.withColumn(c, col(c).cast("string")) else acc
-    }
-}
-
-
-package fr.ccf.job.ingest
-
-import org.apache.spark.sql.DataFrame
-
-trait TableWriter {
-  def createOrAppend(dbConf: DbConf, tableName: String, df: DataFrame, tableProperties: Map[String, String]): Unit
-}
-
-final class IcebergTableWriter extends TableWriter {
-  override def createOrAppend(dbConf: DbConf, tableName: String, df: DataFrame, tableProperties: Map[String, String]): Unit =
-    TableCreator.createOrAppendTable(
-      dbConf = dbConf,
-      tableName = tableName,
-      df = df,
-      tableProperties = tableProperties
-    )
-}
-
-package fr.ccf.job.ingest
-
-import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SparkSession
-
-final class IngestService(
-  jobConf: JobConf,
-  dbConf: DbConf,
-  reportReader: ReportReader,
-  tableInfoService: TableInfoService,
-  loader: DataFrameLoader,
-  transformer: DataFrameTransformer,
-  writer: TableWriter,
-  config: IngestionConfig
-)(implicit spark: SparkSession) extends Logging {
-
-  private val tableProperties: Map[String, String] = Map(
-    "format-version" -> config.formatVersion,
-    "write.target-file-size-bytes" -> config.targetFileSizeBytes.toString
-  )
-
-  def ingestFromReport(reportPath: String): IngestResult = {
-    val keys = reportReader.listIngestedKeys(reportPath)
-
-    val (ok, ko) = keys.foldLeft((List.empty[String], Map.empty[String, String])) {
-      case ((successAcc, failedAcc), key) =>
-        ingestOneKey(key) match {
-          case Right(_)  => (key :: successAcc, failedAcc)
-          case Left(err) => (successAcc, failedAcc + (key -> err))
-        }
+    // 0) Refresh (utile si table modifiée ailleurs)
+    if (cfg.refreshSparkTable) {
+      spark.catalog.refreshTable(tableIdent)
+      steps += "refreshTable" -> "OK"
     }
 
-    IngestResult(ok.reverse, ko)
-  }
+    // 1) Rewrite Data Files (compaction)
+    if (cfg.rewriteDataFiles) {
+      val action = SparkActions.get(spark)
+        .rewriteDataFiles(tableIdent)
+        .option("target-file-size-bytes", cfg.targetFileSizeBytes.toString)
+        .option("min-file-size-bytes", cfg.minFileSizeBytes.toString)
+        .option("max-file-size-bytes", cfg.maxFileSizeBytes.toString)
 
-  def ingestOneKey(key: String): Either[String, Unit] = {
-    tableInfoService.extractTableInfo(jobConf.rzBucket, key) match {
-      case None =>
-        val msg = s"TableInfo introuvable pour key=$key"
-        logWarning(msg)
-        Left(msg)
+      cfg.shufflePartitions.foreach(p => action.option("shuffle-partitions", p.toString))
 
-      case Some(ti) =>
-        try {
-          logInfo(s"Ingesting table=${ti.tableName}, key=${ti.keyInRz}")
-          val rawDf = loader.loadCsv(ti.keyInRz)
-          val finalDf = transformer.prepare(rawDf)
+      val res = cfg.strategy.toLowerCase match {
+        case "sort" =>
+          // Exemple: tri pour regrouper (meilleur scan séquentiel, z-order pas natif ici)
+          // NOTE: nécessite de donner sortColumns
+          if (cfg.sortColumns.isEmpty)
+            throw new IllegalArgumentException("strategy=sort mais sortColumns est vide.")
+          action.sort(cfg.sortColumns: _*).execute()
 
-          writer.createOrAppend(dbConf, ti.tableName, finalDf, tableProperties)
-          Right(())
-        } catch {
-          case e: Throwable =>
-            val msg = s"Echec ingestion key=$key : ${e.getMessage}"
-            logError(msg, e)
-            Left(msg)
-        }
-    }
-  }
-}
-
-package fr.ccf.job.ingest
-
-import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SparkSession
-
-object IngestRunner extends Logging {
-
-  def run(jobConf: JobConf, dbConf: DbConf, reportPath: String)(implicit spark: SparkSession): IngestResult = {
-    val config = IngestionConfig()
-
-    val service = new IngestService(
-      jobConf = jobConf,
-      dbConf = dbConf,
-      reportReader = new SparkCsvReportReader(),
-      tableInfoService = new DefaultTableInfoService(),
-      loader = new SparkUtilDataFrameLoader(),
-      transformer = new CastColumnsToStringTransformer(config.castColumnsToString),
-      writer = new IcebergTableWriter(),
-      config = config
-    )
-
-    service.ingestFromReport(reportPath)
-  }
-}
-
-
-package fr.ccf.job.ingest
-
-import org.apache.spark.sql.SparkSession
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.funsuite.AnyFunSuite
-
-trait SparkTestSession extends AnyFunSuite with BeforeAndAfterAll {
-  implicit var spark: SparkSession = _
-
-  override def beforeAll(): Unit = {
-    spark = SparkSession.builder()
-      .appName("ingest-tests")
-      .master("local[2]")
-      .config("spark.ui.enabled", "false")
-      .getOrCreate()
-  }
-
-  override def afterAll(): Unit = {
-    if (spark != null) spark.stop()
-  }
-}
-
-
-package fr.ccf.job.ingest
-
-import java.nio.file.Files
-
-final class ReportReaderSpec extends SparkTestSession {
-
-  test("listIngestedKeys retourne uniquement les keys en status=Ingested") {
-    val dir = Files.createTempDirectory("report-test")
-    val report = dir.resolve("report.csv")
-
-    val content =
-      """key_in_raw_zone,status
-        |a.csv,Ingested
-        |b.csv,Error
-        |c.csv,Ingested
-        |""".stripMargin
-
-    Files.write(report, content.getBytes("UTF-8"))
-
-    val reader = new SparkCsvReportReader()
-    val keys = reader.listIngestedKeys(report.toString)
-
-    assert(keys.sorted == List("a.csv", "c.csv"))
-  }
-}
-
-package fr.ccf.job.ingest
-
-import org.apache.spark.sql.types.StringType
-
-final class DataFrameTransformerSpec extends SparkTestSession {
-
-  test("CastColumnsToStringTransformer caste seulement les colonnes existantes") {
-    import spark.implicits._
-
-    val df = Seq((2025, 12, 18, "x")).toDF("year", "month", "day", "payload")
-
-    val transformer = new CastColumnsToStringTransformer(Seq("year", "month", "day", "missing_col"))
-    val out = transformer.prepare(df)
-
-    assert(out.schema("year").dataType == StringType)
-    assert(out.schema("month").dataType == StringType)
-    assert(out.schema("day").dataType == StringType)
-    assert(out.schema("payload").dataType != StringType) // payload reste tel quel
-  }
-}
-
-package fr.ccf.job.ingest
-
-import org.apache.spark.sql.{DataFrame}
-
-final class IngestServiceSpec extends SparkTestSession {
-
-  test("ingestOneKey appelle le writer avec les bonnes propriétés") {
-    val jobConf = JobConf(rzBucket = "rz-bucket")
-    val dbConf = DbConf()
-
-    val reportReader = new ReportReader {
-      override def listIngestedKeys(reportPath: String): List[String] = List("k1")
-    }
-
-    val tableInfoService = new TableInfoService {
-      override def extractTableInfo(rzBucket: String, key: String): Option[TableInfo] =
-        Some(TableInfo("my_table", "s3://rz/path/file.csv"))
-    }
-
-    val loader = new DataFrameLoader {
-      override def loadCsv(key: String): DataFrame = {
-        import spark.implicits._
-        Seq((1, 2, 3)).toDF("year", "month", "day")
+        case _ =>
+          action.binPack().execute()
       }
+
+      steps += "rewriteDataFiles" -> s"rewrittenDataFiles=${res.rewrittenDataFilesCount()}, addedDataFiles=${res.addedDataFilesCount()}"
     }
 
-    val transformer = new CastColumnsToStringTransformer(Seq("year", "month", "day"))
-
-    final class CapturingWriter extends TableWriter {
-      var called = false
-      var props: Map[String, String] = Map.empty
-      override def createOrAppend(dbConf: DbConf, tableName: String, df: DataFrame, tableProperties: Map[String, String]): Unit = {
-        called = true
-        props = tableProperties
-        assert(tableName == "my_table")
-      }
+    // 2) Rewrite Manifests
+    if (cfg.rewriteManifests) {
+      val res = SparkActions.get(spark).rewriteManifests(tableIdent).execute()
+      steps += "rewriteManifests" -> s"rewrittenManifests=${res.rewrittenManifestsCount()}"
     }
 
-    val writer = new CapturingWriter
-    val config = IngestionConfig()
+    // 3) Rewrite Delete Files (selon version Iceberg: rewriteDeleteFiles ou rewritePositionDeleteFiles)
+    if (cfg.rewriteDeleteFiles) {
+      val msg =
+        if (tryRewriteDeleteFiles(spark, tableIdent, cfg)) "OK"
+        else "SKIPPED (action non supportée par ta version Iceberg)"
+      steps += "rewriteDeleteFiles" -> msg
+    }
 
-    val service = new IngestService(
-      jobConf, dbConf, reportReader, tableInfoService, loader, transformer, writer, config
-    )
+    // 4) Expire snapshots (et cleanup metadata associé)
+    if (cfg.expireSnapshots) {
+      val olderThanMillis =
+        Instant.now().minus(cfg.expireOlderThanDays.toLong, ChronoUnit.DAYS).toEpochMilli
 
-    val res = service.ingestOneKey("k1")
-    assert(res.isRight)
-    assert(writer.called)
-    assert(writer.props("format-version") == "2")
-    assert(writer.props("write.target-file-size-bytes") == "536870912")
+      val res = SparkActions.get(spark)
+        .expireSnapshots(tableIdent)
+        .expireOlderThan(olderThanMillis)
+        .retainLast(cfg.retainLast)
+        .execute()
+
+      steps += "expireSnapshots" -> s"deletedSnapshots=${res.deletedSnapshotsCount()}, deletedDataFiles=${res.deletedDataFilesCount()}"
+    }
+
+    // 5) Remove orphan files (à exécuter avec une marge de sécurité !)
+    if (cfg.removeOrphanFiles) {
+      val olderThanMillis =
+        Instant.now().minus(cfg.orphanOlderThanDays.toLong, ChronoUnit.DAYS).toEpochMilli
+
+      val res = SparkActions.get(spark)
+        .removeOrphanFiles(tableIdent)
+        .olderThan(olderThanMillis)
+        .execute()
+
+      steps += "removeOrphanFiles" -> s"deletedFiles=${res.orphanFileCount()}"
+    }
+
+    // Final refresh
+    if (cfg.refreshSparkTable) {
+      spark.catalog.refreshTable(tableIdent)
+      steps += "refreshTable(end)" -> "OK"
+    }
+
+    MaintenanceReport(steps.toSeq)
   }
-}
--------------------------------------------
 
-package fr.ccf.job.app
+  /**
+   * Essaie différentes actions selon les versions Iceberg.
+   * - rewriteDeleteFiles (plus récent)
+   * - rewritePositionDeleteFiles (selon version)
+   */
+  private def tryRewriteDeleteFiles(spark: SparkSession, tableIdent: String, cfg: IcebergMaintenanceConfig): Boolean = {
+    // 1) rewriteDeleteFiles (si disponible)
+    val ok1 = tryInvokeSparkActions(spark, "rewriteDeleteFiles", tableIdent, cfg)
+    if (ok1) return true
 
-import fr.ccf.job.ingest.{DbConf, IngestRunner, JobConf}
-import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SparkSession
+    // 2) rewritePositionDeleteFiles (si disponible)
+    val ok2 = tryInvokeSparkActions(spark, "rewritePositionDeleteFiles", tableIdent, cfg)
+    ok2
+  }
 
-object App extends Logging {
-
-  def main(sysArgs: Array[String]): Unit = {
-    val argsMap = GlueArgsResolver.resolve(sysArgs)
-
-    val config = AppConfigLoader.fromArgs(argsMap) match {
-      case Left(err) =>
-        logError(err.message)
-        System.exit(2)
-        return
-      case Right(c) => c
-    }
-
-    implicit val spark: SparkSession =
-      SessionCreator.createSparkSession(
-        config.jobConf.appName,
-        config.warehousePath,
-        config.dbConf.catalog,
-        isLocal = config.isLocal
-      )
-
+  private def tryInvokeSparkActions(
+    spark: SparkSession,
+    methodName: String,
+    tableIdent: String,
+    cfg: IcebergMaintenanceConfig
+  ): Boolean = {
     try {
-      val objectsToIngest: List[String] =
-        config.objectsToIngest.getOrElse {
-          // fallback report obligatoire (sinon on ingère rien => erreur explicite)
-          val reportPath = config.reportPath.getOrElse {
-            throw new IllegalArgumentException(
-              "Ni --objects-to-ingest ni --report-path fournis. Impossible de déterminer quoi ingérer."
-            )
-          }
-          IngestRunner.listObjectFromRZ(reportPath) // ta méthode existante (ou à ajouter)
-        }
-
-      IngestRunner.run(config.jobConf, config.dbConf, objectsToIngest)
-    } finally {
-      spark.stop()
+      val actions = SparkActions.get(spark)
+      val m = actions.getClass.getMethods.find(m => m.getName == methodName && m.getParameterCount == 1)
+      m match {
+        case Some(mm) =>
+          val actionObj = mm.invoke(actions, tableIdent) // retourne une Action
+          // Optionnel: target size + shuffle-partitions si l'action supporte option(key,val)
+          cfg.shufflePartitions.foreach(p => invokeOptionIfExists(actionObj, "shuffle-partitions", p.toString))
+          invokeOptionIfExists(actionObj, "target-file-size-bytes", cfg.targetFileSizeBytes.toString)
+          // execute()
+          val exec = actionObj.getClass.getMethods.find(_.getName == "execute").get
+          exec.invoke(actionObj)
+          true
+        case None => false
+      }
+    } catch {
+      case _: Throwable => false
     }
   }
-}
 
-package fr.ccf.job.app
-
-object GlueArgsResolver {
-
-  private val Required: Array[String] =
-    Array("context", "app-name", "rz-bucket", "sz-bucket", "glue-db-name")
-
-  private val Optional: Seq[String] =
-    Seq("objects-to-ingest", "report-path", "is-local")
-
-  def resolve(sysArgs: Array[String]): Map[String, String] = {
-    val optionalFound = Optional.filter(k => sysArgs.contains(s"--$k"))
-    val keys = Required ++ optionalFound
-
-    val raw = GlueArgParser.getResolvedOptions(sysArgs, keys) // ton util existant
-
-    // Normalisation: on garde une seule forme interne en snake_case
-    raw.map { case (k, v) => normalizeKey(k) -> v }.toMap
-  }
-
-  private def normalizeKey(k: String): String =
-    k.trim.toLowerCase.replace("-", "_")
-}
-
-
-package fr.ccf.job.app
-
-import fr.ccf.job.ingest.{DbConf, JobConf}
-
-final case class AppConfig(
-  jobConf: JobConf,
-  dbConf: DbConf,
-  isLocal: Boolean,
-  warehousePath: String,
-  objectsToIngest: Option[List[String]],
-  reportPath: Option[String]
-)
-
-final case class ConfigError(message: String)
-
-
-
-
-package fr.ccf.job.app
-
-import fr.ccf.job.ingest.{DbConf, JobConf}
-
-object AppConfigLoader {
-
-  def fromArgs(args: Map[String, String]): Either[ConfigError, AppConfig] = {
-    def required(key: String): Either[ConfigError, String] =
-      args.get(key).map(_.trim).filter(_.nonEmpty)
-        .toRight(ConfigError(s"Argument requis manquant: --${key.replace("_", "-")}"))
-
-    def optional(key: String): Option[String] =
-      args.get(key).map(_.trim).filter(_.nonEmpty)
-
-    def optionalBoolean(key: String, default: Boolean = false): Boolean =
-      args.get(key).exists(v => v.trim.equalsIgnoreCase("true") || v.trim == "1")
-
-    val contextE   = required("context")
-    val appNameE   = required("app_name")
-    val rzBucketE  = required("rz_bucket")
-    val szBucketE  = required("sz_bucket")
-    val glueDbE    = required("glue_db_name")
-
-    for {
-      context  <- contextE
-      appName  <- appNameE
-      rzBucket <- rzBucketE
-      szBucket <- szBucketE
-      glueDb   <- glueDbE
-    } yield {
-      val jobConf = JobConf(
-        context = context,
-        appName = appName,
-        rzBucket = rzBucket,
-        szBucket = szBucket
-      )
-
-      val isLocal = optionalBoolean("is_local", default = false)
-      val dbConf = DbConf("glue", glueDb)
-
-      val warehousePath =
-        WarehousePathBuilder.build(szBucket = jobConf.szBucket, appName = jobConf.appName)
-
-      val objectsToIngest = optional("objects_to_ingest").map(ObjectsParser.parse)
-
-      AppConfig(
-        jobConf = jobConf,
-        dbConf = dbConf,
-        isLocal = isLocal,
-        warehousePath = warehousePath,
-        objectsToIngest = objectsToIngest.filter(_.nonEmpty),
-        reportPath = optional("report_path")
-      )
-    }
-  }
-}
-
-
-package fr.ccf.job.app
-
-object ObjectsParser {
-  /** Supporte: "a|b|c" ou "a,b,c" ou "a; b ; c" */
-  def parse(raw: String): List[String] = {
-    raw
-      .split("[|,;]")
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .toList
-  }
-}
-
-
-package fr.ccf.job.app
-
-object WarehousePathBuilder {
-  def build(szBucket: String, appName: String): String =
-    s"s3a://$szBucket/type=projected/daap/$appName/warehouse/"
-}
-
-
-
-package fr.ccf.job.app
-
-import org.scalatest.funsuite.AnyFunSuite
-
-final class ObjectsParserSpec extends AnyFunSuite {
-
-  test("parse supporte pipe") {
-    assert(ObjectsParser.parse("a|b|c") == List("a","b","c"))
-  }
-
-  test("parse supporte virgule et trim") {
-    assert(ObjectsParser.parse(" a,  b ,c ") == List("a","b","c"))
-  }
-
-  test("parse ignore vides") {
-    assert(ObjectsParser.parse("a|| |b; ;c") == List("a","b","c"))
-  }
-}
-
-
-package fr.ccf.job.app
-
-import org.scalatest.funsuite.AnyFunSuite
-
-final class AppConfigLoaderSpec extends AnyFunSuite {
-
-  test("fromArgs construit une config valide + warehouse + isLocal") {
-    val args = Map(
-      "context" -> "dev",
-      "app_name" -> "ingestion",
-      "rz_bucket" -> "rz",
-      "sz_bucket" -> "sz",
-      "glue_db_name" -> "db",
-      "is_local" -> "true",
-      "objects_to_ingest" -> "o1|o2"
+  private def invokeOptionIfExists(actionObj: AnyRef, k: String, v: String): Unit = {
+    val opt = actionObj.getClass.getMethods.find(m =>
+      m.getName == "option" && m.getParameterCount == 2 &&
+        m.getParameterTypes.apply(0) == classOf[String] &&
+        m.getParameterTypes.apply(1) == classOf[String]
     )
-
-    val cfg = AppConfigLoader.fromArgs(args).toOption.get
-    assert(cfg.isLocal)
-    assert(cfg.warehousePath.contains("s3a://sz"))
-    assert(cfg.objectsToIngest.contains(List("o1", "o2")))
-  }
-
-  test("fromArgs retourne une erreur si args requis manquants") {
-    val args = Map("context" -> "dev")
-    val err = AppConfigLoader.fromArgs(args).left.toOption.get
-    assert(err.message.contains("Argument requis manquant"))
+    opt.foreach(_.invoke(actionObj, k, v))
   }
 }

@@ -1,234 +1,120 @@
-import org.apache.spark.sql.SparkSession
-import org.apache.iceberg.spark.actions.SparkActions
+// production
+trait CsvWriter {
+  def write(rows: List[Array[String]], key: String, delimiter: String): Unit
+}
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-
-// -----------------------------
-// 1) Configs par type de maintenance
-// -----------------------------
-final case class SparkTuningConfig(
-  enableAQE: Boolean = true,
-  coalesceAQE: Boolean = true,
-  shufflePartitions: Option[Int] = Some(48)
-)
-
-final case class RewriteDataFilesConfig(
-  enabled: Boolean = true,
-  targetFileSizeBytes: Long = 512L * 1024 * 1024, // 512MB
-  minFileSizeBytes: Long = 128L * 1024 * 1024,    // rewrite seulement < 128MB
-  maxFileSizeBytes: Long = 1024L * 1024 * 1024,   // 1GB
-  strategy: String = "binpack",                   // "binpack" | "sort"
-  sortColumns: Seq[String] = Seq.empty,           // si strategy="sort"
-  shufflePartitions: Option[Int] = None           // override local, sinon prendre SparkTuningConfig
-)
-
-final case class RewriteManifestsConfig(
-  enabled: Boolean = true
-)
-
-final case class RewriteDeleteFilesConfig(
-  enabled: Boolean = true,
-  // certaines versions Iceberg exposent rewriteDeleteFiles, d'autres rewritePositionDeleteFiles
-  // on tente les deux via reflection
-  targetFileSizeBytes: Option[Long] = Some(512L * 1024 * 1024),
-  shufflePartitions: Option[Int] = None
-)
-
-final case class ExpireSnapshotsConfig(
-  enabled: Boolean = true,
-  expireOlderThanDays: Int = 14,
-  retainLast: Int = 10
-)
-
-final case class RemoveOrphanFilesConfig(
-  enabled: Boolean = true,
-  orphanOlderThanDays: Int = 3
-)
-
-final case class MaintenanceConfig(
-  spark: SparkTuningConfig = SparkTuningConfig(),
-  dataFiles: RewriteDataFilesConfig = RewriteDataFilesConfig(),
-  manifests: RewriteManifestsConfig = RewriteManifestsConfig(),
-  deleteFiles: RewriteDeleteFilesConfig = RewriteDeleteFilesConfig(),
-  snapshots: ExpireSnapshotsConfig = ExpireSnapshotsConfig(),
-  orphans: RemoveOrphanFilesConfig = RemoveOrphanFilesConfig(),
-  refreshSparkTable: Boolean = true
-)
-
-// -----------------------------
-// 2) Runner
-// -----------------------------
-object IcebergMaintenance {
-
-  final case class Report(steps: Seq[(String, String)]) {
-    override def toString: String = steps.map { case (s, r) => s"- $s: $r" }.mkString("\n")
-  }
-
-  def run(spark: SparkSession, tableIdent: String, cfg: MaintenanceConfig): Report = {
-    val steps = scala.collection.mutable.ArrayBuffer.empty[(String, String)]
-
-    applySparkTuning(spark, cfg.spark)
-
-    if (cfg.refreshSparkTable) {
-      spark.catalog.refreshTable(tableIdent)
-      steps += "refreshTable(start)" -> "OK"
-    }
-
-    // 1) Data files
-    if (cfg.dataFiles.enabled) {
-      val res = rewriteDataFiles(spark, tableIdent, cfg.dataFiles, cfg.spark)
-      steps += "rewriteDataFiles" -> res
-    }
-
-    // 2) Manifests
-    if (cfg.manifests.enabled) {
-      val res = SparkActions.get(spark).rewriteManifests(tableIdent).execute()
-      steps += "rewriteManifests" -> s"rewrittenManifests=${res.rewrittenManifestsCount()}"
-    }
-
-    // 3) Delete files (si supporté)
-    if (cfg.deleteFiles.enabled) {
-      val ok = tryRewriteDeleteFiles(spark, tableIdent, cfg.deleteFiles, cfg.spark)
-      steps += "rewriteDeleteFiles" -> (if (ok) "OK" else "SKIPPED (non supporté par ta version Iceberg)")
-    }
-
-    // 4) Expire snapshots
-    if (cfg.snapshots.enabled) {
-      val olderThanMillis =
-        Instant.now().minus(cfg.snapshots.expireOlderThanDays.toLong, ChronoUnit.DAYS).toEpochMilli
-
-      val res = SparkActions.get(spark)
-        .expireSnapshots(tableIdent)
-        .expireOlderThan(olderThanMillis)
-        .retainLast(cfg.snapshots.retainLast)
-        .execute()
-
-      steps += "expireSnapshots" -> s"deletedSnapshots=${res.deletedSnapshotsCount()}, deletedDataFiles=${res.deletedDataFilesCount()}"
-    }
-
-    // 5) Remove orphan files
-    if (cfg.orphans.enabled) {
-      val olderThanMillis =
-        Instant.now().minus(cfg.orphans.orphanOlderThanDays.toLong, ChronoUnit.DAYS).toEpochMilli
-
-      val res = SparkActions.get(spark)
-        .removeOrphanFiles(tableIdent)
-        .olderThan(olderThanMillis)
-        .execute()
-
-      steps += "removeOrphanFiles" -> s"deletedFiles=${res.orphanFileCount()}"
-    }
-
-    if (cfg.refreshSparkTable) {
-      spark.catalog.refreshTable(tableIdent)
-      steps += "refreshTable(end)" -> "OK"
-    }
-
-    Report(steps.toSeq)
-  }
-
-  // -----------------------------
-  // Helpers
-  // -----------------------------
-  private def applySparkTuning(spark: SparkSession, tuning: SparkTuningConfig): Unit = {
-    if (tuning.enableAQE) spark.conf.set("spark.sql.adaptive.enabled", "true")
-    if (tuning.coalesceAQE) spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
-    tuning.shufflePartitions.foreach(p => spark.conf.set("spark.sql.shuffle.partitions", p.toString))
-  }
-
-  private def rewriteDataFiles(
-    spark: SparkSession,
-    tableIdent: String,
-    cfg: RewriteDataFilesConfig,
-    globalTuning: SparkTuningConfig
-  ): String = {
-    val shuffleP = cfg.shufflePartitions.orElse(globalTuning.shufflePartitions)
-
-    val action = SparkActions.get(spark)
-      .rewriteDataFiles(tableIdent)
-      .option("target-file-size-bytes", cfg.targetFileSizeBytes.toString)
-      .option("min-file-size-bytes", cfg.minFileSizeBytes.toString)
-      .option("max-file-size-bytes", cfg.maxFileSizeBytes.toString)
-
-    shuffleP.foreach(p => action.option("shuffle-partitions", p.toString))
-
-    val res = cfg.strategy.toLowerCase match {
-      case "sort" =>
-        if (cfg.sortColumns.isEmpty) throw new IllegalArgumentException("strategy=sort mais sortColumns est vide.")
-        action.sort(cfg.sortColumns: _*).execute()
-      case _ =>
-        action.binPack().execute()
-    }
-
-    s"rewrittenDataFiles=${res.rewrittenDataFilesCount()}, addedDataFiles=${res.addedDataFilesCount()}"
-  }
-
-  private def tryRewriteDeleteFiles(
-    spark: SparkSession,
-    tableIdent: String,
-    cfg: RewriteDeleteFilesConfig,
-    globalTuning: SparkTuningConfig
-  ): Boolean = {
-    val shuffleP = cfg.shufflePartitions.orElse(globalTuning.shufflePartitions)
-    val targetSize = cfg.targetFileSizeBytes
-
-    // selon version Iceberg : rewriteDeleteFiles OU rewritePositionDeleteFiles
-    val ok1 = tryInvokeActionWithOptions(spark, "rewriteDeleteFiles", tableIdent, targetSize, shuffleP)
-    if (ok1) return true
-    tryInvokeActionWithOptions(spark, "rewritePositionDeleteFiles", tableIdent, targetSize, shuffleP)
-  }
-
-  private def tryInvokeActionWithOptions(
-    spark: SparkSession,
-    methodName: String,
-    tableIdent: String,
-    targetSize: Option[Long],
-    shuffleP: Option[Int]
-  ): Boolean = {
-    try {
-      val actions = SparkActions.get(spark)
-      val mOpt = actions.getClass.getMethods.find(m => m.getName == methodName && m.getParameterCount == 1)
-      mOpt match {
-        case None => false
-        case Some(m) =>
-          val actionObj = m.invoke(actions, tableIdent).asInstanceOf[AnyRef]
-          targetSize.foreach(sz => invokeOptionIfExists(actionObj, "target-file-size-bytes", sz.toString))
-          shuffleP.foreach(p => invokeOptionIfExists(actionObj, "shuffle-partitions", p.toString))
-          val exec = actionObj.getClass.getMethods.find(_.getName == "execute").get
-          exec.invoke(actionObj)
-          true
-      }
-    } catch {
-      case _: Throwable => false
-    }
-  }
-
-  private def invokeOptionIfExists(actionObj: AnyRef, k: String, v: String): Unit = {
-    val opt = actionObj.getClass.getMethods.find(m =>
-      m.getName == "option" && m.getParameterCount == 2 &&
-        m.getParameterTypes.apply(0) == classOf[String] &&
-        m.getParameterTypes.apply(1) == classOf[String]
-    )
-    opt.foreach(_.invoke(actionObj, k, v))
-  }
+object DefaultCsvWriter extends CsvWriter {
+  override def write(rows: List[Array[String]], key: String, delimiter: String): Unit =
+    CsvUtility.writeCsvDataToFile(rows, key, delimiter)
 }
 
 
-val cfg = MaintenanceConfig(
-  spark = SparkTuningConfig(shufflePartitions = Some(48)),
-  dataFiles = RewriteDataFilesConfig(
-    enabled = true,
-    targetFileSizeBytes = 512L * 1024 * 1024,
-    minFileSizeBytes = 128L * 1024 * 1024,
-    strategy = "binpack"
-  ),
-  manifests = RewriteManifestsConfig(enabled = true),
-  deleteFiles = RewriteDeleteFilesConfig(enabled = true),
-  snapshots = ExpireSnapshotsConfig(enabled = true, expireOlderThanDays = 30, retainLast = 20),
-  orphans = RemoveOrphanFilesConfig(enabled = true, orphanOlderThanDays = 3)
-)
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
+import org.mockito.scalatest.MockitoSugar
+import org.mockito.ArgumentCaptor
 
-val report = IcebergMaintenance.run(spark, "glue_catalog.db.table", cfg)
-println(report)
+class ParameterToDataGalaxyTransformerSpec extends AnyWordSpec with Matchers with MockitoSugar {
 
+  "createCsv" should {
+
+    "write CSV when parametrageFile is defined" in {
+      // mocks
+      val reader = mock[DataFrameReader]
+      val writer = mock[CsvWriter]
+
+      // testable transformer (on force un comportement déterministe)
+      val transformer = new ParameterToDataGalaxyTransformer(writer) {
+        override protected def filterValidGesparam(g: Gesparam): Boolean =
+          g.code != "INVALID"
+
+        override protected def createCsvLines(g: Gesparam): List[Array[String]] =
+          List(Array(g.code, g.value))
+
+        override protected def logWarning(msg: String, e: Throwable): Unit = ()
+      }
+
+      // fixtures
+      val batch = Batch(
+        name = "batchA",
+        artifacts = Artifacts(
+          parametrageFile = Some(Artifact(name = "gesparam.txt"))
+        )
+      )
+
+      val items = List(
+        Gesparam(code = "A", value = "1"),
+        Gesparam(code = "INVALID", value = "X"),
+        Gesparam(code = "B", value = "2")
+      )
+
+      when(reader.readParameterDfAsList(batch /*, ... */)).thenReturn(items)
+
+      // run
+      transformer.createCsv(batch, reader)
+
+      // verify writer called once with expected rows/key/delimiter
+      val rowsCaptor = ArgumentCaptor.forClass(classOf[List[Array[String]]])
+      val keyCaptor  = ArgumentCaptor.forClass(classOf[String])
+      val delCaptor  = ArgumentCaptor.forClass(classOf[String])
+
+      verify(writer).write(rowsCaptor.capture(), keyCaptor.capture(), delCaptor.capture())
+
+      val rows = rowsCaptor.getValue
+      rows.head shouldBe ParameterConstants.GESPARAM_CSV_HEADER
+      rows.tail shouldBe List(
+        Array("A", "1"),
+        Array("B", "2")
+      )
+
+      delCaptor.getValue shouldBe ","
+
+      val expectedKey =
+        StorageConstants.PARAMETER_FILE_CSV_KEY_PATTERN.format("batchA", "gesparam")
+      keyCaptor.getValue shouldBe expectedKey
+    }
+
+    "do nothing when parametrageFile is not defined" in {
+      val reader = mock[DataFrameReader]
+      val writer = mock[CsvWriter]
+
+      val transformer = new ParameterToDataGalaxyTransformer(writer) {
+        override protected def filterValidGesparam(g: Gesparam): Boolean = true
+        override protected def createCsvLines(g: Gesparam): List[Array[String]] = Nil
+        override protected def logWarning(msg: String, e: Throwable): Unit = ()
+      }
+
+      val batch = Batch(
+        name = "batchA",
+        artifacts = Artifacts(parametrageFile = None)
+      )
+
+      transformer.createCsv(batch, reader)
+
+      verifyNoInteractions(reader)
+      verifyNoInteractions(writer)
+    }
+
+    "not throw if DataFrameReader fails (exception is caught)" in {
+      val reader = mock[DataFrameReader]
+      val writer = mock[CsvWriter]
+
+      val transformer = new ParameterToDataGalaxyTransformer(writer) {
+        override protected def filterValidGesparam(g: Gesparam): Boolean = true
+        override protected def createCsvLines(g: Gesparam): List[Array[String]] = Nil
+        override protected def logWarning(msg: String, e: Throwable): Unit = ()
+      }
+
+      val batch = Batch(
+        name = "batchA",
+        artifacts = Artifacts(parametrageFile = Some(Artifact(name = "gesparam.txt")))
+      )
+
+      when(reader.readParameterDfAsList(batch /*, ... */))
+        .thenThrow(new RuntimeException("boom"))
+
+      noException should be thrownBy transformer.createCsv(batch, reader)
+      verifyNoInteractions(writer) // on n’écrit rien si lecture KO
+    }
+  }
+}

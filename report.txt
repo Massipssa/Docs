@@ -1,120 +1,32 @@
-// production
-trait CsvWriter {
-  def write(rows: List[Array[String]], key: String, delimiter: String): Unit
+import org.apache.spark.sql.SparkSession
+import org.apache.iceberg.Table
+import org.apache.iceberg.spark.Spark3Util
+
+import scala.jdk.CollectionConverters._
+
+final case class ColDef(name: String, dataType: String)
+final case class IcebergTableInfo(table: String, location: String, columns: List[ColDef])
+
+def icebergTableInfo(fullTableName: String)(implicit spark: SparkSession): IcebergTableInfo = {
+  val table: Table = Spark3Util.loadIcebergTable(spark, fullTableName)
+
+  val cols: List[ColDef] =
+    table.schema().columns().asScala
+      .map(c => ColDef(c.name(), c.`type`().toString))
+      .toList
+
+  // location de la table (base location / data location)
+  val loc: String =
+    Option(table.location())
+      .orElse(Option(table.properties().get("location")))
+      .getOrElse("UNKNOWN")
+
+  IcebergTableInfo(fullTableName, loc, cols)
 }
 
-object DefaultCsvWriter extends CsvWriter {
-  override def write(rows: List[Array[String]], key: String, delimiter: String): Unit =
-    CsvUtility.writeCsvDataToFile(rows, key, delimiter)
-}
+// Usage
+implicit val spark: SparkSession = SparkSession.builder().getOrCreate()
 
-
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.should.Matchers
-import org.mockito.scalatest.MockitoSugar
-import org.mockito.ArgumentCaptor
-
-class ParameterToDataGalaxyTransformerSpec extends AnyWordSpec with Matchers with MockitoSugar {
-
-  "createCsv" should {
-
-    "write CSV when parametrageFile is defined" in {
-      // mocks
-      val reader = mock[DataFrameReader]
-      val writer = mock[CsvWriter]
-
-      // testable transformer (on force un comportement déterministe)
-      val transformer = new ParameterToDataGalaxyTransformer(writer) {
-        override protected def filterValidGesparam(g: Gesparam): Boolean =
-          g.code != "INVALID"
-
-        override protected def createCsvLines(g: Gesparam): List[Array[String]] =
-          List(Array(g.code, g.value))
-
-        override protected def logWarning(msg: String, e: Throwable): Unit = ()
-      }
-
-      // fixtures
-      val batch = Batch(
-        name = "batchA",
-        artifacts = Artifacts(
-          parametrageFile = Some(Artifact(name = "gesparam.txt"))
-        )
-      )
-
-      val items = List(
-        Gesparam(code = "A", value = "1"),
-        Gesparam(code = "INVALID", value = "X"),
-        Gesparam(code = "B", value = "2")
-      )
-
-      when(reader.readParameterDfAsList(batch /*, ... */)).thenReturn(items)
-
-      // run
-      transformer.createCsv(batch, reader)
-
-      // verify writer called once with expected rows/key/delimiter
-      val rowsCaptor = ArgumentCaptor.forClass(classOf[List[Array[String]]])
-      val keyCaptor  = ArgumentCaptor.forClass(classOf[String])
-      val delCaptor  = ArgumentCaptor.forClass(classOf[String])
-
-      verify(writer).write(rowsCaptor.capture(), keyCaptor.capture(), delCaptor.capture())
-
-      val rows = rowsCaptor.getValue
-      rows.head shouldBe ParameterConstants.GESPARAM_CSV_HEADER
-      rows.tail shouldBe List(
-        Array("A", "1"),
-        Array("B", "2")
-      )
-
-      delCaptor.getValue shouldBe ","
-
-      val expectedKey =
-        StorageConstants.PARAMETER_FILE_CSV_KEY_PATTERN.format("batchA", "gesparam")
-      keyCaptor.getValue shouldBe expectedKey
-    }
-
-    "do nothing when parametrageFile is not defined" in {
-      val reader = mock[DataFrameReader]
-      val writer = mock[CsvWriter]
-
-      val transformer = new ParameterToDataGalaxyTransformer(writer) {
-        override protected def filterValidGesparam(g: Gesparam): Boolean = true
-        override protected def createCsvLines(g: Gesparam): List[Array[String]] = Nil
-        override protected def logWarning(msg: String, e: Throwable): Unit = ()
-      }
-
-      val batch = Batch(
-        name = "batchA",
-        artifacts = Artifacts(parametrageFile = None)
-      )
-
-      transformer.createCsv(batch, reader)
-
-      verifyNoInteractions(reader)
-      verifyNoInteractions(writer)
-    }
-
-    "not throw if DataFrameReader fails (exception is caught)" in {
-      val reader = mock[DataFrameReader]
-      val writer = mock[CsvWriter]
-
-      val transformer = new ParameterToDataGalaxyTransformer(writer) {
-        override protected def filterValidGesparam(g: Gesparam): Boolean = true
-        override protected def createCsvLines(g: Gesparam): List[Array[String]] = Nil
-        override protected def logWarning(msg: String, e: Throwable): Unit = ()
-      }
-
-      val batch = Batch(
-        name = "batchA",
-        artifacts = Artifacts(parametrageFile = Some(Artifact(name = "gesparam.txt")))
-      )
-
-      when(reader.readParameterDfAsList(batch /*, ... */))
-        .thenThrow(new RuntimeException("boom"))
-
-      noException should be thrownBy transformer.createCsv(batch, reader)
-      verifyNoInteractions(writer) // on n’écrit rien si lecture KO
-    }
-  }
-}
+val info = icebergTableInfo("db.ma_table") // ou fullTableName
+println(s"Location: ${info.location}")
+info.columns.foreach(println)

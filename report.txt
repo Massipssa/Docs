@@ -8,3 +8,16 @@ private def applyTableProperties(
     acc.tableProperty(k, v).asInstanceOf[DataFrameWriterV2[_]]
   }
 }
+
+import org.apache.spark.sql.DataFrameWriterV2
+
+private def applyTableProperties(
+  w: DataFrameWriterV2[_],
+  props: Map[String, String]
+): DataFrameWriterV2[_] = {
+  var writer: DataFrameWriterV2[_] = w
+  props.foreach { case (k, v) =>
+    writer = writer.tableProperty(k, v).asInstanceOf[DataFrameWriterV2[_]]
+  }
+  writer
+}

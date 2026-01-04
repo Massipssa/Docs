@@ -1,70 +1,63 @@
 import org.apache.spark.sql.{Column, DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-import spark.implicits._
+import org.apache.spark.sql.connector.catalog.TableCatalog
+import scala.jdk.CollectionConverters._
 
-// Adapte ces types à ton projet si tu les as déjà
-final case class PartitionParts(
-  year: Option[String] = None,
-  month: Option[String] = None,
-  day: Option[String] = None
-)
+object IcebergWriter {
 
-final case class TableInfo(
-  tableName: String,
-  partitionParts: Option[PartitionParts]
-)
+  private def pad2(c: Column): Column = lpad(c.cast("int").cast("string"), 2, "0")
+  private def pad4(c: Column): Column = lpad(c.cast("int").cast("string"), 4, "0")
 
-object IcebergCreWriter {
+  // ✅ Reco: partitions en INT, et colonnes *_str pour l’affichage/contrat
+  private def normalizePartitions(df: DataFrame): DataFrame =
+    df.withColumn("year",  col("year").cast("int"))
+      .withColumn("month", col("month").cast("int"))
+      .withColumn("day",   col("day").cast("int"))
+      .withColumn("year_str",  pad4(col("year")))
+      .withColumn("month_str", pad2(col("month")))
+      .withColumn("day_str",   pad2(col("day")))
+
+  private def addEventDate(df: DataFrame): DataFrame =
+    df.withColumn("event_date", make_date(col("year"), col("month"), col("day")))
+
+  private def applyTableProperties(writer: org.apache.spark.sql.DataFrameWriterV2,
+                                   props: Map[String, String]): org.apache.spark.sql.DataFrameWriterV2 =
+    props.foldLeft(writer) { case (w, (k, v)) => w.tableProperty(k, v) }
 
   /**
-    * Si la colonne existe dans le DF -> on l’utilise
-    * Sinon -> on prend la valeur fournie par PartitionParts (lit)
+    * - Journalier: partition by days(event_date)
+    * - Mensuel (pas day): partition by year, month
+    * + applique tableProperties depuis un Map
     */
-  private def colOrLit(df: DataFrame, name: String, fallback: Option[String]): Column =
-    if (df.columns.contains(name)) col(name) else lit(fallback.getOrElse(null))
-
-  private def hasDay(df: DataFrame, parts: PartitionParts): Boolean =
-    df.columns.contains("day") || parts.day.exists(_.trim.nonEmpty)
-
-  def createOrReplaceIceberg(
+  def createOrReplace(
       spark: SparkSession,
       fullTableName: String,
-      tableInfo: TableInfo,
       df: DataFrame,
-      targetFileSizeBytes: Long = 512L * 1024 * 1024
+      isDaily: Boolean,
+      tableProperties: Map[String, String]
   ): Unit = {
     import spark.implicits._
 
-    val parts = tableInfo.partitionParts.getOrElse(
-      throw new IllegalArgumentException("partitionParts is required")
-    )
+    if (isDaily) {
+      val dfDaily = addEventDate(normalizePartitions(df))
 
-    // 1) Normaliser year/month en int (mensuel et journalier)
-    val dfYm = df
-      .withColumn("year",  colOrLit(df, "year",  parts.year).cast("int"))
-      .withColumn("month", colOrLit(df, "month", parts.month).cast("int"))
+      val base = dfDaily.writeTo(fullTableName)
+      val writerWithProps = applyTableProperties(base, tableProperties)
 
-    // 2) Brancher selon présence de day
-    if (hasDay(df, parts)) {
-      // ====== CAS JOURNALIER ======
-      val dfDaily = dfYm
-        .withColumn("day", colOrLit(df, "day", parts.day).cast("int"))
-        // event_date DOIT être date/timestamp pour days(...)
-        .withColumn("event_date", make_date(col("year"), col("month"), col("day")))
-
-      dfDaily.writeTo(fullTableName)
-        .tableProperty("write.target-file-size-bytes", targetFileSizeBytes.toString)
-        // ✅ IMPORTANT : ici on utilise spark.sql.functions.days (Column),
-        // pas org.apache.spark.sql.connector.expressions.Expressions.days (Transform)
+      writerWithProps
         .partitionedBy(days($"event_date"))
         .createOrReplace()
 
     } else {
-      // ====== CAS MENSUEL (pas de day) ======
-      // ✅ PAS de faux "01" et PAS de event_date
-      // On partitionne directement en year/month
-      dfYm.writeTo(fullTableName)
-        .tableProperty("write.target-file-size-bytes", targetFileSizeBytes.toString)
+      // Mensuel => on ne dépend pas de day/event_date
+      val dfMonthly = df
+        .withColumn("year",  col("year").cast("int"))
+        .withColumn("month", col("month").cast("int"))
+
+      val base = dfMonthly.writeTo(fullTableName)
+      val writerWithProps = applyTableProperties(base, tableProperties)
+
+      writerWithProps
         .partitionedBy($"year", $"month")
         .createOrReplace()
     }

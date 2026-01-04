@@ -1,79 +1,16 @@
-import org.apache.spark.sql.{Column, DataFrame, SparkSession, DataFrameWriterV2}
-import org.apache.spark.sql.functions._
+import org.apache.spark.sql.DataFrameWriterV2
 
-final class IcebergTableWriter(spark: SparkSession) {
+private def applyTableProperties[T](
+  w: DataFrameWriterV2[T],
+  props: Map[String, String]
+): DataFrameWriterV2[T] =
+  props.foldLeft(w) { case (acc, (k, v)) => acc.tableProperty(k, v) }
 
-  // ---- Constants (adapte à ton code) ----
-  private val YEAR_COL       = "year"
-  private val MONTH_COL      = "month"
-  private val DAY_COL        = "day"
-  private val EVENT_DATE_COL = "event_date"
 
-  // ---- Helpers ----
-  private def colOrLit(df: DataFrame, colName: String, fallback: Option[String]): Column =
-    if (df.columns.contains(colName)) col(colName) else lit(fallback.orNull)
+import org.apache.spark.sql.DataFrameWriterV2
 
-  private def pad2(c: Column): Column = lpad(c.cast("int").cast("string"), 2, "0")
-  private def pad4(c: Column): Column = lpad(c.cast("int").cast("string"), 4, "0")
-
-  private def hasDay(df: DataFrame, dayFromParts: Option[String]): Boolean =
-    df.columns.contains(DAY_COL) || dayFromParts.exists(_.trim.nonEmpty)
-
-  // ✅ IMPORTANT: PAS de générique ici
-  private def applyTableProperties(w: DataFrameWriterV2, props: Map[String, String]): DataFrameWriterV2 =
-    props.foldLeft(w) { case (acc, (k, v)) => acc.tableProperty(k, v) }
-
-  /**
-   * partsYear/Month/Day = valeurs par défaut si les colonnes n'existent pas dans df
-   */
-  def createOrReplace(
-      fullTableName: String,
-      df: DataFrame,
-      partsYear: Option[String],
-      partsMonth: Option[String],
-      partsDay: Option[String],
-      tableProperties: Map[String, String]
-  ): Unit = {
-    import spark.implicits._
-
-    // 1) Ajouter/normaliser year/month/day (string paddé si tu le veux)
-    val dfYm = df
-      .withColumn(YEAR_COL,  pad4(colOrLit(df, YEAR_COL,  partsYear)))
-      .withColumn(MONTH_COL, pad2(colOrLit(df, MONTH_COL, partsMonth)))
-
-    val daily = hasDay(df, partsDay)
-
-    // 2) Props: lire target-file-size-bytes depuis le map (ou défaut)
-    val defaultTarget = (512L * 1024 * 1024).toString
-    val propsWithDefault =
-      if (tableProperties.contains("write.target-file-size-bytes")) tableProperties
-      else tableProperties + ("write.target-file-size-bytes" -> defaultTarget)
-
-    if (daily) {
-      // ---- CAS JOURNALIER ----
-      val dfDaily = dfYm
-        .withColumn(DAY_COL, pad2(colOrLit(df, DAY_COL, partsDay)))
-        // make_date attend des int => cast
-        .withColumn(
-          EVENT_DATE_COL,
-          make_date(col(YEAR_COL).cast("int"), col(MONTH_COL).cast("int"), col(DAY_COL).cast("int"))
-        )
-
-      val base: DataFrameWriterV2 = dfDaily.writeTo(fullTableName)
-      val writer = applyTableProperties(base, propsWithDefault)
-
-      writer
-        .partitionedBy(days(col(EVENT_DATE_COL))) // ✅ spark.sql.functions.days => Column
-        .createOrReplace()
-
-    } else {
-      // ---- CAS MENSUEL (pas de day) ----
-      val base: DataFrameWriterV2 = dfYm.writeTo(fullTableName)
-      val writer = applyTableProperties(base, propsWithDefault)
-
-      writer
-        .partitionedBy(col(YEAR_COL), col(MONTH_COL))
-        .createOrReplace()
-    }
-  }
-}
+private def applyTableProperties(
+  w: DataFrameWriterV2[_],
+  props: Map[String, String]
+): DataFrameWriterV2[_] =
+  props.foldLeft(w) { case (acc, (k, v)) => acc.tableProperty(k, v) }

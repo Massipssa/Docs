@@ -1,26 +1,72 @@
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{Column, DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.connector.expressions.Expressions
+import spark.implicits._
 
-def writeIceberg(fullTableName: String, df: DataFrame, hasDay: Boolean): Unit = {
-  if (hasDay) {
-    val dfDaily =
-      df.withColumn("event_date", make_date(col("year").cast("int"), col("month").cast("int"), col("day").cast("int")))
+// Adapte ces types à ton projet si tu les as déjà
+final case class PartitionParts(
+  year: Option[String] = None,
+  month: Option[String] = None,
+  day: Option[String] = None
+)
 
-    dfDaily.writeTo(fullTableName)
-      .partitionedBy(Expressions.days("event_date"))   // ✅ OK
-      .createOrReplace()
+final case class TableInfo(
+  tableName: String,
+  partitionParts: Option[PartitionParts]
+)
 
-  } else {
-    val dfMonthly =
-      df.withColumn("year", col("year").cast("int"))
-        .withColumn("month", col("month").cast("int"))
+object IcebergCreWriter {
 
-    dfMonthly.writeTo(fullTableName)
-      .partitionedBy(
-        Expressions.identity("year"),                  // ✅ OK
-        Expressions.identity("month")                  // ✅ OK
-      )
-      .createOrReplace()
+  /**
+    * Si la colonne existe dans le DF -> on l’utilise
+    * Sinon -> on prend la valeur fournie par PartitionParts (lit)
+    */
+  private def colOrLit(df: DataFrame, name: String, fallback: Option[String]): Column =
+    if (df.columns.contains(name)) col(name) else lit(fallback.getOrElse(null))
+
+  private def hasDay(df: DataFrame, parts: PartitionParts): Boolean =
+    df.columns.contains("day") || parts.day.exists(_.trim.nonEmpty)
+
+  def createOrReplaceIceberg(
+      spark: SparkSession,
+      fullTableName: String,
+      tableInfo: TableInfo,
+      df: DataFrame,
+      targetFileSizeBytes: Long = 512L * 1024 * 1024
+  ): Unit = {
+    import spark.implicits._
+
+    val parts = tableInfo.partitionParts.getOrElse(
+      throw new IllegalArgumentException("partitionParts is required")
+    )
+
+    // 1) Normaliser year/month en int (mensuel et journalier)
+    val dfYm = df
+      .withColumn("year",  colOrLit(df, "year",  parts.year).cast("int"))
+      .withColumn("month", colOrLit(df, "month", parts.month).cast("int"))
+
+    // 2) Brancher selon présence de day
+    if (hasDay(df, parts)) {
+      // ====== CAS JOURNALIER ======
+      val dfDaily = dfYm
+        .withColumn("day", colOrLit(df, "day", parts.day).cast("int"))
+        // event_date DOIT être date/timestamp pour days(...)
+        .withColumn("event_date", make_date(col("year"), col("month"), col("day")))
+
+      dfDaily.writeTo(fullTableName)
+        .tableProperty("write.target-file-size-bytes", targetFileSizeBytes.toString)
+        // ✅ IMPORTANT : ici on utilise spark.sql.functions.days (Column),
+        // pas org.apache.spark.sql.connector.expressions.Expressions.days (Transform)
+        .partitionedBy(days($"event_date"))
+        .createOrReplace()
+
+    } else {
+      // ====== CAS MENSUEL (pas de day) ======
+      // ✅ PAS de faux "01" et PAS de event_date
+      // On partitionne directement en year/month
+      dfYm.writeTo(fullTableName)
+        .tableProperty("write.target-file-size-bytes", targetFileSizeBytes.toString)
+        .partitionedBy($"year", $"month")
+        .createOrReplace()
+    }
   }
 }

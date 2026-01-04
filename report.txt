@@ -1,32 +1,68 @@
-import org.apache.spark.sql.SparkSession
-import org.apache.iceberg.Table
-import org.apache.iceberg.spark.Spark3Util
+import org.apache.spark.sql.{Column, DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.connector.expressions.Expressions
 
-import scala.jdk.CollectionConverters._
+// Exemple : adapte selon ton vrai type
+final case class PartitionParts(
+  year: Option[String],
+  month: Option[String],
+  day: Option[String]
+)
 
-final case class ColDef(name: String, dataType: String)
-final case class IcebergTableInfo(table: String, location: String, columns: List[ColDef])
+final case class TableInfo(
+  tableName: String,
+  partitionParts: Option[PartitionParts]
+)
 
-def icebergTableInfo(fullTableName: String)(implicit spark: SparkSession): IcebergTableInfo = {
-  val table: Table = Spark3Util.loadIcebergTable(spark, fullTableName)
+final class IcebergTableWriter(spark: SparkSession) {
 
-  val cols: List[ColDef] =
-    table.schema().columns().asScala
-      .map(c => ColDef(c.name(), c.`type`().toString))
-      .toList
+  // Tu as déjà ça
+  private def colorPartition(df: DataFrame, colName: String, partValue: Option[String]): Column =
+    if (df.columns.contains(colName)) col(colName) else lit(partValue.orNull)
 
-  // location de la table (base location / data location)
-  val loc: String =
-    Option(table.location())
-      .orElse(Option(table.properties().get("location")))
-      .getOrElse("UNKNOWN")
+  private def hasDay(df: DataFrame, parts: PartitionParts): Boolean =
+    df.columns.contains("day") || parts.day.exists(_.trim.nonEmpty)
 
-  IcebergTableInfo(fullTableName, loc, cols)
+  def createOrReplace(
+      fullTableName: String,
+      tableInfo: TableInfo,
+      df: DataFrame,
+      targetFileSizeBytes: Long = 512L * 1024 * 1024
+  ): Unit = {
+
+    val parts = tableInfo.partitionParts.getOrElse(
+      throw new IllegalArgumentException("partitionParts is required")
+    )
+
+    // Normalise year/month[/day] (même si absents du DF)
+    val dfYm = df
+      .withColumn("year",  colorPartition(df, "year",  parts.year).cast("int"))
+      .withColumn("month", colorPartition(df, "month", parts.month).cast("int"))
+
+    val writerBase =
+      dfYm.writeTo(fullTableName)
+        .tableProperty("write.target-file-size-bytes", targetFileSizeBytes.toString)
+
+    if (hasDay(df, parts)) {
+      // ✅ CAS JOURNALIER : on construit event_date et on partitionne par days(event_date)
+      val dfDaily = dfYm
+        .withColumn("day", colorPartition(df, "day", parts.day).cast("int"))
+        .withColumn("event_date", make_date(col("year"), col("month"), col("day")))
+
+      dfDaily.writeTo(fullTableName)
+        .tableProperty("write.target-file-size-bytes", targetFileSizeBytes.toString)
+        .partitionedBy(Expressions.days("event_date"))
+        .createOrReplace()
+
+    } else {
+      // ✅ CAS MENSUEL : PAS de faux day, PAS de event_date
+      // Partition Iceberg directement sur year + month
+      writerBase
+        .partitionedBy(
+          Expressions.identity("year"),
+          Expressions.identity("month")
+        )
+        .createOrReplace()
+    }
+  }
 }
-
-// Usage
-implicit val spark: SparkSession = SparkSession.builder().getOrCreate()
-
-val info = icebergTableInfo("db.ma_table") // ou fullTableName
-println(s"Location: ${info.location}")
-info.columns.foreach(println)

@@ -1,65 +1,23 @@
-import org.apache.spark.sql.{Column, DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession, DataFrameWriterV2}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.connector.catalog.TableCatalog
-import scala.jdk.CollectionConverters._
 
-object IcebergWriter {
+object WriterUtil {
 
-  private def pad2(c: Column): Column = lpad(c.cast("int").cast("string"), 2, "0")
-  private def pad4(c: Column): Column = lpad(c.cast("int").cast("string"), 4, "0")
+  private def applyTableProperties(
+      w: DataFrameWriterV2,
+      props: Map[String, String]
+  ): DataFrameWriterV2 =
+    props.foldLeft(w) { case (acc, (k, v)) => acc.tableProperty(k, v) }
 
-  // ✅ Reco: partitions en INT, et colonnes *_str pour l’affichage/contrat
-  private def normalizePartitions(df: DataFrame): DataFrame =
-    df.withColumn("year",  col("year").cast("int"))
-      .withColumn("month", col("month").cast("int"))
-      .withColumn("day",   col("day").cast("int"))
-      .withColumn("year_str",  pad4(col("year")))
-      .withColumn("month_str", pad2(col("month")))
-      .withColumn("day_str",   pad2(col("day")))
-
-  private def addEventDate(df: DataFrame): DataFrame =
-    df.withColumn("event_date", make_date(col("year"), col("month"), col("day")))
-
-  private def applyTableProperties(writer: org.apache.spark.sql.DataFrameWriterV2,
-                                   props: Map[String, String]): org.apache.spark.sql.DataFrameWriterV2 =
-    props.foldLeft(writer) { case (w, (k, v)) => w.tableProperty(k, v) }
-
-  /**
-    * - Journalier: partition by days(event_date)
-    * - Mensuel (pas day): partition by year, month
-    * + applique tableProperties depuis un Map
-    */
-  def createOrReplace(
-      spark: SparkSession,
-      fullTableName: String,
-      df: DataFrame,
-      isDaily: Boolean,
-      tableProperties: Map[String, String]
-  ): Unit = {
+  def writeDaily(spark: SparkSession, fullTableName: String, df: DataFrame, props: Map[String, String]): Unit = {
     import spark.implicits._
 
-    if (isDaily) {
-      val dfDaily = addEventDate(normalizePartitions(df))
+    val df2 = df.withColumn("event_date", to_date(col("event_date")))
 
-      val base = dfDaily.writeTo(fullTableName)
-      val writerWithProps = applyTableProperties(base, tableProperties)
+    val baseWriter: DataFrameWriterV2 = df2.writeTo(fullTableName)
 
-      writerWithProps
-        .partitionedBy(days($"event_date"))
-        .createOrReplace()
-
-    } else {
-      // Mensuel => on ne dépend pas de day/event_date
-      val dfMonthly = df
-        .withColumn("year",  col("year").cast("int"))
-        .withColumn("month", col("month").cast("int"))
-
-      val base = dfMonthly.writeTo(fullTableName)
-      val writerWithProps = applyTableProperties(base, tableProperties)
-
-      writerWithProps
-        .partitionedBy($"year", $"month")
-        .createOrReplace()
-    }
+    applyTableProperties(baseWriter, props)
+      .partitionedBy(days($"event_date"))   // ✅ Column transform (spark.sql.functions.days)
+      .createOrReplace()
   }
 }

@@ -1,68 +1,26 @@
-import org.apache.spark.sql.{Column, DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.connector.expressions.Expressions
 
-// Exemple : adapte selon ton vrai type
-final case class PartitionParts(
-  year: Option[String],
-  month: Option[String],
-  day: Option[String]
-)
+def writeIceberg(fullTableName: String, df: DataFrame, hasDay: Boolean): Unit = {
+  if (hasDay) {
+    val dfDaily =
+      df.withColumn("event_date", make_date(col("year").cast("int"), col("month").cast("int"), col("day").cast("int")))
 
-final case class TableInfo(
-  tableName: String,
-  partitionParts: Option[PartitionParts]
-)
+    dfDaily.writeTo(fullTableName)
+      .partitionedBy(Expressions.days("event_date"))   // ✅ OK
+      .createOrReplace()
 
-final class IcebergTableWriter(spark: SparkSession) {
+  } else {
+    val dfMonthly =
+      df.withColumn("year", col("year").cast("int"))
+        .withColumn("month", col("month").cast("int"))
 
-  // Tu as déjà ça
-  private def colorPartition(df: DataFrame, colName: String, partValue: Option[String]): Column =
-    if (df.columns.contains(colName)) col(colName) else lit(partValue.orNull)
-
-  private def hasDay(df: DataFrame, parts: PartitionParts): Boolean =
-    df.columns.contains("day") || parts.day.exists(_.trim.nonEmpty)
-
-  def createOrReplace(
-      fullTableName: String,
-      tableInfo: TableInfo,
-      df: DataFrame,
-      targetFileSizeBytes: Long = 512L * 1024 * 1024
-  ): Unit = {
-
-    val parts = tableInfo.partitionParts.getOrElse(
-      throw new IllegalArgumentException("partitionParts is required")
-    )
-
-    // Normalise year/month[/day] (même si absents du DF)
-    val dfYm = df
-      .withColumn("year",  colorPartition(df, "year",  parts.year).cast("int"))
-      .withColumn("month", colorPartition(df, "month", parts.month).cast("int"))
-
-    val writerBase =
-      dfYm.writeTo(fullTableName)
-        .tableProperty("write.target-file-size-bytes", targetFileSizeBytes.toString)
-
-    if (hasDay(df, parts)) {
-      // ✅ CAS JOURNALIER : on construit event_date et on partitionne par days(event_date)
-      val dfDaily = dfYm
-        .withColumn("day", colorPartition(df, "day", parts.day).cast("int"))
-        .withColumn("event_date", make_date(col("year"), col("month"), col("day")))
-
-      dfDaily.writeTo(fullTableName)
-        .tableProperty("write.target-file-size-bytes", targetFileSizeBytes.toString)
-        .partitionedBy(Expressions.days("event_date"))
-        .createOrReplace()
-
-    } else {
-      // ✅ CAS MENSUEL : PAS de faux day, PAS de event_date
-      // Partition Iceberg directement sur year + month
-      writerBase
-        .partitionedBy(
-          Expressions.identity("year"),
-          Expressions.identity("month")
-        )
-        .createOrReplace()
-    }
+    dfMonthly.writeTo(fullTableName)
+      .partitionedBy(
+        Expressions.identity("year"),                  // ✅ OK
+        Expressions.identity("month")                  // ✅ OK
+      )
+      .createOrReplace()
   }
 }

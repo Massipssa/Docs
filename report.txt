@@ -4,7 +4,9 @@ private def applyTableProperties[T](
   w: DataFrameWriterV2[T],
   props: Map[String, String]
 ): DataFrameWriterV2[T] =
-  props.foldLeft(w) { case (acc, (k, v)) => acc.tableProperty(k, v) }
+  props.foldLeft[DataFrameWriterV2[T]](w) { case (acc, (k, v)) =>
+    acc.tableProperty(k, v)
+  }
 
 
 import org.apache.spark.sql.DataFrameWriterV2
@@ -12,5 +14,14 @@ import org.apache.spark.sql.DataFrameWriterV2
 private def applyTableProperties(
   w: DataFrameWriterV2[_],
   props: Map[String, String]
-): DataFrameWriterV2[_] =
-  props.foldLeft(w) { case (acc, (k, v)) => acc.tableProperty(k, v) }
+): DataFrameWriterV2[_] = {
+  val base: DataFrameWriterV2[_] = w   // ✅ widening
+  props.foldLeft(base) { case (acc, (k, v)) =>
+    acc.tableProperty(k, v)
+  }
+}
+
+val writerWithProps = applyTableProperties(df.writeTo(fullTableName), tableProperties)
+writerWithProps
+  .partitionedBy(col("year"), col("month"))
+  .createOrReplace()

@@ -1,140 +1,73 @@
 package fr.ccf.commons.datacontract
 
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito._
+import org.mockito.{MockedConstruction, Mockito}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.yaml.snakeyaml.DumperOptions
-import org.yaml.snakeyaml.nodes._
+import org.yaml.snakeyaml.Yaml
 
-import java.util.{HashMap => JHashMap, Map => JMap}
+import java.util.{LinkedHashMap => JLinkedHashMap, List => JList}
 import scala.jdk.CollectionConverters._
 
-class ContractRepresenterSpec extends AnyWordSpec with Matchers {
+class DataContractGeneratorSpec extends AnyWordSpec with Matchers {
 
-  private def jmap(kvs: (Any, Any)*): JMap[Any, Any] = {
-    val m = new JHashMap[Any, Any]()
-    kvs.foreach { case (k, v) => m.put(k, v) }
-    m
-  }
+  "generate(contract)" should {
 
-  private def asMappingNode(n: Node): MappingNode =
-    n shouldBe a[MappingNode]
-    n.asInstanceOf[MappingNode]
+    "build root map and dump it with expected DumperOptions" in {
+      // ⬇️ Remplace par ta vraie classe
+      val generator = new DataContractGenerator()
 
-  private def asScalarNode(n: Node): ScalarNode =
-    n shouldBe a[ScalarNode]
-    n.asInstanceOf[ScalarNode]
-
-  "ContractRepresenter.representMapping" should {
-
-    "apply custom representation for storage_descriptor map (BLOCK) and render value map in FLOW with double quotes" in {
-      val options = new DumperOptions()
-      val representer = new ContractRepresenter(options)
-
-      val inner = jmap(
-        "bucket" -> "my-bucket",
-        "prefix" -> "path/",
-        "number" -> Integer.valueOf(12),
-        "nested" -> jmap("k1" -> "v1")
+      // DataContract minimal : schema vide pour éviter la complexité de toSchemaList
+      val contract = DataContract(
+        kind = "DataContract",
+        apiVersion = "v3.0.2",
+        id = "ignored",
+        status = "ACTIVE",
+        schema = Nil // <- important : évite d'avoir à construire un Schema complet
       )
 
-      // Map "custom" avec une clé en plus (foo) => doit être ignorée par le custom render
-      val mapping = jmap(
-        "property" -> "storage_descriptor",
-        "value" -> inner,
-        "foo" -> "bar"
-      )
+      val mockedYaml: MockedConstruction[Yaml] =
+        Mockito.mockConstruction(
+          classOf[Yaml],
+          (yamlMock: Yaml, context) => {
+            when(yamlMock.dump(any())).thenReturn("DUMPED_YAML")
 
-      val node = representer.representMapping(Tag.MAP, mapping.asInstanceOf[JMap[_, _]], DumperOptions.FlowStyle.BLOCK)
-      val top = asMappingNode(node)
+            // ✅ Vérifie les DumperOptions passées à new Yaml(represent, options)
+            val options = context.arguments().get(1).asInstanceOf[DumperOptions]
 
-      // custom: top level en BLOCK
-      top.getFlowStyle shouldBe DumperOptions.FlowStyle.BLOCK
+            options.getDefaultFlowStyle shouldBe DumperOptions.FlowStyle.BLOCK
+            options.isPrettyFlow shouldBe true
+            options.getIndent shouldBe 2
+            options.getWidth shouldBe 120
+            options.getDefaultScalarStyle shouldBe DumperOptions.ScalarStyle.PLAIN
+          }
+        )
 
-      val tuples = top.getValue.asScala.toList
-      // custom: ne garde que property + value (ignore foo)
-      tuples.size shouldBe 2
+      try {
+        val out = generator.generate(contract)
+        out shouldBe "DUMPED_YAML"
 
-      val t0 = tuples(0)
-      val k0 = asScalarNode(t0.getKeyNode)
-      val v0 = asScalarNode(t0.getValueNode)
+        // ✅ Vérifie l'argument passé à dump(root)
+        val yamlInstance = mockedYaml.constructed().get(0)
+        val captor = org.mockito.ArgumentCaptor.forClass(classOf[Object])
+        verify(yamlInstance).dump(captor.capture())
 
-      k0.getValue shouldBe "property"
-      k0.getScalarStyle shouldBe DumperOptions.ScalarStyle.PLAIN
+        val root = captor.getValue.asInstanceOf[JLinkedHashMap[String, Any]]
+        root.asScala.keySet shouldBe Set("kind", "apiVersion", "id", "status", "schema")
 
-      v0.getValue shouldBe "storage_descriptor"
-      v0.getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
+        root.get("kind") shouldBe "DataContract"
+        root.get("apiVersion") shouldBe "v3.0.2"
+        root.get("id") shouldBe "ignored"
+        root.get("status") shouldBe "ACTIVE"
 
-      val t1 = tuples(1)
-      val k1 = asScalarNode(t1.getKeyNode)
-      k1.getValue shouldBe "value"
-      k1.getScalarStyle shouldBe DumperOptions.ScalarStyle.PLAIN
-
-      // value => MappingNode FLOW
-      val valueNode = asMappingNode(t1.getValueNode)
-      valueNode.getFlowStyle shouldBe DumperOptions.FlowStyle.FLOW
-
-      // Dans FLOW: keys et values doivent être DOUBLE_QUOTED
-      val innerTuples = valueNode.getValue.asScala.toList
-      innerTuples.map(_.getKeyNode).foreach { kn =>
-        val sk = asScalarNode(kn)
-        sk.getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
+        val schemaValue = root.get("schema")
+        schemaValue shouldBe a[JList[?]]
+        schemaValue.asInstanceOf[JList[?]].size() shouldBe 0
+      } finally {
+        mockedYaml.close()
       }
-
-      // bucket -> "my-bucket"
-      val bucketTuple = innerTuples.find(t => asScalarNode(t.getKeyNode).getValue == "bucket").get
-      asScalarNode(bucketTuple.getValueNode).getValue shouldBe "my-bucket"
-      asScalarNode(bucketTuple.getValueNode).getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
-
-      // number (12) => "12" (stringifié) + quotes
-      val numTuple = innerTuples.find(t => asScalarNode(t.getKeyNode).getValue == "number").get
-      asScalarNode(numTuple.getValueNode).getValue shouldBe "12"
-      asScalarNode(numTuple.getValueNode).getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
-
-      // nested => MappingNode FLOW récursif
-      val nestedTuple = innerTuples.find(t => asScalarNode(t.getKeyNode).getValue == "nested").get
-      val nestedNode = asMappingNode(nestedTuple.getValueNode)
-      nestedNode.getFlowStyle shouldBe DumperOptions.FlowStyle.FLOW
-
-      val nestedInner = nestedNode.getValue.asScala.toList
-      nestedInner.size shouldBe 1
-      asScalarNode(nestedInner.head.getKeyNode).getValue shouldBe "k1"
-      asScalarNode(nestedInner.head.getKeyNode).getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
-      asScalarNode(nestedInner.head.getValueNode).getValue shouldBe "v1"
-      asScalarNode(nestedInner.head.getValueNode).getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
-    }
-
-    "NOT apply custom representation when property != storage_descriptor (keeps all keys)" in {
-      val options = new DumperOptions()
-      val representer = new ContractRepresenter(options)
-
-      val mapping = jmap(
-        "property" -> "other",
-        "value" -> jmap("a" -> "b"),
-        "foo" -> "bar"
-      )
-
-      val node = representer.representMapping(Tag.MAP, mapping.asInstanceOf[JMap[_, _]], DumperOptions.FlowStyle.BLOCK)
-      val top = asMappingNode(node)
-
-      // pas de custom: le representer standard doit garder toutes les entrées
-      top.getValue.size() shouldBe 3
-    }
-
-    "NOT apply custom representation when value is not a map (keeps all keys)" in {
-      val options = new DumperOptions()
-      val representer = new ContractRepresenter(options)
-
-      val mapping = jmap(
-        "property" -> "storage_descriptor",
-        "value" -> "not-a-map",
-        "foo" -> "bar"
-      )
-
-      val node = representer.representMapping(Tag.MAP, mapping.asInstanceOf[JMap[_, _]], DumperOptions.FlowStyle.BLOCK)
-      val top = asMappingNode(node)
-
-      // pas de custom: value n'est pas une Map
-      top.getValue.size() shouldBe 3
     }
   }
 }

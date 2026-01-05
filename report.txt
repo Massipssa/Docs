@@ -1,61 +1,107 @@
-package fr.ccf.commons.s3
+package fr.ccf.commons.vault
 
-import com.amazonaws.services.s3.AmazonS3
-import org.scalatest.BeforeAndAfterAll
+import com.bettercloud.vault.Vault
+import com.bettercloud.vault.VaultConfig
+import com.bettercloud.vault.api.Logical
+import com.bettercloud.vault.response.LogicalResponse
+import com.bettercloud.vault.rest.RestResponse
+import org.mockito.ArgumentMatchers.{any, anyInt, eq => eqTo}
+import org.mockito.Mockito._
+import org.mockito.{MockedConstruction, Mockito}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class S3ServiceFactorySpec extends AnyWordSpec with Matchers with BeforeAndAfterAll {
+import java.util
 
-  override def beforeAll(): Unit = {
-    // Fix: évite "Unable to find a region via the region provider chain"
-    System.setProperty("aws.region", "eu-west-1")
+class VaultServiceImplSpec extends AnyWordSpec with Matchers {
 
-    // Optionnel: évite des soucis si quelqu’un déclenche une vraie requête S3
-    System.setProperty("aws.accessKeyId", "dummy")
-    System.setProperty("aws.secretKey", "dummy")
+  /** On évite le vrai login IAM Vault en forçant un token fixe */
+  private class VaultServiceTest extends VaultServiceImpl {
+    override def getVaultToken(vaultHostname: String, config: VaultConfig, role: Option[String]): String =
+      "fake-token"
   }
 
-  override def afterAll(): Unit = {
-    System.clearProperty("aws.region")
-    System.clearProperty("aws.accessKeyId")
-    System.clearProperty("aws.secretKey")
-  }
+  "retrieveVaultKeys" should {
 
-  "S3ServiceFactory.create" should {
+    "return credentials map when Vault returns data" in {
+      val service = new VaultServiceTest
 
-    "return DefaultS3Service for env=test (client = null)" in {
-      val service = S3ServiceFactory.create("test")
-      service shouldBe a[DefaultS3Service]
+      val logical = mock(classOf[Logical])
+      val response = mock(classOf[LogicalResponse])
 
-      val client = extractS3Client(service)
-      client shouldBe null
+      val data = new util.HashMap[String, String]()
+      data.put("username", "u1")
+      data.put("password", "p1")
+      when(response.getData).thenReturn(data)
+
+      when(logical.read(eqTo("secret/data/my-app"))).thenReturn(response)
+
+      val mockedVault: MockedConstruction[Vault] =
+        Mockito.mockConstruction(
+          classOf[Vault],
+          (vaultMock: Vault, _) => {
+            // chain: new Vault(...).withRetries(...).logical().read(...)
+            when(vaultMock.withRetries(anyInt(), anyInt())).thenReturn(vaultMock)
+            when(vaultMock.logical()).thenReturn(logical)
+          }
+        )
+
+      try {
+        val result = service.retrieveVaultKeys(
+          vaultHostname = "vault.company.net",
+          kvPath = "secret/data/my-app",
+          role = None,
+          requestTimeout = 5
+        )
+
+        result shouldBe Map("username" -> "u1", "password" -> "p1")
+
+        // Vérifs d'appels (optionnelles mais utiles)
+        val constructed = mockedVault.constructed()
+        constructed.size() shouldBe 1
+        verify(constructed.get(0)).withRetries(anyInt(), anyInt())
+        verify(logical).read("secret/data/my-app")
+      } finally {
+        mockedVault.close()
+      }
     }
 
-    "return DefaultS3Service for other envs (client != null) without throwing" in {
-      val service = S3ServiceFactory.create("prod")
-      service shouldBe a[DefaultS3Service]
+    "throw InvalidCredentialsException when Vault returns empty data" in {
+      val service = new VaultServiceTest
 
-      val client = extractS3Client(service)
-      client should not be null
-    }
+      val logical = mock(classOf[Logical])
+      val response = mock(classOf[LogicalResponse])
+      val rest = mock(classOf[RestResponse])
 
-    "return DefaultS3Service for env=local" in {
-      // NOTE: ce test peut dépendre de ta config local (localstack, endpoint, etc.)
-      val service = S3ServiceFactory.create("local")
-      service shouldBe a[DefaultS3Service]
-    }
-  }
+      when(response.getData).thenReturn(util.Collections.emptyMap[String, String]())
+      when(response.getRestResponse).thenReturn(rest)
+      when(rest.getStatus).thenReturn(403)
 
-  /** Récupère le champ s3Client même s’il est private dans DefaultS3Service. */
-  private def extractS3Client(service: S3Service): AmazonS3 = {
-    val fieldOpt = service.getClass.getDeclaredFields.find(_.getName.toLowerCase.contains("s3client"))
-    fieldOpt match {
-      case Some(f) =>
-        f.setAccessible(true)
-        f.get(service).asInstanceOf[AmazonS3]
-      case None =>
-        fail(s"Impossible de trouver un champ 's3Client' dans ${service.getClass.getName}")
+      when(logical.read(eqTo("secret/data/empty"))).thenReturn(response)
+
+      val mockedVault: MockedConstruction[Vault] =
+        Mockito.mockConstruction(
+          classOf[Vault],
+          (vaultMock: Vault, _) => {
+            when(vaultMock.withRetries(anyInt(), anyInt())).thenReturn(vaultMock)
+            when(vaultMock.logical()).thenReturn(logical)
+          }
+        )
+
+      try {
+        val ex = intercept[InvalidCredentialsException] {
+          service.retrieveVaultKeys(
+            vaultHostname = "vault.company.net",
+            kvPath = "secret/data/empty",
+            role = None,
+            requestTimeout = 5
+          )
+        }
+
+        ex.getMessage.toLowerCase should include("empty")
+      } finally {
+        mockedVault.close()
+      }
     }
   }
 }

@@ -1,73 +1,83 @@
-package fr.ccf.commons.datacontract
+// src/test/scala/fr/ccf/job/service/datacontract/DataContractGeneratorTest.scala
+package fr.ccf.job.service.datacontract
 
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
-import org.mockito.{MockedConstruction, Mockito}
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.{any => anyArg, eq => eqTo}
+import org.mockito.Mockito.{verify, when}
+import org.scalatest.PrivateMethodTester
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.yaml.snakeyaml.DumperOptions
-import org.yaml.snakeyaml.Yaml
+import org.scalatestplus.mockito.MockitoSugar
 
-import java.util.{LinkedHashMap => JLinkedHashMap, List => JList}
-import scala.jdk.CollectionConverters._
+import java.io.InputStream
+import java.nio.charset.StandardCharsets
 
-class DataContractGeneratorSpec extends AnyWordSpec with Matchers {
+class DataContractGeneratorTest
+    extends AnyWordSpec
+    with Matchers
+    with MockitoSugar
+    with PrivateMethodTester {
 
-  "generate(contract)" should {
+  "saveDataContractToS3" should {
+    "upload YAML to S3 using the computed key and the job bucket" in {
+      // GIVEN
+      val s3 = mock[S3Service]
 
-    "build root map and dump it with expected DumperOptions" in {
-      // ⬇️ Remplace par ta vraie classe
-      val generator = new DataContractGenerator()
+      // If JobConfigDto is a trait/class => mocking works
+      implicit val jobConfigDto: JobConfigDto = mock[JobConfigDto]
+      when(jobConfigDto.bucketName).thenReturn("my-bucket")
+      when(jobConfigDto.context).thenReturn("dev")
 
-      // DataContract minimal : schema vide pour éviter la complexité de toSchemaList
-      val contract = DataContract(
-        kind = "DataContract",
-        apiVersion = "v3.0.2",
-        id = "ignored",
-        status = "ACTIVE",
-        schema = Nil // <- important : évite d'avoir à construire un Schema complet
-      )
+      val yamlContent = "name: my_contract\nversion: v1\n"
+      val objectId = "myObject"
+      val version = "1.0.0"
 
-      val mockedYaml: MockedConstruction[Yaml] =
-        Mockito.mockConstruction(
-          classOf[Yaml],
-          (yamlMock: Yaml, context) => {
-            when(yamlMock.dump(any())).thenReturn("DUMPED_YAML")
+      // WHEN
+      DataContractGenerator.saveDataContractToS3(s3, yamlContent, objectId, version)
 
-            // ✅ Vérifie les DumperOptions passées à new Yaml(represent, options)
-            val options = context.arguments().get(1).asInstanceOf[DumperOptions]
+      // THEN (capture args)
+      val keyCaptor = ArgumentCaptor.forClass(classOf[String])
+      val isCaptor  = ArgumentCaptor.forClass(classOf[InputStream])
 
-            options.getDefaultFlowStyle shouldBe DumperOptions.FlowStyle.BLOCK
-            options.isPrettyFlow shouldBe true
-            options.getIndent shouldBe 2
-            options.getWidth shouldBe 120
-            options.getDefaultScalarStyle shouldBe DumperOptions.ScalarStyle.PLAIN
-          }
+      verify(s3).putMultiPart(eqTo("my-bucket"), keyCaptor.capture(), isCaptor.capture())
+
+      val uploadedKey = keyCaptor.getValue
+      uploadedKey should include("dev")
+      uploadedKey should include(objectId)
+      uploadedKey should include(version)
+
+      val uploadedText = new String(isCaptor.getValue.readAllBytes(), StandardCharsets.UTF_8)
+      uploadedText shouldBe yamlContent
+    }
+  }
+
+  "createDataContractPath" should {
+    "build the S3 key using context + filename pattern" in {
+      // GIVEN
+      implicit val jobConfigDto: JobConfigDto = mock[JobConfigDto]
+      when(jobConfigDto.context).thenReturn("int")
+
+      val objectId = "OBJ"
+      val version  = "2.3.4"
+
+      // Access private method in the object
+      val createPath = PrivateMethod[String](Symbol("createDataContractPath"))
+
+      // WHEN
+      val key =
+        DataContractGenerator.invokePrivate(createPath(objectId, version, jobConfigDto))
+
+      // THEN
+      val expectedFileName =
+        StorageConstants.DATACONTRACT_FILE_NAME_PATTERN.format(objectId, "int", version)
+
+      val expectedKey =
+        S3KeyUtil.createS3KeyWithFilename(
+          List(StorageConstants.DATACONTRACT_APPL_ZONE_KEY, "int"),
+          expectedFileName
         )
 
-      try {
-        val out = generator.generate(contract)
-        out shouldBe "DUMPED_YAML"
-
-        // ✅ Vérifie l'argument passé à dump(root)
-        val yamlInstance = mockedYaml.constructed().get(0)
-        val captor = org.mockito.ArgumentCaptor.forClass(classOf[Object])
-        verify(yamlInstance).dump(captor.capture())
-
-        val root = captor.getValue.asInstanceOf[JLinkedHashMap[String, Any]]
-        root.asScala.keySet shouldBe Set("kind", "apiVersion", "id", "status", "schema")
-
-        root.get("kind") shouldBe "DataContract"
-        root.get("apiVersion") shouldBe "v3.0.2"
-        root.get("id") shouldBe "ignored"
-        root.get("status") shouldBe "ACTIVE"
-
-        val schemaValue = root.get("schema")
-        schemaValue shouldBe a[JList[?]]
-        schemaValue.asInstanceOf[JList[?]].size() shouldBe 0
-      } finally {
-        mockedYaml.close()
-      }
+      key shouldBe expectedKey
     }
   }
 }

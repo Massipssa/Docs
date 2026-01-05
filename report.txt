@@ -1,107 +1,140 @@
-package fr.ccf.commons.vault
+package fr.ccf.commons.datacontract
 
-import com.bettercloud.vault.Vault
-import com.bettercloud.vault.VaultConfig
-import com.bettercloud.vault.api.Logical
-import com.bettercloud.vault.response.LogicalResponse
-import com.bettercloud.vault.rest.RestResponse
-import org.mockito.ArgumentMatchers.{any, anyInt, eq => eqTo}
-import org.mockito.Mockito._
-import org.mockito.{MockedConstruction, Mockito}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.yaml.snakeyaml.DumperOptions
+import org.yaml.snakeyaml.nodes._
 
-import java.util
+import java.util.{HashMap => JHashMap, Map => JMap}
+import scala.jdk.CollectionConverters._
 
-class VaultServiceImplSpec extends AnyWordSpec with Matchers {
+class ContractRepresenterSpec extends AnyWordSpec with Matchers {
 
-  /** On évite le vrai login IAM Vault en forçant un token fixe */
-  private class VaultServiceTest extends VaultServiceImpl {
-    override def getVaultToken(vaultHostname: String, config: VaultConfig, role: Option[String]): String =
-      "fake-token"
+  private def jmap(kvs: (Any, Any)*): JMap[Any, Any] = {
+    val m = new JHashMap[Any, Any]()
+    kvs.foreach { case (k, v) => m.put(k, v) }
+    m
   }
 
-  "retrieveVaultKeys" should {
+  private def asMappingNode(n: Node): MappingNode =
+    n shouldBe a[MappingNode]
+    n.asInstanceOf[MappingNode]
 
-    "return credentials map when Vault returns data" in {
-      val service = new VaultServiceTest
+  private def asScalarNode(n: Node): ScalarNode =
+    n shouldBe a[ScalarNode]
+    n.asInstanceOf[ScalarNode]
 
-      val logical = mock(classOf[Logical])
-      val response = mock(classOf[LogicalResponse])
+  "ContractRepresenter.representMapping" should {
 
-      val data = new util.HashMap[String, String]()
-      data.put("username", "u1")
-      data.put("password", "p1")
-      when(response.getData).thenReturn(data)
+    "apply custom representation for storage_descriptor map (BLOCK) and render value map in FLOW with double quotes" in {
+      val options = new DumperOptions()
+      val representer = new ContractRepresenter(options)
 
-      when(logical.read(eqTo("secret/data/my-app"))).thenReturn(response)
+      val inner = jmap(
+        "bucket" -> "my-bucket",
+        "prefix" -> "path/",
+        "number" -> Integer.valueOf(12),
+        "nested" -> jmap("k1" -> "v1")
+      )
 
-      val mockedVault: MockedConstruction[Vault] =
-        Mockito.mockConstruction(
-          classOf[Vault],
-          (vaultMock: Vault, _) => {
-            // chain: new Vault(...).withRetries(...).logical().read(...)
-            when(vaultMock.withRetries(anyInt(), anyInt())).thenReturn(vaultMock)
-            when(vaultMock.logical()).thenReturn(logical)
-          }
-        )
+      // Map "custom" avec une clé en plus (foo) => doit être ignorée par le custom render
+      val mapping = jmap(
+        "property" -> "storage_descriptor",
+        "value" -> inner,
+        "foo" -> "bar"
+      )
 
-      try {
-        val result = service.retrieveVaultKeys(
-          vaultHostname = "vault.company.net",
-          kvPath = "secret/data/my-app",
-          role = None,
-          requestTimeout = 5
-        )
+      val node = representer.representMapping(Tag.MAP, mapping.asInstanceOf[JMap[_, _]], DumperOptions.FlowStyle.BLOCK)
+      val top = asMappingNode(node)
 
-        result shouldBe Map("username" -> "u1", "password" -> "p1")
+      // custom: top level en BLOCK
+      top.getFlowStyle shouldBe DumperOptions.FlowStyle.BLOCK
 
-        // Vérifs d'appels (optionnelles mais utiles)
-        val constructed = mockedVault.constructed()
-        constructed.size() shouldBe 1
-        verify(constructed.get(0)).withRetries(anyInt(), anyInt())
-        verify(logical).read("secret/data/my-app")
-      } finally {
-        mockedVault.close()
+      val tuples = top.getValue.asScala.toList
+      // custom: ne garde que property + value (ignore foo)
+      tuples.size shouldBe 2
+
+      val t0 = tuples(0)
+      val k0 = asScalarNode(t0.getKeyNode)
+      val v0 = asScalarNode(t0.getValueNode)
+
+      k0.getValue shouldBe "property"
+      k0.getScalarStyle shouldBe DumperOptions.ScalarStyle.PLAIN
+
+      v0.getValue shouldBe "storage_descriptor"
+      v0.getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
+
+      val t1 = tuples(1)
+      val k1 = asScalarNode(t1.getKeyNode)
+      k1.getValue shouldBe "value"
+      k1.getScalarStyle shouldBe DumperOptions.ScalarStyle.PLAIN
+
+      // value => MappingNode FLOW
+      val valueNode = asMappingNode(t1.getValueNode)
+      valueNode.getFlowStyle shouldBe DumperOptions.FlowStyle.FLOW
+
+      // Dans FLOW: keys et values doivent être DOUBLE_QUOTED
+      val innerTuples = valueNode.getValue.asScala.toList
+      innerTuples.map(_.getKeyNode).foreach { kn =>
+        val sk = asScalarNode(kn)
+        sk.getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
       }
+
+      // bucket -> "my-bucket"
+      val bucketTuple = innerTuples.find(t => asScalarNode(t.getKeyNode).getValue == "bucket").get
+      asScalarNode(bucketTuple.getValueNode).getValue shouldBe "my-bucket"
+      asScalarNode(bucketTuple.getValueNode).getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
+
+      // number (12) => "12" (stringifié) + quotes
+      val numTuple = innerTuples.find(t => asScalarNode(t.getKeyNode).getValue == "number").get
+      asScalarNode(numTuple.getValueNode).getValue shouldBe "12"
+      asScalarNode(numTuple.getValueNode).getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
+
+      // nested => MappingNode FLOW récursif
+      val nestedTuple = innerTuples.find(t => asScalarNode(t.getKeyNode).getValue == "nested").get
+      val nestedNode = asMappingNode(nestedTuple.getValueNode)
+      nestedNode.getFlowStyle shouldBe DumperOptions.FlowStyle.FLOW
+
+      val nestedInner = nestedNode.getValue.asScala.toList
+      nestedInner.size shouldBe 1
+      asScalarNode(nestedInner.head.getKeyNode).getValue shouldBe "k1"
+      asScalarNode(nestedInner.head.getKeyNode).getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
+      asScalarNode(nestedInner.head.getValueNode).getValue shouldBe "v1"
+      asScalarNode(nestedInner.head.getValueNode).getScalarStyle shouldBe DumperOptions.ScalarStyle.DOUBLE_QUOTED
     }
 
-    "throw InvalidCredentialsException when Vault returns empty data" in {
-      val service = new VaultServiceTest
+    "NOT apply custom representation when property != storage_descriptor (keeps all keys)" in {
+      val options = new DumperOptions()
+      val representer = new ContractRepresenter(options)
 
-      val logical = mock(classOf[Logical])
-      val response = mock(classOf[LogicalResponse])
-      val rest = mock(classOf[RestResponse])
+      val mapping = jmap(
+        "property" -> "other",
+        "value" -> jmap("a" -> "b"),
+        "foo" -> "bar"
+      )
 
-      when(response.getData).thenReturn(util.Collections.emptyMap[String, String]())
-      when(response.getRestResponse).thenReturn(rest)
-      when(rest.getStatus).thenReturn(403)
+      val node = representer.representMapping(Tag.MAP, mapping.asInstanceOf[JMap[_, _]], DumperOptions.FlowStyle.BLOCK)
+      val top = asMappingNode(node)
 
-      when(logical.read(eqTo("secret/data/empty"))).thenReturn(response)
+      // pas de custom: le representer standard doit garder toutes les entrées
+      top.getValue.size() shouldBe 3
+    }
 
-      val mockedVault: MockedConstruction[Vault] =
-        Mockito.mockConstruction(
-          classOf[Vault],
-          (vaultMock: Vault, _) => {
-            when(vaultMock.withRetries(anyInt(), anyInt())).thenReturn(vaultMock)
-            when(vaultMock.logical()).thenReturn(logical)
-          }
-        )
+    "NOT apply custom representation when value is not a map (keeps all keys)" in {
+      val options = new DumperOptions()
+      val representer = new ContractRepresenter(options)
 
-      try {
-        val ex = intercept[InvalidCredentialsException] {
-          service.retrieveVaultKeys(
-            vaultHostname = "vault.company.net",
-            kvPath = "secret/data/empty",
-            role = None,
-            requestTimeout = 5
-          )
-        }
+      val mapping = jmap(
+        "property" -> "storage_descriptor",
+        "value" -> "not-a-map",
+        "foo" -> "bar"
+      )
 
-        ex.getMessage.toLowerCase should include("empty")
-      } finally {
-        mockedVault.close()
-      }
+      val node = representer.representMapping(Tag.MAP, mapping.asInstanceOf[JMap[_, _]], DumperOptions.FlowStyle.BLOCK)
+      val top = asMappingNode(node)
+
+      // pas de custom: value n'est pas une Map
+      top.getValue.size() shouldBe 3
     }
   }
 }

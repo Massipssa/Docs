@@ -1,83 +1,165 @@
-// src/test/scala/fr/ccf/job/service/datacontract/DataContractGeneratorTest.scala
-package fr.ccf.job.service.datacontract
+// src/test/scala/.../DataContractGeneratorSpec.scala
+package fr.ccf.job.service.datacontract // <-- adapte le package au tien
 
-import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any => anyArg, eq => eqTo}
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.{mock, verify, when, mockConstruction}
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.PrivateMethodTester
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.mockito.MockitoSugar
 
-import java.io.InputStream
-import java.nio.charset.StandardCharsets
+import scala.jdk.CollectionConverters._
 
-class DataContractGeneratorTest
+// ⚠️ Adapte ces imports à tes vrais packages/types
+// import fr.ccf.job.service.datacontract.model.{CreStructure, ReferentialPlanning, ColumnProperty, DataContract}
+// import fr.ccf.job.service.datacontract.props.CommonProp
+// import fr.ccf.job.service.datacontract.mapper.ArtifactColumnTypeMapper
+
+class DataContractGeneratorSpec
     extends AnyWordSpec
     with Matchers
-    with MockitoSugar
+    with MockFactory
     with PrivateMethodTester {
 
-  "saveDataContractToS3" should {
-    "upload YAML to S3 using the computed key and the job bucket" in {
+  "generateDataContract" should {
+
+    "return yaml content and call generator with expected args" in {
       // GIVEN
-      val s3 = mock[S3Service]
+      implicit val jobConfigDto: JobConfigDto = mock(classOf[JobConfigDto])
 
-      // If JobConfigDto is a trait/class => mocking works
-      implicit val jobConfigDto: JobConfigDto = mock[JobConfigDto]
-      when(jobConfigDto.bucketName).thenReturn("my-bucket")
-      when(jobConfigDto.context).thenReturn("dev")
+      val objectId = "CRE_ABC"
+      val referentialPlanning = mock(classOf[ReferentialPlanning])
+      val latestCreStructure  = mock(classOf[CreStructure])
 
-      val yamlContent = "name: my_contract\nversion: v1\n"
-      val objectId = "myObject"
-      val version = "1.0.0"
+      when(latestCreStructure.version).thenReturn("1.0.0")
 
-      // WHEN
-      DataContractGenerator.saveDataContractToS3(s3, yamlContent, objectId, version)
+      // Mock CommonProp object call
+      val commonProp = mock(classOf[CommonProp])
+      when(commonProp.name).thenReturn("myName")
+      when(commonProp.objectName).thenReturn("myObjectName")
 
-      // THEN (capture args)
-      val keyCaptor = ArgumentCaptor.forClass(classOf[String])
-      val isCaptor  = ArgumentCaptor.forClass(classOf[InputStream])
+      // storageDescMap type = adapte si nécessaire (Map[String, StorageDesc] etc.)
+      val storageDescMap = mock(classOf[scala.collection.immutable.Map[_, _]])
+      when(commonProp.storageDescMap).thenReturn(storageDescMap.asInstanceOf[commonProp.storageDescMap.type])
 
-      verify(s3).putMultiPart(eqTo("my-bucket"), keyCaptor.capture(), isCaptor.capture())
+      mockObject(CommonProp)
+      (CommonProp.createCommonProps _)
+        .expects(jobConfigDto, "1.0.0", objectId)
+        .returning(commonProp)
 
-      val uploadedKey = keyCaptor.getValue
-      uploadedKey should include("dev")
-      uploadedKey should include(objectId)
-      uploadedKey should include(version)
+      // Mock ArtifactColumnTypeMapper call
+      // columnsTypes type = adapte si nécessaire
+      val columnsTypes = mock(classOf[AnyRef])
 
-      val uploadedText = new String(isCaptor.getValue.readAllBytes(), StandardCharsets.UTF_8)
-      uploadedText shouldBe yamlContent
+      mockObject(ArtifactColumnTypeMapper)
+      (ArtifactColumnTypeMapper.createCreColumnsTypesMap _)
+        .expects(latestCreStructure)
+        .returning(columnsTypes)
+
+      // Compute expected partitionCols using the private method
+      val createPartitionsCol = PrivateMethod[List[ColumnProperty]](Symbol("createPartitionsCol"))
+      val expectedPartitionCols =
+        DataContractGenerator.invokePrivate(createPartitionsCol(referentialPlanning))
+
+      // Mock the DataContractGeneratorImpl created with `new`
+      val expectedYaml = "yaml: content"
+      val dataContract = mock(classOf[DataContract])
+
+      val construction = mockConstruction(
+        classOf[DataContractGeneratorImpl],
+        (gen: DataContractGeneratorImpl, _: org.mockito.MockedConstruction.Context) => {
+          // stub createDataContract + generate
+          when(gen.createDataContract(
+            eqTo("myObjectName"),
+            anyArg(),            // storageDescMap (type exacte selon ton code)
+            eqTo(columnsTypes),  // columnsTypes
+            eqTo(expectedPartitionCols)
+          )).thenReturn(dataContract)
+
+          when(gen.generate(eqTo(dataContract))).thenReturn(expectedYaml)
+        }
+      )
+
+      try {
+        // WHEN
+        val yaml =
+          DataContractGenerator.generateDataContract(objectId, referentialPlanning, latestCreStructure)
+
+        // THEN
+        yaml shouldBe expectedYaml
+
+        val created = construction.constructed().asScala.head
+        verify(created).generate(eqTo(dataContract))
+      } finally {
+        construction.close()
+      }
     }
-  }
 
-  "createDataContractPath" should {
-    "build the S3 key using context + filename pattern" in {
+    "throw IllegalArgumentException when objectId is empty" in {
+      implicit val jobConfigDto: JobConfigDto = mock(classOf[JobConfigDto])
+      val referentialPlanning = mock(classOf[ReferentialPlanning])
+      val latestCreStructure  = mock(classOf[CreStructure])
+
+      val ex = intercept[IllegalArgumentException] {
+        DataContractGenerator.generateDataContract("", referentialPlanning, latestCreStructure)
+      }
+      ex.getMessage should include ("creId should not be empty")
+    }
+
+    "rethrow exception when generator.generate fails" in {
       // GIVEN
-      implicit val jobConfigDto: JobConfigDto = mock[JobConfigDto]
-      when(jobConfigDto.context).thenReturn("int")
+      implicit val jobConfigDto: JobConfigDto = mock(classOf[JobConfigDto])
 
-      val objectId = "OBJ"
-      val version  = "2.3.4"
+      val objectId = "CRE_ABC"
+      val referentialPlanning = mock(classOf[ReferentialPlanning])
+      val latestCreStructure  = mock(classOf[CreStructure])
+      when(latestCreStructure.version).thenReturn("1.0.0")
 
-      // Access private method in the object
-      val createPath = PrivateMethod[String](Symbol("createDataContractPath"))
+      val commonProp = mock(classOf[CommonProp])
+      when(commonProp.objectName).thenReturn("myObjectName")
+      val storageDescMap = mock(classOf[scala.collection.immutable.Map[_, _]])
+      when(commonProp.storageDescMap).thenReturn(storageDescMap.asInstanceOf[commonProp.storageDescMap.type])
 
-      // WHEN
-      val key =
-        DataContractGenerator.invokePrivate(createPath(objectId, version, jobConfigDto))
+      mockObject(CommonProp)
+      (CommonProp.createCommonProps _)
+        .expects(jobConfigDto, "1.0.0", objectId)
+        .returning(commonProp)
 
-      // THEN
-      val expectedFileName =
-        StorageConstants.DATACONTRACT_FILE_NAME_PATTERN.format(objectId, "int", version)
+      val columnsTypes = mock(classOf[AnyRef])
+      mockObject(ArtifactColumnTypeMapper)
+      (ArtifactColumnTypeMapper.createCreColumnsTypesMap _)
+        .expects(latestCreStructure)
+        .returning(columnsTypes)
 
-      val expectedKey =
-        S3KeyUtil.createS3KeyWithFilename(
-          List(StorageConstants.DATACONTRACT_APPL_ZONE_KEY, "int"),
-          expectedFileName
-        )
+      val createPartitionsCol = PrivateMethod[List[ColumnProperty]](Symbol("createPartitionsCol"))
+      val expectedPartitionCols =
+        DataContractGenerator.invokePrivate(createPartitionsCol(referentialPlanning))
 
-      key shouldBe expectedKey
+      val dataContract = mock(classOf[DataContract])
+
+      val boom = new RuntimeException("boom")
+      val construction = mockConstruction(
+        classOf[DataContractGeneratorImpl],
+        (gen: DataContractGeneratorImpl, _: org.mockito.MockedConstruction.Context) => {
+          when(gen.createDataContract(
+            eqTo("myObjectName"),
+            anyArg(),
+            eqTo(columnsTypes),
+            eqTo(expectedPartitionCols)
+          )).thenReturn(dataContract)
+
+          when(gen.generate(eqTo(dataContract))).thenThrow(boom)
+        }
+      )
+
+      try {
+        val ex = intercept[RuntimeException] {
+          DataContractGenerator.generateDataContract(objectId, referentialPlanning, latestCreStructure)
+        }
+        ex shouldBe boom
+      } finally {
+        construction.close()
+      }
     }
   }
 }

@@ -1,23 +1,61 @@
-import org.apache.spark.sql.DataFrameWriterV2
+package fr.ccf.commons.s3
 
-private def applyTableProperties(
-  w: DataFrameWriterV2[_],
-  props: Map[String, String]
-): DataFrameWriterV2[_] = {
-  props.foldLeft(w) { case (acc, (k, v)) =>
-    acc.tableProperty(k, v).asInstanceOf[DataFrameWriterV2[_]]
+import com.amazonaws.services.s3.AmazonS3
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
+class S3ServiceFactorySpec extends AnyWordSpec with Matchers with BeforeAndAfterAll {
+
+  override def beforeAll(): Unit = {
+    // Fix: évite "Unable to find a region via the region provider chain"
+    System.setProperty("aws.region", "eu-west-1")
+
+    // Optionnel: évite des soucis si quelqu’un déclenche une vraie requête S3
+    System.setProperty("aws.accessKeyId", "dummy")
+    System.setProperty("aws.secretKey", "dummy")
   }
-}
 
-import org.apache.spark.sql.DataFrameWriterV2
-
-private def applyTableProperties(
-  w: DataFrameWriterV2[_],
-  props: Map[String, String]
-): DataFrameWriterV2[_] = {
-  var writer: DataFrameWriterV2[_] = w
-  props.foreach { case (k, v) =>
-    writer = writer.tableProperty(k, v).asInstanceOf[DataFrameWriterV2[_]]
+  override def afterAll(): Unit = {
+    System.clearProperty("aws.region")
+    System.clearProperty("aws.accessKeyId")
+    System.clearProperty("aws.secretKey")
   }
-  writer
+
+  "S3ServiceFactory.create" should {
+
+    "return DefaultS3Service for env=test (client = null)" in {
+      val service = S3ServiceFactory.create("test")
+      service shouldBe a[DefaultS3Service]
+
+      val client = extractS3Client(service)
+      client shouldBe null
+    }
+
+    "return DefaultS3Service for other envs (client != null) without throwing" in {
+      val service = S3ServiceFactory.create("prod")
+      service shouldBe a[DefaultS3Service]
+
+      val client = extractS3Client(service)
+      client should not be null
+    }
+
+    "return DefaultS3Service for env=local" in {
+      // NOTE: ce test peut dépendre de ta config local (localstack, endpoint, etc.)
+      val service = S3ServiceFactory.create("local")
+      service shouldBe a[DefaultS3Service]
+    }
+  }
+
+  /** Récupère le champ s3Client même s’il est private dans DefaultS3Service. */
+  private def extractS3Client(service: S3Service): AmazonS3 = {
+    val fieldOpt = service.getClass.getDeclaredFields.find(_.getName.toLowerCase.contains("s3client"))
+    fieldOpt match {
+      case Some(f) =>
+        f.setAccessible(true)
+        f.get(service).asInstanceOf[AmazonS3]
+      case None =>
+        fail(s"Impossible de trouver un champ 's3Client' dans ${service.getClass.getName}")
+    }
+  }
 }

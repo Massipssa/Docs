@@ -1,165 +1,175 @@
-// src/test/scala/.../DataContractGeneratorSpec.scala
-package fr.ccf.job.service.datacontract // <-- adapte le package au tien
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.model._
 
-import org.mockito.ArgumentMatchers.{any => anyArg, eq => eqTo}
-import org.mockito.Mockito.{mock, verify, when, mockConstruction}
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.PrivateMethodTester
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import java.io._
+import java.nio.file.{Files, Path}
+import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
-import scala.jdk.CollectionConverters._
+final class S3AutoUploader(val s3: AmazonS3) {
 
-// ⚠️ Adapte ces imports à tes vrais packages/types
-// import fr.ccf.job.service.datacontract.model.{CreStructure, ReferentialPlanning, ColumnProperty, DataContract}
-// import fr.ccf.job.service.datacontract.props.CommonProp
-// import fr.ccf.job.service.datacontract.mapper.ArtifactColumnTypeMapper
+  // S3 constraint: each part (except last) must be >= 5MB
+  private val MinPartSize: Int = 5 * 1024 * 1024
 
-class DataContractGeneratorSpec
-    extends AnyWordSpec
-    with Matchers
-    with MockFactory
-    with PrivateMethodTester {
+  /** Upload auto à partir d'un fichier (taille connue) */
+  def upload(bucket: String, key: String, file: Path, contentType: String, dropLocalFile: Boolean = false, partSizeBytes: Int = 64 * 1024 * 1024): Unit = {
+    val size = Files.size(file)
 
-  "generateDataContract" should {
-
-    "return yaml content and call generator with expected args" in {
-      // GIVEN
-      implicit val jobConfigDto: JobConfigDto = mock(classOf[JobConfigDto])
-
-      val objectId = "CRE_ABC"
-      val referentialPlanning = mock(classOf[ReferentialPlanning])
-      val latestCreStructure  = mock(classOf[CreStructure])
-
-      when(latestCreStructure.version).thenReturn("1.0.0")
-
-      // Mock CommonProp object call
-      val commonProp = mock(classOf[CommonProp])
-      when(commonProp.name).thenReturn("myName")
-      when(commonProp.objectName).thenReturn("myObjectName")
-
-      // storageDescMap type = adapte si nécessaire (Map[String, StorageDesc] etc.)
-      val storageDescMap = mock(classOf[scala.collection.immutable.Map[_, _]])
-      when(commonProp.storageDescMap).thenReturn(storageDescMap.asInstanceOf[commonProp.storageDescMap.type])
-
-      mockObject(CommonProp)
-      (CommonProp.createCommonProps _)
-        .expects(jobConfigDto, "1.0.0", objectId)
-        .returning(commonProp)
-
-      // Mock ArtifactColumnTypeMapper call
-      // columnsTypes type = adapte si nécessaire
-      val columnsTypes = mock(classOf[AnyRef])
-
-      mockObject(ArtifactColumnTypeMapper)
-      (ArtifactColumnTypeMapper.createCreColumnsTypesMap _)
-        .expects(latestCreStructure)
-        .returning(columnsTypes)
-
-      // Compute expected partitionCols using the private method
-      val createPartitionsCol = PrivateMethod[List[ColumnProperty]](Symbol("createPartitionsCol"))
-      val expectedPartitionCols =
-        DataContractGenerator.invokePrivate(createPartitionsCol(referentialPlanning))
-
-      // Mock the DataContractGeneratorImpl created with `new`
-      val expectedYaml = "yaml: content"
-      val dataContract = mock(classOf[DataContract])
-
-      val construction = mockConstruction(
-        classOf[DataContractGeneratorImpl],
-        (gen: DataContractGeneratorImpl, _: org.mockito.MockedConstruction.Context) => {
-          // stub createDataContract + generate
-          when(gen.createDataContract(
-            eqTo("myObjectName"),
-            anyArg(),            // storageDescMap (type exacte selon ton code)
-            eqTo(columnsTypes),  // columnsTypes
-            eqTo(expectedPartitionCols)
-          )).thenReturn(dataContract)
-
-          when(gen.generate(eqTo(dataContract))).thenReturn(expectedYaml)
-        }
-      )
-
-      try {
-        // WHEN
-        val yaml =
-          DataContractGenerator.generateDataContract(objectId, referentialPlanning, latestCreStructure)
-
-        // THEN
-        yaml shouldBe expectedYaml
-
-        val created = construction.constructed().asScala.head
-        verify(created).generate(eqTo(dataContract))
-      } finally {
-        construction.close()
+    try {
+      if (size == 0L) {
+        putBytes(bucket, key, Array.emptyByteArray, contentType)
+      } else if (size < MinPartSize) {
+        putFile(bucket, key, file, contentType)
+      } else {
+        val in = new BufferedInputStream(new FileInputStream(file.toFile))
+        try multipartUpload(bucket, key, in, Some(size), contentType, partSizeBytes)
+        finally safeClose(in)
       }
-    }
-
-    "throw IllegalArgumentException when objectId is empty" in {
-      implicit val jobConfigDto: JobConfigDto = mock(classOf[JobConfigDto])
-      val referentialPlanning = mock(classOf[ReferentialPlanning])
-      val latestCreStructure  = mock(classOf[CreStructure])
-
-      val ex = intercept[IllegalArgumentException] {
-        DataContractGenerator.generateDataContract("", referentialPlanning, latestCreStructure)
-      }
-      ex.getMessage should include ("creId should not be empty")
-    }
-
-    "rethrow exception when generator.generate fails" in {
-      // GIVEN
-      implicit val jobConfigDto: JobConfigDto = mock(classOf[JobConfigDto])
-
-      val objectId = "CRE_ABC"
-      val referentialPlanning = mock(classOf[ReferentialPlanning])
-      val latestCreStructure  = mock(classOf[CreStructure])
-      when(latestCreStructure.version).thenReturn("1.0.0")
-
-      val commonProp = mock(classOf[CommonProp])
-      when(commonProp.objectName).thenReturn("myObjectName")
-      val storageDescMap = mock(classOf[scala.collection.immutable.Map[_, _]])
-      when(commonProp.storageDescMap).thenReturn(storageDescMap.asInstanceOf[commonProp.storageDescMap.type])
-
-      mockObject(CommonProp)
-      (CommonProp.createCommonProps _)
-        .expects(jobConfigDto, "1.0.0", objectId)
-        .returning(commonProp)
-
-      val columnsTypes = mock(classOf[AnyRef])
-      mockObject(ArtifactColumnTypeMapper)
-      (ArtifactColumnTypeMapper.createCreColumnsTypesMap _)
-        .expects(latestCreStructure)
-        .returning(columnsTypes)
-
-      val createPartitionsCol = PrivateMethod[List[ColumnProperty]](Symbol("createPartitionsCol"))
-      val expectedPartitionCols =
-        DataContractGenerator.invokePrivate(createPartitionsCol(referentialPlanning))
-
-      val dataContract = mock(classOf[DataContract])
-
-      val boom = new RuntimeException("boom")
-      val construction = mockConstruction(
-        classOf[DataContractGeneratorImpl],
-        (gen: DataContractGeneratorImpl, _: org.mockito.MockedConstruction.Context) => {
-          when(gen.createDataContract(
-            eqTo("myObjectName"),
-            anyArg(),
-            eqTo(columnsTypes),
-            eqTo(expectedPartitionCols)
-          )).thenReturn(dataContract)
-
-          when(gen.generate(eqTo(dataContract))).thenThrow(boom)
-        }
-      )
-
-      try {
-        val ex = intercept[RuntimeException] {
-          DataContractGenerator.generateDataContract(objectId, referentialPlanning, latestCreStructure)
-        }
-        ex shouldBe boom
-      } finally {
-        construction.close()
-      }
+    } finally {
+      if (dropLocalFile) safeDelete(file)
     }
   }
+
+  /** Upload auto à partir d'un InputStream.
+    * length optionnel.
+    * - si length < 5MB => putObject
+    * - si length >= 5MB => multipart
+    * - si length absent => sniff 5MB: si EOF => putObject, sinon multipart
+    */
+  def upload(bucket: String, key: String, in: InputStream, length: Option[Long], contentType: String, partSizeBytes: Int = 64 * 1024 * 1024): Unit = {
+    val partSize = math.max(partSizeBytes, MinPartSize)
+
+    length match {
+      case Some(0L) =>
+        putBytes(bucket, key, Array.emptyByteArray, contentType)
+        safeClose(in)
+
+      case Some(len) if len < MinPartSize =>
+        try putStream(bucket, key, in, len, contentType)
+        finally safeClose(in)
+
+      case Some(_) =>
+        try multipartUpload(bucket, key, in, length, contentType, partSize)
+        finally safeClose(in)
+
+      case None =>
+        // Sniff: lis 5MB pour décider
+        val sniff = readUpTo(in, MinPartSize)
+        if (sniff.isEmpty) {
+          putBytes(bucket, key, Array.emptyByteArray, contentType)
+          safeClose(in)
+        } else if (sniff.length < MinPartSize) {
+          // Petit stream => putObject avec bytes (<= 5MB donc safe)
+          putBytes(bucket, key, sniff, contentType)
+          safeClose(in)
+        } else {
+          // Gros stream => multipart; part 1 = sniff + le reste du stream
+          val chained = new SequenceInputStream(new ByteArrayInputStream(sniff), in)
+          try multipartUpload(bucket, key, chained, None, contentType, partSize)
+          finally safeClose(chained) // ferme aussi "in"
+        }
+    }
+  }
+
+  // ---------------- putObject (small) ----------------
+
+  private def putFile(bucket: String, key: String, file: Path, contentType: String): Unit = {
+    val md = new ObjectMetadata()
+    md.setContentType(contentType)
+    s3.putObject(new PutObjectRequest(bucket, key, file.toFile).withMetadata(md))
+  }
+
+  private def putStream(bucket: String, key: String, in: InputStream, length: Long, contentType: String): Unit = {
+    val md = new ObjectMetadata()
+    md.setContentType(contentType)
+    md.setContentLength(length)
+    s3.putObject(bucket, key, in, md)
+  }
+
+  private def putBytes(bucket: String, key: String, bytes: Array[Byte], contentType: String): Unit = {
+    val md = new ObjectMetadata()
+    md.setContentType(contentType)
+    md.setContentLength(bytes.length.toLong)
+    val is = new ByteArrayInputStream(bytes)
+    try s3.putObject(bucket, key, is, md)
+    finally safeClose(is)
+  }
+
+  // ---------------- multipart (large) ----------------
+
+  private def multipartUpload(bucket: String, key: String, in: InputStream, length: Option[Long], contentType: String, partSizeBytes: Int): Unit = {
+    val partSize = math.max(partSizeBytes, MinPartSize)
+
+    // init
+    val md = new ObjectMetadata()
+    md.setContentType(contentType)
+    val init = s3.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucket, key).withObjectMetadata(md))
+    val uploadId = init.getUploadId
+
+    val eTags = ListBuffer.empty[PartETag]
+    val buffer = new Array[Byte](partSize)
+
+    var partNumber = 1
+    try {
+      var bytesRead = in.read(buffer)
+      if (bytesRead == -1) {
+        // stream vide => objet vide
+        s3.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId))
+        putBytes(bucket, key, Array.emptyByteArray, contentType)
+        return
+      }
+
+      while (bytesRead > 0) {
+        val partStream = new ByteArrayInputStream(buffer, 0, bytesRead)
+        val req = new UploadPartRequest()
+          .withBucketName(bucket)
+          .withKey(key)
+          .withUploadId(uploadId)
+          .withPartNumber(partNumber)
+          .withPartSize(bytesRead.toLong)
+          .withInputStream(partStream)
+
+        val res = s3.uploadPart(req)
+        val etag = res.getETag
+        if (etag == null) throw new IllegalStateException(s"Missing ETag for part=$partNumber s3://$bucket/$key uploadId=$uploadId")
+
+        eTags += new PartETag(partNumber, etag)
+        partNumber += 1
+
+        bytesRead = in.read(buffer)
+      }
+
+      if (eTags.isEmpty) throw new IllegalStateException(s"No parts uploaded for s3://$bucket/$key uploadId=$uploadId")
+
+      s3.completeMultipartUpload(new CompleteMultipartUploadRequest(bucket, key, uploadId, eTags.toList.asInstanceOf[java.util.List[PartETag]]))
+
+    } catch {
+      case NonFatal(e) =>
+        try s3.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId))
+        catch { case _: Throwable => () }
+        throw e
+    }
+  }
+
+  // ---------------- utils ----------------
+
+  /** Lit au plus max bytes depuis in (peut retourner < max si EOF) */
+  private def readUpTo(in: InputStream, max: Int): Array[Byte] = {
+    val out = new ByteArrayOutputStream(math.min(max, 64 * 1024))
+    val buf = new Array[Byte](64 * 1024)
+    var remaining = max
+    while (remaining > 0) {
+      val n = in.read(buf, 0, math.min(buf.length, remaining))
+      if (n == -1) return out.toByteArray
+      out.write(buf, 0, n)
+      remaining -= n
+    }
+    out.toByteArray
+  }
+
+  private def safeClose(c: Closeable): Unit =
+    try c.close() catch { case _: Throwable => () }
+
+  private def safeDelete(p: Path): Unit =
+    try Files.deleteIfExists(p) catch { case _: Throwable => () }
 }

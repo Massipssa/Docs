@@ -2,125 +2,140 @@ import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model._
 
 import java.io._
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-final class S3AutoUploader(val s3: AmazonS3) {
+trait S3Service {
+  def put(bucket: String, key: String, content: String, contentType: String): Unit
+  def put(bucket: String, destKey: String, inputStream: InputStream, uploadPartSize: Int): Unit
+}
 
-  // S3 constraint: each part (except last) must be >= 5MB
-  private val MinPartSize: Int = 5 * 1024 * 1024
+trait Logging {
+  protected def logInfo(msg: String): Unit = println(s"[INFO] $msg")
+  protected def logWarn(msg: String): Unit = println(s"[WARN] $msg")
+  protected def logError(msg: String): Unit = println(s"[ERROR] $msg")
+}
 
-  /** Upload auto à partir d'un fichier (taille connue) */
-  def upload(bucket: String, key: String, file: Path, contentType: String, dropLocalFile: Boolean = false, partSizeBytes: Int = 64 * 1024 * 1024): Unit = {
-    val size = Files.size(file)
+class DefaultS3Service(val s3Client: AmazonS3) extends S3Service with Logging {
+
+  private val MinPartSize: Int = 5 * 1024 * 1024 // 5MB (règle S3 multipart)
+
+  // ---------------------------------------------------------------------------
+  // 1) put string (comme ton screenshot)
+  // ---------------------------------------------------------------------------
+  override def put(bucket: String, key: String, content: String, contentType: String): Unit = {
+    val bytes = content.getBytes(StandardCharsets.UTF_8)
+    val md = new ObjectMetadata()
+    md.setContentType(contentType)
+    md.setContentLength(bytes.length.toLong)
+
+    val is = new ByteArrayInputStream(bytes)
+    try {
+      s3Client.putObject(bucket, key, is, md)
+      logInfo(s"PutObject OK: s3://$bucket/$key (bytes=${bytes.length})")
+    } finally {
+      safeClose(is)
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 2) put inputStream multipart automatique (SIGNATURE IDENTIQUE SCREENSHOT)
+  //    - si stream < 5MB => putObject
+  //    - sinon => multipart
+  //    - corrige le bug "arrêt à 5MB" via readFully()
+  // ---------------------------------------------------------------------------
+  override def put(bucket: String, destKey: String, inputStream: InputStream, uploadPartSize: Int): Unit = {
+    val partSize = math.max(uploadPartSize, MinPartSize)
+
+    // 1) Sniff: lire jusqu’à 5MB pour savoir si c’est petit ou gros (sans threshold à fournir)
+    val sniff = readUpTo(inputStream, MinPartSize)
+
+    if (sniff.isEmpty) {
+      // stream vide => objet vide
+      putBytes(bucket, destKey, Array.emptyByteArray, "application/octet-stream")
+      safeClose(inputStream)
+      return
+    }
+
+    if (sniff.length < MinPartSize) {
+      // petit => putObject (safe: <=5MB en RAM)
+      putBytes(bucket, destKey, sniff, "application/octet-stream")
+      safeClose(inputStream)
+      return
+    }
+
+    // 2) Gros stream => multipart
+    // on "rejoue" le sniff au début du stream grâce à un stream chaîné
+    val chained = new SequenceInputStream(new ByteArrayInputStream(sniff), inputStream)
 
     try {
-      if (size == 0L) {
-        putBytes(bucket, key, Array.emptyByteArray, contentType)
-      } else if (size < MinPartSize) {
-        putFile(bucket, key, file, contentType)
-      } else {
-        val in = new BufferedInputStream(new FileInputStream(file.toFile))
-        try multipartUpload(bucket, key, in, Some(size), contentType, partSizeBytes)
-        finally safeClose(in)
-      }
+      multipartUpload(bucket, destKey, chained, contentType = "application/octet-stream", partSizeBytes = partSize)
     } finally {
-      if (dropLocalFile) safeDelete(file)
+      safeClose(chained) // ferme aussi inputStream
     }
   }
 
-  /** Upload auto à partir d'un InputStream.
-    * length optionnel.
-    * - si length < 5MB => putObject
-    * - si length >= 5MB => multipart
-    * - si length absent => sniff 5MB: si EOF => putObject, sinon multipart
-    */
-  def upload(bucket: String, key: String, in: InputStream, length: Option[Long], contentType: String, partSizeBytes: Int = 64 * 1024 * 1024): Unit = {
-    val partSize = math.max(partSizeBytes, MinPartSize)
-
-    length match {
-      case Some(0L) =>
-        putBytes(bucket, key, Array.emptyByteArray, contentType)
-        safeClose(in)
-
-      case Some(len) if len < MinPartSize =>
-        try putStream(bucket, key, in, len, contentType)
-        finally safeClose(in)
-
-      case Some(_) =>
-        try multipartUpload(bucket, key, in, length, contentType, partSize)
-        finally safeClose(in)
-
-      case None =>
-        // Sniff: lis 5MB pour décider
-        val sniff = readUpTo(in, MinPartSize)
-        if (sniff.isEmpty) {
-          putBytes(bucket, key, Array.emptyByteArray, contentType)
-          safeClose(in)
-        } else if (sniff.length < MinPartSize) {
-          // Petit stream => putObject avec bytes (<= 5MB donc safe)
-          putBytes(bucket, key, sniff, contentType)
-          safeClose(in)
-        } else {
-          // Gros stream => multipart; part 1 = sniff + le reste du stream
-          val chained = new SequenceInputStream(new ByteArrayInputStream(sniff), in)
-          try multipartUpload(bucket, key, chained, None, contentType, partSize)
-          finally safeClose(chained) // ferme aussi "in"
-        }
-    }
-  }
-
-  // ---------------- putObject (small) ----------------
-
-  private def putFile(bucket: String, key: String, file: Path, contentType: String): Unit = {
-    val md = new ObjectMetadata()
-    md.setContentType(contentType)
-    s3.putObject(new PutObjectRequest(bucket, key, file.toFile).withMetadata(md))
-  }
-
-  private def putStream(bucket: String, key: String, in: InputStream, length: Long, contentType: String): Unit = {
-    val md = new ObjectMetadata()
-    md.setContentType(contentType)
-    md.setContentLength(length)
-    s3.putObject(bucket, key, in, md)
-  }
-
+  // ---------------------------------------------------------------------------
+  // Helpers putObject
+  // ---------------------------------------------------------------------------
   private def putBytes(bucket: String, key: String, bytes: Array[Byte], contentType: String): Unit = {
     val md = new ObjectMetadata()
     md.setContentType(contentType)
     md.setContentLength(bytes.length.toLong)
+
     val is = new ByteArrayInputStream(bytes)
-    try s3.putObject(bucket, key, is, md)
-    finally safeClose(is)
+    try {
+      s3Client.putObject(bucket, key, is, md)
+      logInfo(s"PutObject OK: s3://$bucket/$key (bytes=${bytes.length})")
+    } finally {
+      safeClose(is)
+    }
   }
 
-  // ---------------- multipart (large) ----------------
-
-  private def multipartUpload(bucket: String, key: String, in: InputStream, length: Option[Long], contentType: String, partSizeBytes: Int): Unit = {
-    val partSize = math.max(partSizeBytes, MinPartSize)
-
-    // init
+  private def putStream(bucket: String, key: String, is: InputStream, length: Long, contentType: String): Unit = {
     val md = new ObjectMetadata()
     md.setContentType(contentType)
-    val init = s3.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucket, key).withObjectMetadata(md))
+    md.setContentLength(length)
+    s3Client.putObject(bucket, key, is, md)
+    logInfo(s"PutObject OK: s3://$bucket/$key (length=$length)")
+  }
+
+  // ---------------------------------------------------------------------------
+  // Multipart upload robuste
+  //  - utilise readFully => évite parts < 5MB (sauf dernier)
+  //  - eTags: java.util.ArrayList[PartETag] + add(new PartETag(...))
+  //  - abort en cas d’erreur
+  // ---------------------------------------------------------------------------
+  private def multipartUpload(bucket: String, key: String, in: InputStream, contentType: String, partSizeBytes: Int): Unit = {
+    val partSize = math.max(partSizeBytes, MinPartSize)
+
+    val md = new ObjectMetadata()
+    md.setContentType(contentType)
+
+    val init = s3Client.initiateMultipartUpload(
+      new InitiateMultipartUploadRequest(bucket, key).withObjectMetadata(md)
+    )
     val uploadId = init.getUploadId
 
-    val eTags = ListBuffer.empty[PartETag]
+    val eTags = new java.util.ArrayList[PartETag]()
     val buffer = new Array[Byte](partSize)
 
     var partNumber = 1
+
     try {
-      var bytesRead = in.read(buffer)
-      if (bytesRead == -1) {
-        // stream vide => objet vide
-        s3.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId))
+      var bytesRead = readFully(in, buffer)
+
+      // Stream vide (au cas où)
+      if (bytesRead == 0) {
+        s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId))
         putBytes(bucket, key, Array.emptyByteArray, contentType)
         return
       }
 
       while (bytesRead > 0) {
         val partStream = new ByteArrayInputStream(buffer, 0, bytesRead)
+
         val req = new UploadPartRequest()
           .withBucketName(bucket)
           .withKey(key)
@@ -129,31 +144,48 @@ final class S3AutoUploader(val s3: AmazonS3) {
           .withPartSize(bytesRead.toLong)
           .withInputStream(partStream)
 
-        val res = s3.uploadPart(req)
+        val res = s3Client.uploadPart(req)
         val etag = res.getETag
         if (etag == null) throw new IllegalStateException(s"Missing ETag for part=$partNumber s3://$bucket/$key uploadId=$uploadId")
 
-        eTags += new PartETag(partNumber, etag)
-        partNumber += 1
+        // ✅ Correct: on ajoute un PartETag, pas la String etag
+        eTags.add(new PartETag(partNumber, etag))
 
-        bytesRead = in.read(buffer)
+        partNumber += 1
+        bytesRead = readFully(in, buffer) // ✅ clé: pas in.read(buffer)
       }
 
-      if (eTags.isEmpty) throw new IllegalStateException(s"No parts uploaded for s3://$bucket/$key uploadId=$uploadId")
+      if (eTags.isEmpty) {
+        throw new IllegalStateException(s"No parts uploaded for s3://$bucket/$key uploadId=$uploadId")
+      }
 
-      s3.completeMultipartUpload(new CompleteMultipartUploadRequest(bucket, key, uploadId, eTags.toList.asInstanceOf[java.util.List[PartETag]]))
+      s3Client.completeMultipartUpload(new CompleteMultipartUploadRequest(bucket, key, uploadId, eTags))
+      logInfo(s"Multipart upload OK: s3://$bucket/$key parts=${eTags.size()} uploadId=$uploadId")
 
     } catch {
       case NonFatal(e) =>
-        try s3.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId))
-        catch { case _: Throwable => () }
+        logError(s"Multipart upload FAILED => abort: s3://$bucket/$key uploadId=$uploadId reason=${e.getMessage}")
+        try s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId))
+        catch { case NonFatal(abortErr) => logWarn(s"Abort failed: ${abortErr.getMessage}") }
         throw e
     }
   }
 
-  // ---------------- utils ----------------
+  // ---------------------------------------------------------------------------
+  // Utils lecture (IMPORTANT)
+  // ---------------------------------------------------------------------------
 
-  /** Lit au plus max bytes depuis in (peut retourner < max si EOF) */
+  /** Lit jusqu’à remplir buffer ou EOF. Retourne 0 si EOF immédiat. */
+  private def readFully(in: InputStream, buffer: Array[Byte]): Int = {
+    var offset = 0
+    var n = 0
+    while (offset < buffer.length && { n = in.read(buffer, offset, buffer.length - offset); n != -1 }) {
+      offset += n
+    }
+    offset
+  }
+
+  /** Lit au plus max bytes (peut retourner < max si EOF) */
   private def readUpTo(in: InputStream, max: Int): Array[Byte] = {
     val out = new ByteArrayOutputStream(math.min(max, 64 * 1024))
     val buf = new Array[Byte](64 * 1024)
@@ -169,7 +201,4 @@ final class S3AutoUploader(val s3: AmazonS3) {
 
   private def safeClose(c: Closeable): Unit =
     try c.close() catch { case _: Throwable => () }
-
-  private def safeDelete(p: Path): Unit =
-    try Files.deleteIfExists(p) catch { case _: Throwable => () }
 }

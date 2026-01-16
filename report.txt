@@ -1,204 +1,75 @@
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model._
+import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import boto3
 
-import java.io._
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
-import scala.util.control.NonFatal
+s3 = boto3.client("s3")
 
-trait S3Service {
-  def put(bucket: String, key: String, content: String, contentType: String): Unit
-  def put(bucket: String, destKey: String, inputStream: InputStream, uploadPartSize: Int): Unit
-}
+def parse_s3_uri(s3_uri: str):
+    m = re.match(r"^s3://([^/]+)/?(.*)$", s3_uri.strip())
+    if not m:
+        raise ValueError(f"Invalid S3 URI: {s3_uri}")
+    bucket = m.group(1)
+    prefix = m.group(2) or ""
+    if prefix and not prefix.endswith("/"):
+        prefix += "/"
+    return bucket, prefix
 
-trait Logging {
-  protected def logInfo(msg: String): Unit = println(s"[INFO] $msg")
-  protected def logWarn(msg: String): Unit = println(s"[WARN] $msg")
-  protected def logError(msg: String): Unit = println(s"[ERROR] $msg")
-}
+def list_top_level_prefixes(bucket: str, prefix: str):
+    """
+    Retourne les sous-dossiers (CommonPrefixes) directement sous `prefix`.
+    Exemple: prefix=path/to/items/ => [path/to/items/item1/, path/to/items/item2/, ...]
+    """
+    paginator = s3.get_paginator("list_objects_v2")
+    pages = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="/")
+    out = []
+    for page in pages:
+        for cp in page.get("CommonPrefixes", []):
+            out.append(cp["Prefix"])
+    return out
 
-class DefaultS3Service(val s3Client: AmazonS3) extends S3Service with Logging {
+def prefix_total_size(bucket: str, prefix: str) -> int:
+    """Somme des tailles (bytes) de tous les objets sous `prefix`."""
+    paginator = s3.get_paginator("list_objects_v2")
+    total = 0
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            total += obj["Size"]
+    return total
 
-  private val MinPartSize: Int = 5 * 1024 * 1024 // 5MB (règle S3 multipart)
+def human_bytes(n: int) -> str:
+    units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    f = float(n)
+    i = 0
+    while f >= 1024 and i < len(units) - 1:
+        f /= 1024
+        i += 1
+    return f"{f:.2f} {units[i]}"
 
-  // ---------------------------------------------------------------------------
-  // 1) put string (comme ton screenshot)
-  // ---------------------------------------------------------------------------
-  override def put(bucket: String, key: String, content: String, contentType: String): Unit = {
-    val bytes = content.getBytes(StandardCharsets.UTF_8)
-    val md = new ObjectMetadata()
-    md.setContentType(contentType)
-    md.setContentLength(bytes.length.toLong)
+def rank_items_by_size(s3_items_prefix_uri: str, max_workers: int = 16):
+    bucket, base_prefix = parse_s3_uri(s3_items_prefix_uri)
 
-    val is = new ByteArrayInputStream(bytes)
-    try {
-      s3Client.putObject(bucket, key, is, md)
-      logInfo(s"PutObject OK: s3://$bucket/$key (bytes=${bytes.length})")
-    } finally {
-      safeClose(is)
-    }
-  }
+    items = list_top_level_prefixes(bucket, base_prefix)
+    if not items:
+        # si pas de "folders" détectés, on traite le préfixe lui-même comme un item
+        items = [base_prefix]
 
-  // ---------------------------------------------------------------------------
-  // 2) put inputStream multipart automatique (SIGNATURE IDENTIQUE SCREENSHOT)
-  //    - si stream < 5MB => putObject
-  //    - sinon => multipart
-  //    - corrige le bug "arrêt à 5MB" via readFully()
-  // ---------------------------------------------------------------------------
-  override def put(bucket: String, destKey: String, inputStream: InputStream, uploadPartSize: Int): Unit = {
-    val partSize = math.max(uploadPartSize, MinPartSize)
+    results = []
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        futs = {ex.submit(prefix_total_size, bucket, p): p for p in items}
+        for fut in as_completed(futs):
+            p = futs[fut]
+            size = fut.result()
+            results.append((p, size))
 
-    // 1) Sniff: lire jusqu’à 5MB pour savoir si c’est petit ou gros (sans threshold à fournir)
-    val sniff = readUpTo(inputStream, MinPartSize)
+    # Tri décroissant (du plus gros au plus petit)
+    results.sort(key=lambda x: x[1], reverse=True)
+    return results
 
-    if (sniff.isEmpty) {
-      // stream vide => objet vide
-      putBytes(bucket, destKey, Array.emptyByteArray, "application/octet-stream")
-      safeClose(inputStream)
-      return
-    }
+if __name__ == "__main__":
+    # Exemple
+    s3_prefix = "s3://my-bucket/path/to/items/"
+    ranked = rank_items_by_size(s3_prefix, max_workers=16)
 
-    if (sniff.length < MinPartSize) {
-      // petit => putObject (safe: <=5MB en RAM)
-      putBytes(bucket, destKey, sniff, "application/octet-stream")
-      safeClose(inputStream)
-      return
-    }
-
-    // 2) Gros stream => multipart
-    // on "rejoue" le sniff au début du stream grâce à un stream chaîné
-    val chained = new SequenceInputStream(new ByteArrayInputStream(sniff), inputStream)
-
-    try {
-      multipartUpload(bucket, destKey, chained, contentType = "application/octet-stream", partSizeBytes = partSize)
-    } finally {
-      safeClose(chained) // ferme aussi inputStream
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Helpers putObject
-  // ---------------------------------------------------------------------------
-  private def putBytes(bucket: String, key: String, bytes: Array[Byte], contentType: String): Unit = {
-    val md = new ObjectMetadata()
-    md.setContentType(contentType)
-    md.setContentLength(bytes.length.toLong)
-
-    val is = new ByteArrayInputStream(bytes)
-    try {
-      s3Client.putObject(bucket, key, is, md)
-      logInfo(s"PutObject OK: s3://$bucket/$key (bytes=${bytes.length})")
-    } finally {
-      safeClose(is)
-    }
-  }
-
-  private def putStream(bucket: String, key: String, is: InputStream, length: Long, contentType: String): Unit = {
-    val md = new ObjectMetadata()
-    md.setContentType(contentType)
-    md.setContentLength(length)
-    s3Client.putObject(bucket, key, is, md)
-    logInfo(s"PutObject OK: s3://$bucket/$key (length=$length)")
-  }
-
-  // ---------------------------------------------------------------------------
-  // Multipart upload robuste
-  //  - utilise readFully => évite parts < 5MB (sauf dernier)
-  //  - eTags: java.util.ArrayList[PartETag] + add(new PartETag(...))
-  //  - abort en cas d’erreur
-  // ---------------------------------------------------------------------------
-  private def multipartUpload(bucket: String, key: String, in: InputStream, contentType: String, partSizeBytes: Int): Unit = {
-    val partSize = math.max(partSizeBytes, MinPartSize)
-
-    val md = new ObjectMetadata()
-    md.setContentType(contentType)
-
-    val init = s3Client.initiateMultipartUpload(
-      new InitiateMultipartUploadRequest(bucket, key).withObjectMetadata(md)
-    )
-    val uploadId = init.getUploadId
-
-    val eTags = new java.util.ArrayList[PartETag]()
-    val buffer = new Array[Byte](partSize)
-
-    var partNumber = 1
-
-    try {
-      var bytesRead = readFully(in, buffer)
-
-      // Stream vide (au cas où)
-      if (bytesRead == 0) {
-        s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId))
-        putBytes(bucket, key, Array.emptyByteArray, contentType)
-        return
-      }
-
-      while (bytesRead > 0) {
-        val partStream = new ByteArrayInputStream(buffer, 0, bytesRead)
-
-        val req = new UploadPartRequest()
-          .withBucketName(bucket)
-          .withKey(key)
-          .withUploadId(uploadId)
-          .withPartNumber(partNumber)
-          .withPartSize(bytesRead.toLong)
-          .withInputStream(partStream)
-
-        val res = s3Client.uploadPart(req)
-        val etag = res.getETag
-        if (etag == null) throw new IllegalStateException(s"Missing ETag for part=$partNumber s3://$bucket/$key uploadId=$uploadId")
-
-        // ✅ Correct: on ajoute un PartETag, pas la String etag
-        eTags.add(new PartETag(partNumber, etag))
-
-        partNumber += 1
-        bytesRead = readFully(in, buffer) // ✅ clé: pas in.read(buffer)
-      }
-
-      if (eTags.isEmpty) {
-        throw new IllegalStateException(s"No parts uploaded for s3://$bucket/$key uploadId=$uploadId")
-      }
-
-      s3Client.completeMultipartUpload(new CompleteMultipartUploadRequest(bucket, key, uploadId, eTags))
-      logInfo(s"Multipart upload OK: s3://$bucket/$key parts=${eTags.size()} uploadId=$uploadId")
-
-    } catch {
-      case NonFatal(e) =>
-        logError(s"Multipart upload FAILED => abort: s3://$bucket/$key uploadId=$uploadId reason=${e.getMessage}")
-        try s3Client.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId))
-        catch { case NonFatal(abortErr) => logWarn(s"Abort failed: ${abortErr.getMessage}") }
-        throw e
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Utils lecture (IMPORTANT)
-  // ---------------------------------------------------------------------------
-
-  /** Lit jusqu’à remplir buffer ou EOF. Retourne 0 si EOF immédiat. */
-  private def readFully(in: InputStream, buffer: Array[Byte]): Int = {
-    var offset = 0
-    var n = 0
-    while (offset < buffer.length && { n = in.read(buffer, offset, buffer.length - offset); n != -1 }) {
-      offset += n
-    }
-    offset
-  }
-
-  /** Lit au plus max bytes (peut retourner < max si EOF) */
-  private def readUpTo(in: InputStream, max: Int): Array[Byte] = {
-    val out = new ByteArrayOutputStream(math.min(max, 64 * 1024))
-    val buf = new Array[Byte](64 * 1024)
-    var remaining = max
-    while (remaining > 0) {
-      val n = in.read(buf, 0, math.min(buf.length, remaining))
-      if (n == -1) return out.toByteArray
-      out.write(buf, 0, n)
-      remaining -= n
-    }
-    out.toByteArray
-  }
-
-  private def safeClose(c: Closeable): Unit =
-    try c.close() catch { case _: Throwable => () }
-}
+    print(f"Classement par taille pour {s3_prefix}\n")
+    for p, size in ranked:
+        print(f"{human_bytes(size):>12}  {p}")

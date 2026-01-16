@@ -5,6 +5,9 @@ import boto3
 
 s3 = boto3.client("s3")
 
+# Exemple attendu dans le path: .../object=xxx_PROD-yyy/... (pas de "/")
+ITEM_RE = re.compile(r"(object=[^/]*?_PROD-[^/]+)")
+
 def parse_s3_uri(s3_uri: str):
     m = re.match(r"^s3://([^/]+)/?(.*)$", s3_uri.strip())
     if not m:
@@ -41,6 +44,14 @@ def human_bytes(n: int) -> str:
         i += 1
     return f"{f:.2f} {units[i]}"
 
+def extract_item_name(item_prefix: str) -> str:
+    """
+    Extrait 'object=..._PROD-...' n'importe où dans le prefix.
+    Retourne "" si non trouvé.
+    """
+    m = ITEM_RE.search(item_prefix)
+    return m.group(1) if m else ""
+
 def rank_items_by_size(s3_items_prefix_uri: str, max_workers: int = 16):
     bucket, base_prefix = parse_s3_uri(s3_items_prefix_uri)
 
@@ -60,14 +71,12 @@ def rank_items_by_size(s3_items_prefix_uri: str, max_workers: int = 16):
     return bucket, base_prefix, results
 
 def write_csv(output_path: str, bucket: str, base_prefix: str, ranked):
-    """
-    ranked = list[(prefix, size_bytes)]
-    """
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["bucket", "base_prefix", "item_prefix", "size_bytes", "size_human"])
+        w.writerow(["bucket", "base_prefix", "item_name", "item_prefix", "size_bytes", "size_human"])
         for item_prefix, size in ranked:
-            w.writerow([bucket, base_prefix, item_prefix, size, human_bytes(size)])
+            item_name = extract_item_name(item_prefix)
+            w.writerow([bucket, base_prefix, item_name, item_prefix, size, human_bytes(size)])
 
 if __name__ == "__main__":
     s3_prefix = "s3://my-bucket/path/to/items/"
@@ -79,4 +88,4 @@ if __name__ == "__main__":
     print(f"CSV écrit: {output_csv}")
     print("Top 10:")
     for p, size in ranked[:10]:
-        print(f"{human_bytes(size):>12}  {p}")
+        print(f"{human_bytes(size):>12}  {extract_item_name(p):<40}  {p}")

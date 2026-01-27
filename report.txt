@@ -1,6 +1,8 @@
-cid=$(docker create oa-mask ... )
-docker cp install/storage/. "$cid":/app/oa/EllipsysStorage/openAudit
-docker cp install/oa.env "$cid":/app/oa.env
+cid=$(docker create --env-file "$CI_PROJECT_DIR/install/oa.env" oa-mask \
+  -c /app/oa/EllipsysStorage/openAudit/input/test.csv \
+  -h /app/oa/EllipsysStorage/openAudit/config/hsh.txt \
+  -o /app/oa/EllipsysStorage/openAudit/output/ \
+  -f -v --sm)
+
+docker cp "$CI_PROJECT_DIR/install/storage/." "$cid:/app/oa/EllipsysStorage/openAudit"
 docker start -a "$cid"
-docker cp "$cid":/app/oa/EllipsysStorage/openAudit/output/. install/output/
-docker rm "$cid"

@@ -1,8 +1,104 @@
-cid=$(docker create --env-file "$CI_PROJECT_DIR/install/oa.env" oa-mask \
-  -c /app/oa/EllipsysStorage/openAudit/input/test.csv \
-  -h /app/oa/EllipsysStorage/openAudit/config/hsh.txt \
-  -o /app/oa/EllipsysStorage/openAudit/output/ \
-  -f -v --sm)
+<dependencies>
+  <dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.15.3</version>
+  </dependency>
+  <dependency>
+    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <artifactId>jackson-dataformat-yaml</artifactId>
+    <version>2.15.3</version>
+  </dependency>
+  <dependency>
+    <groupId>com.fasterxml.jackson.module</groupId>
+    <artifactId>jackson-module-scala_2.12</artifactId>
+    <version>2.15.3</version>
+  </dependency>
+</dependencies>
 
-docker cp "$CI_PROJECT_DIR/install/storage/." "$cid:/app/oa/EllipsysStorage/openAudit"
-docker start -a "$cid"
+
+package fr.ccf.commons.datacontract
+
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+
+import java.io.{File, InputStream}
+import scala.collection.JavaConverters._
+
+object DataContractReader {
+
+  private val mapper: ObjectMapper =
+    new ObjectMapper(new YAMLFactory())
+      .registerModule(DefaultScalaModule)
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
+  def fromFile(path: String): DataContract =
+    mapper.readValue(new File(path), classOf[DataContract])
+
+  def fromResource(resourcePath: String): DataContract = {
+    val is: InputStream =
+      Option(getClass.getClassLoader.getResourceAsStream(resourcePath))
+        .getOrElse(throw new IllegalArgumentException(s"Resource introuvable: $resourcePath"))
+    try mapper.readValue(is, classOf[DataContract])
+    finally is.close()
+  }
+
+  /**
+   * Utilitaires pour manipuler CustomProperty.value: Any
+   * (souvent java.util.Map / java.util.List en sortie Jackson)
+   */
+  object AnyHelpers {
+
+    def asJavaMap(v: Any): Option[java.util.Map[String, Any]] = v match {
+      case m: java.util.Map[_, _] =>
+        Some(m.asInstanceOf[java.util.Map[String, Any]])
+      case _ => None
+    }
+
+    def getString(map: java.util.Map[String, Any], key: String): Option[String] =
+      Option(map.get(key)).map(_.toString)
+
+    def getMap(map: java.util.Map[String, Any], key: String): Option[java.util.Map[String, Any]] =
+      Option(map.get(key)).flatMap(asJavaMap)
+
+    /** Conversion optionnelle en Map/List Scala (si tu préfères manipuler en Scala pur) */
+    def toScala(v: Any): Any = v match {
+      case m: java.util.Map[_, _] =>
+        m.asScala.toMap.map { case (k, vv) => k.toString -> toScala(vv) }
+      case l: java.util.List[_] =>
+        l.asScala.toList.map(toScala)
+      case other => other
+    }
+  }
+}
+
+
+import fr.ccf.commons.datacontract.{DataContractReader, CustomProperty}
+import fr.ccf.commons.datacontract.DataContractReader.AnyHelpers._
+
+object Demo extends App {
+  val dc = DataContractReader.fromFile("SA030_PROD-V1.yaml")
+
+  val schema0 = dc.schema.head
+
+  val storageDescriptorValueOpt: Option[Any] =
+    schema0.customProperties.find(_.property == "storage_descriptor").map(_.value)
+
+  val location: Option[String] =
+    storageDescriptorValueOpt
+      .flatMap(asJavaMap)
+      .flatMap(m => getString(m, "location"))
+
+  println(s"location = ${location.getOrElse("N/A")}")
+
+  // Exemple: parameters.EXTERNAL
+  val external: Option[String] =
+    schema0.customProperties
+      .find(_.property == "parameters")
+      .map(_.value)
+      .flatMap(asJavaMap)
+      .flatMap(m => getString(m, "EXTERNAL"))
+
+  println(s"EXTERNAL = ${external.getOrElse("N/A")}")
+}

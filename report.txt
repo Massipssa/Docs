@@ -49,3 +49,63 @@ object DomainEnforcer extends LazyLogging {
   private def equalsType(a: DataType, b: DataType): Boolean =
     a.catalogString.equalsIgnoreCase(b.catalogString)
 }
+package fr.ccf.job.contract
+
+import org.apache.spark.sql.types._
+import scala.util.Try
+
+case class DomainType(prefix: String, regex: String, sparkType: String)
+
+object DomainTypeReader {
+
+  private def readResource(path: String): String = {
+    val stream = getClass.getClassLoader.getResourceAsStream(path)
+    require(stream != null, s"Resource not found: $path")
+    scala.io.Source.fromInputStream(stream).mkString
+  }
+
+  def loadDomainTypes(resourceName: String = "domain-types.csv"): Seq[DomainType] = {
+    val csv = readResource(resourceName)
+
+    // Ton fichier est en ";" (d'après la capture)
+    csv.split("\n").toSeq
+      .map(_.trim)
+      .filter(l => l.nonEmpty && !l.startsWith("#"))
+      .flatMap { line =>
+        val parts = line.split(";", -1).map(_.trim)
+        if (parts.length >= 3) Some(DomainType(parts(0), parts(1), parts(2)))
+        else None
+      }
+  }
+
+  // le prefix le plus long gagne
+  def detectDomainType(colName: String, rules: Seq[DomainType]): Option[DomainType] =
+    rules
+      .filter(r => colName.startsWith(r.prefix))
+      .sortBy(_.prefix.length)
+      .lastOption
+
+  /** Convertit ton "sparkType" CSV -> DataType Spark */
+  def parseSparkType(raw: String): Option[DataType] = {
+    val s = raw.trim.toLowerCase
+
+    s match {
+      // ex: VARCHAR(30), CHAR(8), etc => on mappe sur StringType (safe)
+      case x if x.startsWith("varchar") || x.startsWith("char") => Some(StringType)
+
+      // tu as des lignes "double" ou "double integer in text format"
+      case x if x.startsWith("double") => Some(DoubleType)
+
+      case x if x == "long" => Some(LongType)
+
+      // ex: date (JJ/MM/SSAA)
+      case x if x.startsWith("date") => Some(DateType)
+
+      // si un jour tu ajoutes timestamp
+      case x if x.startsWith("timestamp") => Some(TimestampType)
+
+      // fallback: inconnu
+      case _ => None
+    }
+  }
+}

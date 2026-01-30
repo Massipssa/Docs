@@ -1,142 +1,109 @@
+package fr.ccf.job.contract
+
 import org.apache.spark.sql.types._
-import fr.ccf.commons.datacontract.ColumnProperty
+import scala.util.Try
 
-object ContractSchema {
+case class DomainType(prefix: String, regex: String, sparkType: String)
 
-  def toSparkType(logicalType: String): DataType = {
-    val t = logicalType.trim.toLowerCase
-    t match {
-      case "string" | "varchar" | "char" => StringType
-      case "int" | "integer"             => IntegerType
-      case "bigint" | "long"             => LongType
-      case "boolean"                     => BooleanType
-      case "double"                      => DoubleType
-      case "float"                       => FloatType
-      case "date"                        => DateType
-      case "timestamp"                   => TimestampType
-      case dec if dec.startsWith("decimal") =>
-        val inside = dec.dropWhile(_ != '(').drop(1).takeWhile(_ != ')')
-        val Array(p, s) = inside.split(",").map(_.trim.toInt)
-        DecimalType(p, s)
-      case _ =>
-        // fallback
-        StringType
+object DomainTypeReader {
+
+  private def readResource(path: String): String = {
+    val stream = getClass.getClassLoader.getResourceAsStream(path)
+    require(stream != null, s"Resource not found: $path")
+    scala.io.Source.fromInputStream(stream).mkString
+  }
+
+  def loadDomainTypes(resourceName: String = "domain-types.csv"): Seq[DomainType] = {
+    val csv = readResource(resourceName)
+
+    // Ton fichier est en ";" (d'après la capture)
+    csv.split("\n").toSeq
+      .map(_.trim)
+      .filter(l => l.nonEmpty && !l.startsWith("#"))
+      .flatMap { line =>
+        val parts = line.split(";", -1).map(_.trim)
+        if (parts.length >= 3) Some(DomainType(parts(0), parts(1), parts(2)))
+        else None
+      }
+  }
+
+  // le prefix le plus long gagne
+  def detectDomainType(colName: String, rules: Seq[DomainType]): Option[DomainType] =
+    rules
+      .filter(r => colName.startsWith(r.prefix))
+      .sortBy(_.prefix.length)
+      .lastOption
+
+  /** Convertit ton "sparkType" CSV -> DataType Spark */
+  def parseSparkType(raw: String): Option[DataType] = {
+    val s = raw.trim.toLowerCase
+
+    s match {
+      // ex: VARCHAR(30), CHAR(8), etc => on mappe sur StringType (safe)
+      case x if x.startsWith("varchar") || x.startsWith("char") => Some(StringType)
+
+      // tu as des lignes "double" ou "double integer in text format"
+      case x if x.startsWith("double") => Some(DoubleType)
+
+      case x if x == "long" => Some(LongType)
+
+      // ex: date (JJ/MM/SSAA)
+      case x if x.startsWith("date") => Some(DateType)
+
+      // si un jour tu ajoutes timestamp
+      case x if x.startsWith("timestamp") => Some(TimestampType)
+
+      // fallback: inconnu
+      case _ => None
     }
   }
-
-  def expectedStruct(cols: List[ColumnProperty], nullable: Boolean = true): StructType =
-    StructType(cols.map(c => StructField(c.name, toSparkType(c.logicalType), nullable)))
-}
-
-import org.apache.spark.sql.types._
-
-case class SchemaDiff(
-  missingInActual: List[String],
-  extraInActual: List[String],
-  typeMismatches: List[(String, DataType, DataType)]
-) {
-  def isEmpty: Boolean =
-    missingInActual.isEmpty && extraInActual.isEmpty && typeMismatches.isEmpty
-}
-
-object SchemaCompare {
-
-  private def norm(dt: DataType): String = dt.catalogString.toLowerCase
-
-  def compare(expected: StructType, actual: StructType): SchemaDiff = {
-    val exp = expected.fields.map(f => f.name -> f.dataType).toMap
-    val act = actual.fields.map(f => f.name -> f.dataType).toMap
-
-    val missing = exp.keySet.diff(act.keySet).toList.sorted
-    val extra   = act.keySet.diff(exp.keySet).toList.sorted
-
-    val mismatches =
-      exp.keySet.intersect(act.keySet).toList.sorted.flatMap { col =>
-        val e = exp(col); val a = act(col)
-        if (norm(e) != norm(a)) Some((col, e, a)) else None
-      }
-
-    SchemaDiff(missing, extra, mismatches)
-  }
 }
 
 
-import org.apache.spark.sql.{DataFrame, Column}
+package fr.ccf.job.contract
+
+import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
+import com.typesafe.scalalogging.LazyLogging
 
-object ContractAlign {
+object DomainEnforcer extends LazyLogging {
 
-  /**
-   * Retourne un DataFrame aligné sur le contract:
-   * - ordre des colonnes = contract
-   * - cast types (si colonne existe)
-   * - colonnes manquantes -> null typé
-   * - colonnes en trop -> drop
-   */
-  def align(df: DataFrame, expected: StructType): DataFrame = {
-    val dfCols = df.columns.toSet
+  /** Cast uniquement les colonnes qui matchent un DomainType */
+  def enforce(df: DataFrame, domainRules: Seq[DomainType]): DataFrame = {
+    val dfSchema = df.schema
 
-    val selectCols: Seq[Column] = expected.fields.map { f =>
-      if (dfCols.contains(f.name)) {
-        // cast vers le type attendu
-        col(f.name).cast(f.dataType).as(f.name)
-      } else {
-        // colonne absente
-        lit(null).cast(f.dataType).as(f.name)
+    val newCols: Seq[Column] = df.columns.map { colName =>
+      val actualType = dfSchema(colName).dataType
+
+      val domainOpt = DomainTypeReader.detectDomainType(colName, domainRules)
+      val expectedTypeOpt = domainOpt.flatMap(d => DomainTypeReader.parseSparkType(d.sparkType))
+
+      expectedTypeOpt match {
+        case None =>
+          // Pas de domaine (ou type non parsable) -> on laisse la colonne telle quelle
+          col(colName)
+
+        case Some(expectedType) if equalsType(actualType, expectedType) =>
+          logger.info(s"[DOMAIN] $colName no cast (actual=$actualType expected=$expectedType domain=${domainOpt.map(_.sparkType)})")
+          col(colName)
+
+        case Some(expectedType) =>
+          logger.info(s"[DOMAIN] $colName cast from $actualType to $expectedType (domain=${domainOpt.map(_.sparkType)})")
+          col(colName).cast(expectedType).as(colName)
       }
     }
 
-    df.select(selectCols: _*)
+    df.select(newCols: _*)
+  }
+
+  /** Normalisation (ex: varchar/string, nullable, etc.) */
+  private def equalsType(a: DataType, b: DataType): Boolean = {
+    def norm(dt: DataType): String = dt.catalogString.toLowerCase
+    norm(a) == norm(b)
   }
 }
 
+val domainRules = DomainTypeReader.loadDomainTypes("domain-types.csv")
+val df2 = DomainEnforcer.enforce(df, domainRules)
 
-import org.apache.spark.sql.DataFrame
-import fr.ccf.commons.datacontract.{DataContract, ColumnProperty}
-
-object ContractEnforcer {
-
-  /**
-   * Compare df.schema avec le schema du DataContract.
-   * Si différent -> retourne df converti (aligné sur le contract)
-   * Sinon -> retourne df tel quel (optionnellement reorder)
-   */
-  def enforce(df: DataFrame, contractCols: List[ColumnProperty], alwaysReorder: Boolean = true): DataFrame = {
-    val expected = ContractSchema.expectedStruct(contractCols)
-    val diff = SchemaCompare.compare(expected, df.schema)
-
-    if (!diff.isEmpty) {
-      // logs utiles
-      println(s"[SCHEMA DIFF] missing: ${diff.missingInActual.mkString(", ")}")
-      println(s"[SCHEMA DIFF] extra: ${diff.extraInActual.mkString(", ")}")
-      println(s"[SCHEMA DIFF] mismatches: " +
-        diff.typeMismatches.map { case (c, e, a) => s"$c(expected=$e, actual=$a)" }.mkString(" | ")
-      )
-
-      ContractAlign.align(df, expected)
-    } else if (alwaysReorder) {
-      // même schéma → on reorder selon le contract (utile pour standardiser)
-      val orderedCols = expected.fieldNames.map(org.apache.spark.sql.functions.col)
-      df.select(orderedCols: _*)
-    } else {
-      df
-    }
-  }
-}
-
-
-import fr.ccf.commons.datacontract.DataContractReader
-
-// 1) df déjà lu (CSV, parquet, etc.)
-val df = spark.read.option("header","true").option("delimiter",";").csv("s3://.../input.csv")
-
-// 2) lire le DataContract YAML
-val contract = DataContractReader.fromResource("SA030_PROD-V1.yaml")
-val contractCols = contract.schema.head.properties
-
-// 3) compare + convert si nécessaire
-val dfAligned = ContractEnforcer.enforce(df, contractCols)
-
-// dfAligned est maintenant conforme au DataContract
-dfAligned.printSchema()

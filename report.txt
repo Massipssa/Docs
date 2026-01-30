@@ -1,104 +1,142 @@
-<dependencies>
-  <dependency>
-    <groupId>com.fasterxml.jackson.core</groupId>
-    <artifactId>jackson-databind</artifactId>
-    <version>2.15.3</version>
-  </dependency>
-  <dependency>
-    <groupId>com.fasterxml.jackson.dataformat</groupId>
-    <artifactId>jackson-dataformat-yaml</artifactId>
-    <version>2.15.3</version>
-  </dependency>
-  <dependency>
-    <groupId>com.fasterxml.jackson.module</groupId>
-    <artifactId>jackson-module-scala_2.12</artifactId>
-    <version>2.15.3</version>
-  </dependency>
-</dependencies>
+import org.apache.spark.sql.types._
+import fr.ccf.commons.datacontract.ColumnProperty
 
+object ContractSchema {
 
-package fr.ccf.commons.datacontract
-
-import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-
-import java.io.{File, InputStream}
-import scala.collection.JavaConverters._
-
-object DataContractReader {
-
-  private val mapper: ObjectMapper =
-    new ObjectMapper(new YAMLFactory())
-      .registerModule(DefaultScalaModule)
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-
-  def fromFile(path: String): DataContract =
-    mapper.readValue(new File(path), classOf[DataContract])
-
-  def fromResource(resourcePath: String): DataContract = {
-    val is: InputStream =
-      Option(getClass.getClassLoader.getResourceAsStream(resourcePath))
-        .getOrElse(throw new IllegalArgumentException(s"Resource introuvable: $resourcePath"))
-    try mapper.readValue(is, classOf[DataContract])
-    finally is.close()
+  def toSparkType(logicalType: String): DataType = {
+    val t = logicalType.trim.toLowerCase
+    t match {
+      case "string" | "varchar" | "char" => StringType
+      case "int" | "integer"             => IntegerType
+      case "bigint" | "long"             => LongType
+      case "boolean"                     => BooleanType
+      case "double"                      => DoubleType
+      case "float"                       => FloatType
+      case "date"                        => DateType
+      case "timestamp"                   => TimestampType
+      case dec if dec.startsWith("decimal") =>
+        val inside = dec.dropWhile(_ != '(').drop(1).takeWhile(_ != ')')
+        val Array(p, s) = inside.split(",").map(_.trim.toInt)
+        DecimalType(p, s)
+      case _ =>
+        // fallback
+        StringType
+    }
   }
+
+  def expectedStruct(cols: List[ColumnProperty], nullable: Boolean = true): StructType =
+    StructType(cols.map(c => StructField(c.name, toSparkType(c.logicalType), nullable)))
+}
+
+import org.apache.spark.sql.types._
+
+case class SchemaDiff(
+  missingInActual: List[String],
+  extraInActual: List[String],
+  typeMismatches: List[(String, DataType, DataType)]
+) {
+  def isEmpty: Boolean =
+    missingInActual.isEmpty && extraInActual.isEmpty && typeMismatches.isEmpty
+}
+
+object SchemaCompare {
+
+  private def norm(dt: DataType): String = dt.catalogString.toLowerCase
+
+  def compare(expected: StructType, actual: StructType): SchemaDiff = {
+    val exp = expected.fields.map(f => f.name -> f.dataType).toMap
+    val act = actual.fields.map(f => f.name -> f.dataType).toMap
+
+    val missing = exp.keySet.diff(act.keySet).toList.sorted
+    val extra   = act.keySet.diff(exp.keySet).toList.sorted
+
+    val mismatches =
+      exp.keySet.intersect(act.keySet).toList.sorted.flatMap { col =>
+        val e = exp(col); val a = act(col)
+        if (norm(e) != norm(a)) Some((col, e, a)) else None
+      }
+
+    SchemaDiff(missing, extra, mismatches)
+  }
+}
+
+
+import org.apache.spark.sql.{DataFrame, Column}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types._
+
+object ContractAlign {
 
   /**
-   * Utilitaires pour manipuler CustomProperty.value: Any
-   * (souvent java.util.Map / java.util.List en sortie Jackson)
+   * Retourne un DataFrame aligné sur le contract:
+   * - ordre des colonnes = contract
+   * - cast types (si colonne existe)
+   * - colonnes manquantes -> null typé
+   * - colonnes en trop -> drop
    */
-  object AnyHelpers {
+  def align(df: DataFrame, expected: StructType): DataFrame = {
+    val dfCols = df.columns.toSet
 
-    def asJavaMap(v: Any): Option[java.util.Map[String, Any]] = v match {
-      case m: java.util.Map[_, _] =>
-        Some(m.asInstanceOf[java.util.Map[String, Any]])
-      case _ => None
+    val selectCols: Seq[Column] = expected.fields.map { f =>
+      if (dfCols.contains(f.name)) {
+        // cast vers le type attendu
+        col(f.name).cast(f.dataType).as(f.name)
+      } else {
+        // colonne absente
+        lit(null).cast(f.dataType).as(f.name)
+      }
     }
 
-    def getString(map: java.util.Map[String, Any], key: String): Option[String] =
-      Option(map.get(key)).map(_.toString)
+    df.select(selectCols: _*)
+  }
+}
 
-    def getMap(map: java.util.Map[String, Any], key: String): Option[java.util.Map[String, Any]] =
-      Option(map.get(key)).flatMap(asJavaMap)
 
-    /** Conversion optionnelle en Map/List Scala (si tu préfères manipuler en Scala pur) */
-    def toScala(v: Any): Any = v match {
-      case m: java.util.Map[_, _] =>
-        m.asScala.toMap.map { case (k, vv) => k.toString -> toScala(vv) }
-      case l: java.util.List[_] =>
-        l.asScala.toList.map(toScala)
-      case other => other
+import org.apache.spark.sql.DataFrame
+import fr.ccf.commons.datacontract.{DataContract, ColumnProperty}
+
+object ContractEnforcer {
+
+  /**
+   * Compare df.schema avec le schema du DataContract.
+   * Si différent -> retourne df converti (aligné sur le contract)
+   * Sinon -> retourne df tel quel (optionnellement reorder)
+   */
+  def enforce(df: DataFrame, contractCols: List[ColumnProperty], alwaysReorder: Boolean = true): DataFrame = {
+    val expected = ContractSchema.expectedStruct(contractCols)
+    val diff = SchemaCompare.compare(expected, df.schema)
+
+    if (!diff.isEmpty) {
+      // logs utiles
+      println(s"[SCHEMA DIFF] missing: ${diff.missingInActual.mkString(", ")}")
+      println(s"[SCHEMA DIFF] extra: ${diff.extraInActual.mkString(", ")}")
+      println(s"[SCHEMA DIFF] mismatches: " +
+        diff.typeMismatches.map { case (c, e, a) => s"$c(expected=$e, actual=$a)" }.mkString(" | ")
+      )
+
+      ContractAlign.align(df, expected)
+    } else if (alwaysReorder) {
+      // même schéma → on reorder selon le contract (utile pour standardiser)
+      val orderedCols = expected.fieldNames.map(org.apache.spark.sql.functions.col)
+      df.select(orderedCols: _*)
+    } else {
+      df
     }
   }
 }
 
 
-import fr.ccf.commons.datacontract.{DataContractReader, CustomProperty}
-import fr.ccf.commons.datacontract.DataContractReader.AnyHelpers._
+import fr.ccf.commons.datacontract.DataContractReader
 
-object Demo extends App {
-  val dc = DataContractReader.fromFile("SA030_PROD-V1.yaml")
+// 1) df déjà lu (CSV, parquet, etc.)
+val df = spark.read.option("header","true").option("delimiter",";").csv("s3://.../input.csv")
 
-  val schema0 = dc.schema.head
+// 2) lire le DataContract YAML
+val contract = DataContractReader.fromResource("SA030_PROD-V1.yaml")
+val contractCols = contract.schema.head.properties
 
-  val storageDescriptorValueOpt: Option[Any] =
-    schema0.customProperties.find(_.property == "storage_descriptor").map(_.value)
+// 3) compare + convert si nécessaire
+val dfAligned = ContractEnforcer.enforce(df, contractCols)
 
-  val location: Option[String] =
-    storageDescriptorValueOpt
-      .flatMap(asJavaMap)
-      .flatMap(m => getString(m, "location"))
-
-  println(s"location = ${location.getOrElse("N/A")}")
-
-  // Exemple: parameters.EXTERNAL
-  val external: Option[String] =
-    schema0.customProperties
-      .find(_.property == "parameters")
-      .map(_.value)
-      .flatMap(asJavaMap)
-      .flatMap(m => getString(m, "EXTERNAL"))
-
-  println(s"EXTERNAL = ${external.getOrElse("N/A")}")
-}
+// dfAligned est maintenant conforme au DataContract
+dfAligned.printSchema()

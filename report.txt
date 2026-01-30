@@ -1,67 +1,5 @@
 package fr.ccf.job.contract
 
-import org.apache.spark.sql.types._
-import scala.util.Try
-
-case class DomainType(prefix: String, regex: String, sparkType: String)
-
-object DomainTypeReader {
-
-  private def readResource(path: String): String = {
-    val stream = getClass.getClassLoader.getResourceAsStream(path)
-    require(stream != null, s"Resource not found: $path")
-    scala.io.Source.fromInputStream(stream).mkString
-  }
-
-  def loadDomainTypes(resourceName: String = "domain-types.csv"): Seq[DomainType] = {
-    val csv = readResource(resourceName)
-
-    // Ton fichier est en ";" (d'après la capture)
-    csv.split("\n").toSeq
-      .map(_.trim)
-      .filter(l => l.nonEmpty && !l.startsWith("#"))
-      .flatMap { line =>
-        val parts = line.split(";", -1).map(_.trim)
-        if (parts.length >= 3) Some(DomainType(parts(0), parts(1), parts(2)))
-        else None
-      }
-  }
-
-  // le prefix le plus long gagne
-  def detectDomainType(colName: String, rules: Seq[DomainType]): Option[DomainType] =
-    rules
-      .filter(r => colName.startsWith(r.prefix))
-      .sortBy(_.prefix.length)
-      .lastOption
-
-  /** Convertit ton "sparkType" CSV -> DataType Spark */
-  def parseSparkType(raw: String): Option[DataType] = {
-    val s = raw.trim.toLowerCase
-
-    s match {
-      // ex: VARCHAR(30), CHAR(8), etc => on mappe sur StringType (safe)
-      case x if x.startsWith("varchar") || x.startsWith("char") => Some(StringType)
-
-      // tu as des lignes "double" ou "double integer in text format"
-      case x if x.startsWith("double") => Some(DoubleType)
-
-      case x if x == "long" => Some(LongType)
-
-      // ex: date (JJ/MM/SSAA)
-      case x if x.startsWith("date") => Some(DateType)
-
-      // si un jour tu ajoutes timestamp
-      case x if x.startsWith("timestamp") => Some(TimestampType)
-
-      // fallback: inconnu
-      case _ => None
-    }
-  }
-}
-
-
-package fr.ccf.job.contract
-
 import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
@@ -69,41 +7,45 @@ import com.typesafe.scalalogging.LazyLogging
 
 object DomainEnforcer extends LazyLogging {
 
-  /** Cast uniquement les colonnes qui matchent un DomainType */
-  def enforce(df: DataFrame, domainRules: Seq[DomainType]): DataFrame = {
-    val dfSchema = df.schema
+  def enforce(
+      df: DataFrame,
+      domainRules: Seq[DomainType],
+      protectedCols: Set[String] = Set("event_day")
+  ): DataFrame = {
 
-    val newCols: Seq[Column] = df.columns.map { colName =>
-      val actualType = dfSchema(colName).dataType
+    val protectedLower = protectedCols.map(_.toLowerCase)
 
-      val domainOpt = DomainTypeReader.detectDomainType(colName, domainRules)
-      val expectedTypeOpt = domainOpt.flatMap(d => DomainTypeReader.parseSparkType(d.sparkType))
+    val newCols: Seq[Column] = df.schema.fields.map { f =>
+      val colName = f.name
+      val actualType = f.dataType
 
-      expectedTypeOpt match {
-        case None =>
-          // Pas de domaine (ou type non parsable) -> on laisse la colonne telle quelle
-          col(colName)
+      // 0) Colonnes protégées -> on garde tel quel (pas de cast)
+      if (protectedLower.contains(colName.toLowerCase)) {
+        logger.info(s"[DOMAIN] $colName is protected -> no cast")
+        col(colName)
 
-        case Some(expectedType) if equalsType(actualType, expectedType) =>
-          logger.info(s"[DOMAIN] $colName no cast (actual=$actualType expected=$expectedType domain=${domainOpt.map(_.sparkType)})")
-          col(colName)
+      } else {
+        val domainOpt = DomainTypeReader.detectDomainType(colName, domainRules)
+        val expectedTypeOpt = domainOpt.flatMap(d => DomainTypeReader.parseSparkType(d.sparkType))
 
-        case Some(expectedType) =>
-          logger.info(s"[DOMAIN] $colName cast from $actualType to $expectedType (domain=${domainOpt.map(_.sparkType)})")
-          col(colName).cast(expectedType).as(colName)
+        expectedTypeOpt match {
+          case None =>
+            col(colName)
+
+          case Some(expectedType) if equalsType(actualType, expectedType) =>
+            logger.info(s"[DOMAIN] $colName no cast (actual=$actualType expected=$expectedType domain=${domainOpt.map(_.sparkType)})")
+            col(colName)
+
+          case Some(expectedType) =>
+            logger.info(s"[DOMAIN] $colName cast from $actualType to $expectedType (domain=${domainOpt.map(_.sparkType)})")
+            col(colName).cast(expectedType).as(colName)
+        }
       }
     }
 
     df.select(newCols: _*)
   }
 
-  /** Normalisation (ex: varchar/string, nullable, etc.) */
-  private def equalsType(a: DataType, b: DataType): Boolean = {
-    def norm(dt: DataType): String = dt.catalogString.toLowerCase
-    norm(a) == norm(b)
-  }
+  private def equalsType(a: DataType, b: DataType): Boolean =
+    a.catalogString.equalsIgnoreCase(b.catalogString)
 }
-
-val domainRules = DomainTypeReader.loadDomainTypes("domain-types.csv")
-val df2 = DomainEnforcer.enforce(df, domainRules)
-

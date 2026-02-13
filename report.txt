@@ -1,111 +1,186 @@
-package fr.ccf.job.contract
-
-import org.apache.spark.sql.{Column, DataFrame}
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types._
-import com.typesafe.scalalogging.LazyLogging
 
-object DomainEnforcer extends LazyLogging {
+/**
+ * Objectif (sans cast explicite) :
+ * 1) Construire un schéma StructType à partir des domainRules
+ * 2) À la 1ère exécution : créer la table Iceberg avec CE schéma (DDL), puis append
+ * 3) Aux exécutions suivantes : récupérer le schéma depuis Iceberg et LIRE les données d’entrée avec ce schéma
+ *    (donc pas de cast ensuite : si la donnée ne respecte pas le schéma -> échec/NULL selon le parse du reader)
+ *
+ * IMPORTANT : Sans cast, la seule façon “propre” d’avoir les bons types est de LIRE dès le départ avec le bon schéma.
+ *             Si tu lis tout en string puis tu écris, tu seras obligé de caster ou ça échouera.
+ */
+object IcebergDomainSchemaWriter {
 
-  def enforce(
-      df: DataFrame,
-      domainRules: Seq[DomainType],
-      protectedCols: Set[String] = Set("event_day")
+  // ----------------------------
+  // 1) Build schema from domain rules
+  // ----------------------------
+
+  /** Construit un schéma cible à partir des colonnes du DF (noms + ordre) et des domainRules. */
+  def buildSchemaFromDomainRules(dfColumnsInOrder: Seq[String], domainRules: Seq[DomainFamiliesType]): StructType = {
+    val fields = dfColumnsInOrder.map { colName =>
+      val domainOpt = DomainTypeReader.detectDomainType(colName, domainRules)
+
+      // ⚠️ adapte ici si ton modèle a `sparkType` au lieu de `description`
+      val dtOpt: Option[DataType] = domainOpt.flatMap(d => DomainTypeReader.parseSparkType(d.description))
+
+      // Si pas de règle -> StringType par défaut (ou ce que tu veux)
+      // 👉 Tu peux aussi choisir "ne pas créer la colonne" si pas de domaine, mais généralement on la garde.
+      StructField(colName, dtOpt.getOrElse(StringType), nullable = true)
+    }
+    StructType(fields)
+  }
+
+  // ----------------------------
+  // 2) Create Iceberg table with the target schema (first run)
+  // ----------------------------
+
+  /**
+   * Crée une table Iceberg via DDL avec un schéma exact.
+   * partitionSpecSql : ex "years(event_date), months(event_date)" ou "event_day" etc.
+   * tableProperties  : TBLPROPERTIES('key'='value', ...)
+   */
+  def createIcebergTableIfMissing(
+    spark: SparkSession,
+    fullTableName: String,                 // ex: "catalog.db.table"
+    targetSchema: StructType,
+    partitionSpecSql: Option[String],      // ex: Some("years(event_date), months(event_date)")
+    tableProperties: Map[String, String],
+    tableExists: => Boolean
+  ): Unit = {
+    if (tableExists) return
+
+    val colsSql = targetSchema.fields.map { f =>
+      s"`${f.name}` ${toSqlType(f.dataType)}"
+    }.mkString(",\n  ")
+
+    val partitionSql = partitionSpecSql.map(p => s"\nPARTITIONED BY ($p)").getOrElse("")
+
+    val propsSql =
+      if (tableProperties.isEmpty) ""
+      else {
+        val kv = tableProperties.map { case (k, v) => s"'$k'='$v'" }.mkString(", ")
+        s"\nTBLPROPERTIES ($kv)"
+      }
+
+    val ddl =
+      s"""
+         |CREATE TABLE $fullTableName (
+         |  $colsSql
+         |)
+         |USING iceberg$partitionSql$propsSql
+         |""".stripMargin
+
+    spark.sql(ddl)
+  }
+
+  private def toSqlType(dt: DataType): String = dt match {
+    case StringType            => "string"
+    case IntegerType           => "int"
+    case LongType              => "bigint"
+    case ShortType             => "smallint"
+    case ByteType              => "tinyint"
+    case BooleanType           => "boolean"
+    case DoubleType            => "double"
+    case FloatType             => "float"
+    case DateType              => "date"
+    case TimestampType         => "timestamp"
+    case d: DecimalType        => s"decimal(${d.precision},${d.scale})"
+    case BinaryType            => "binary"
+    // si tu as struct/array/map, tu peux étendre ici
+    case other                 => other.sql
+  }
+
+  // ----------------------------
+  // 3) Read input using the table schema (next runs)
+  // ----------------------------
+
+  /** Récupère le schéma depuis la table Iceberg existante (source de vérité). */
+  def getIcebergTableSchema(spark: SparkSession, fullTableName: String): StructType =
+    spark.table(fullTableName).schema
+
+  /**
+   * Lit l’entrée AVEC un schéma (pas de cast ensuite).
+   * Exemple CSV/JSON/Parquet : tu fournis format + options + path(s)
+   */
+  def readInputWithSchema(
+    spark: SparkSession,
+    format: String,
+    paths: Seq[String],
+    schema: StructType,
+    options: Map[String, String] = Map.empty
   ): DataFrame = {
+    val reader = spark.read.format(format).schema(schema)
+    options.foreach { case (k, v) => reader.option(k, v) }
+    reader.load(paths: _*)
+  }
 
-    val protectedLower = protectedCols.map(_.toLowerCase)
+  // ----------------------------
+  // 4) End-to-end writer
+  // ----------------------------
 
-    val newCols: Seq[Column] = df.schema.fields.map { f =>
-      val colName = f.name
-      val actualType = f.dataType
+  /**
+   * Ecriture “sans cast explicite” :
+   * - 1ère fois : build schema depuis domainRules => CREATE TABLE (schema) => read input avec schema => append
+   * - ensuite : schema vient de Iceberg => read input avec schema => append
+   */
+  def writeWithDomainSchema(
+    spark: SparkSession,
+    fullTableName: String,
+    inputFormat: String,
+    inputPaths: Seq[String],
+    inputOptions: Map[String, String],
+    domainRules: Seq[DomainFamiliesType],
 
-      // 0) Colonnes protégées -> on garde tel quel (pas de cast)
-      if (protectedLower.contains(colName.toLowerCase)) {
-        logger.info(s"[DOMAIN] $colName is protected -> no cast")
-        col(colName)
+    // tu peux construire ça depuis ton TableInfo/PartitionParts
+    partitionSpecSql: Option[String],
+    tableProperties: Map[String, String],
 
+    tableExists: => Boolean
+  ): Unit = {
+
+    // A) Déterminer le schéma à utiliser
+    val schemaToUse: StructType =
+      if (tableExists) {
+        // source de vérité : Iceberg
+        getIcebergTableSchema(spark, fullTableName)
       } else {
-        val domainOpt = DomainTypeReader.detectDomainType(colName, domainRules)
-        val expectedTypeOpt = domainOpt.flatMap(d => DomainTypeReader.parseSparkType(d.sparkType))
-
-        expectedTypeOpt match {
-          case None =>
-            col(colName)
-
-          case Some(expectedType) if equalsType(actualType, expectedType) =>
-            logger.info(s"[DOMAIN] $colName no cast (actual=$actualType expected=$expectedType domain=${domainOpt.map(_.sparkType)})")
-            col(colName)
-
-          case Some(expectedType) =>
-            logger.info(s"[DOMAIN] $colName cast from $actualType to $expectedType (domain=${domainOpt.map(_.sparkType)})")
-            col(colName).cast(expectedType).as(colName)
+        // 1ère fois : construit depuis domainRules
+        // 👉 IMPORTANT : il nous faut l’ordre des colonnes attendues.
+        //    Idéalement tu l’as dans ton data contract / metadata.
+        //    Ici, on déduit depuis l’en-tête de lecture "sans schema" (juste pour récupérer les noms).
+        //    Si tu as déjà la liste des colonnes, remplace cette partie.
+        val headerCols: Seq[String] = {
+          val tmp = spark.read.format(inputFormat)
+          inputOptions.foreach { case (k, v) => tmp.option(k, v) }
+          val df0 = tmp.load(inputPaths: _*)
+          df0.columns.toSeq
         }
+        buildSchemaFromDomainRules(headerCols, domainRules)
       }
-    }
 
-    df.select(newCols: _*)
-  }
+    // B) Si table absente : créer la table avec ce schéma
+    createIcebergTableIfMissing(
+      spark = spark,
+      fullTableName = fullTableName,
+      targetSchema = schemaToUse,
+      partitionSpecSql = partitionSpecSql,
+      tableProperties = tableProperties,
+      tableExists = tableExists
+    )
 
-  private def equalsType(a: DataType, b: DataType): Boolean =
-    a.catalogString.equalsIgnoreCase(b.catalogString)
-}
-package fr.ccf.job.contract
+    // C) Lire l’entrée avec le schéma “source de vérité” (domainRules à la 1ère fois, sinon Iceberg)
+    val dfTyped = readInputWithSchema(
+      spark = spark,
+      format = inputFormat,
+      paths = inputPaths,
+      schema = schemaToUse,
+      options = inputOptions
+    )
 
-import org.apache.spark.sql.types._
-import scala.util.Try
-
-case class DomainType(prefix: String, regex: String, sparkType: String)
-
-object DomainTypeReader {
-
-  private def readResource(path: String): String = {
-    val stream = getClass.getClassLoader.getResourceAsStream(path)
-    require(stream != null, s"Resource not found: $path")
-    scala.io.Source.fromInputStream(stream).mkString
-  }
-
-  def loadDomainTypes(resourceName: String = "domain-types.csv"): Seq[DomainType] = {
-    val csv = readResource(resourceName)
-
-    // Ton fichier est en ";" (d'après la capture)
-    csv.split("\n").toSeq
-      .map(_.trim)
-      .filter(l => l.nonEmpty && !l.startsWith("#"))
-      .flatMap { line =>
-        val parts = line.split(";", -1).map(_.trim)
-        if (parts.length >= 3) Some(DomainType(parts(0), parts(1), parts(2)))
-        else None
-      }
-  }
-
-  // le prefix le plus long gagne
-  def detectDomainType(colName: String, rules: Seq[DomainType]): Option[DomainType] =
-    rules
-      .filter(r => colName.startsWith(r.prefix))
-      .sortBy(_.prefix.length)
-      .lastOption
-
-  /** Convertit ton "sparkType" CSV -> DataType Spark */
-  def parseSparkType(raw: String): Option[DataType] = {
-    val s = raw.trim.toLowerCase
-
-    s match {
-      // ex: VARCHAR(30), CHAR(8), etc => on mappe sur StringType (safe)
-      case x if x.startsWith("varchar") || x.startsWith("char") => Some(StringType)
-
-      // tu as des lignes "double" ou "double integer in text format"
-      case x if x.startsWith("double") => Some(DoubleType)
-
-      case x if x == "long" => Some(LongType)
-
-      // ex: date (JJ/MM/SSAA)
-      case x if x.startsWith("date") => Some(DateType)
-
-      // si un jour tu ajoutes timestamp
-      case x if x.startsWith("timestamp") => Some(TimestampType)
-
-      // fallback: inconnu
-      case _ => None
-    }
+    // D) Écrire : Iceberg impose son schéma ; pas de cast explicite ici
+    dfTyped.writeTo(fullTableName).append()
   }
 }

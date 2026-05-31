@@ -3,6 +3,6 @@
   "position": 3,
   "link": {
     "type": "generated-index",
-    "description": "Learn about big data technologies and frameworks."
+    "description": "Learn big data foundations, storage formats, processing engines, streaming platforms, lakehouse tables, query systems, and governance practices."
   }
 }

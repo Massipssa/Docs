@@ -2,6 +2,8 @@
 sidebar_position: 1
 ---
 
+# DataEngLab Docs
+
 ***Welcome to The DataEngLab Docs Your all-in-one learning hub for mastering the craft of data engineering.***
 
 :::note

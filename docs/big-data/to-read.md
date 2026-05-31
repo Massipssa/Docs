@@ -1,2 +1,0 @@
-- https://eng.uber.com/uber-big-data-platform
-- https://eng.uber.com/presto
